@@ -1,0 +1,67 @@
+plugins {
+  id 'org.jenkins-ci.jpi' version '0.27.0'
+}
+
+repositories {
+    jcenter()
+    maven {
+        url('https://repo.jenkins-ci.org/public/')
+    }
+}
+
+group = 'org.jenkins-ci.plugins'
+version = '0.0.0-SNAPSHOT'
+description = 'Enables Pipeline Templating and Governance' 
+
+jenkinsPlugin {
+    coreVersion = '2.121.3'
+    shortName = 'jte'
+    displayName = 'Jenkins Templating Engine'
+    url = 'https://boozallen.github.io/sdp-pipeline-framework/index.html'
+    disabledTestInjection = true
+    localizerOutputDir = "${project.buildDir}/generated-src/localizer"
+    configureRepositories = false
+    configurePublishing = false
+    fileExtension = 'jpi'
+    developers {
+        developer {
+            id 'steven-terrana'
+            name 'Steven Terrana'
+            email 'terrana_steven@bah.com'
+        }
+    }
+    licenses {
+        license {
+            name 'Booz Allen Public License, Version 1.0'
+            url 'http://boozallen.github.io/licenses/bapl'
+        }
+    }
+}
+
+dependencies {
+	jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-multibranch:2.20"
+	jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-api:2.28"
+	jenkinsPlugins "org.jenkins-ci.plugins:branch-api:2.0.20"
+	jenkinsPlugins "org.jenkins-ci.plugins:scm-api:2.2.7"
+	jenkinsPlugins "org.jenkins-ci.plugins:junit:1.24"
+
+    /*
+    jenkinsTest    "org.jenkins-ci.modules:sshd:2.4"
+    jenkinsTest    "com.cloudbees:groovy-cps:1.24"
+	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-basic-steps:2.9"
+	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-durable-task-step:2.19"
+	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-step-api:2.16"
+	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-support:2.19"
+	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-cps:2.54"
+	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-scm-step:2.6"
+	jenkinsTest    "org.jenkins-ci.plugins:git:3.9.1"
+	jenkinsTest    "org.jenkins-ci.plugins:subversion:2.11.1"
+	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-job:2.23"
+    jenkinsTest    "org.jenkins-ci.plugins:matrix-auth:2.3"
+    */ 
+
+    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+    testCompile 'junit:junit:4.12'
+    testCompile 'cglib:cglib-nodep:3.2.5'       // used by Spock
+    testCompile 'org.objenesis:objenesis:2.5.1' // used by Spock
+}
