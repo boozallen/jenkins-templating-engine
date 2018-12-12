@@ -50,7 +50,7 @@ class TemplateFlowDefinition extends FlowDefinition {
             TODO: 
                 make sandbox optional and debug why stepwrapper fails w/ sandboxing
         */
-        return new CpsFlowExecution("template()", false, handle, hint)
+        return new CpsFlowExecution("template()", true, handle, hint)
     }
 
     @Extension
