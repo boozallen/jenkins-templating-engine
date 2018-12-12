@@ -62,7 +62,7 @@ import jenkins.model.Jenkins
                             libDir.children().findAll{ it.getName().endsWith(".groovy") }.each{ step ->
                                 String stepName = step.getName() - ".groovy" 
                                 Script stepImpl = Utils.parseScript(step.contentAsString(), script.getBinding())
-                                stepImpl.metaClass."config" = libConfig  
+                                stepImpl.metaClass.config = libConfig  
                                 StepWrapper sw = new StepWrapper(script, stepImpl, stepName, libName) 
                                 script.getBinding().setVariable(stepName, sw) 
                             }
