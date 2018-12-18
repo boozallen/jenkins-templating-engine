@@ -20,12 +20,13 @@ import org.boozallen.plugins.jte.binding.StepWrapper
 import org.boozallen.plugins.jte.Utils
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
+
 
 class AnnotatedMethod implements Serializable{
     String annotationName 
     StepWrapper stepWrapper 
     String methodName
-    Object impl 
 
     AnnotatedMethod(String annotationName, String methodName, StepWrapper stepWrapper){
         this.annotationName = annotationName
@@ -33,6 +34,7 @@ class AnnotatedMethod implements Serializable{
         this.stepWrapper = stepWrapper 
     } 
 
+    @Whitelisted
     void invoke(Map context){
         def logger = Utils.getLogger()
         try{

@@ -30,6 +30,7 @@ import hudson.Extension
     represents a library step
 */
 class StepWrapper extends TemplatePrimitive{
+    public static final String libraryConfigVariable = "config" 
     private Object impl
     private CpsScript script
     private String name
@@ -65,7 +66,7 @@ class StepWrapper extends TemplatePrimitive{
             status: script.currentBuild.result
         ]
         try{
-            //Hooks.invoke(BeforeStep, script.getBinding(), context)
+            Hooks.invoke(BeforeStep, script.getBinding(), context)
             Utils.getLogger().println "[JTE] Executing step ${name} from the ${library} Library" 
             result = InvokerHelper.getMetaClass(impl).invokeMethod(impl, "call", args)
         } catch (Exception x) {
@@ -73,8 +74,8 @@ class StepWrapper extends TemplatePrimitive{
             throw new InvokerInvocationException(x)
         } finally{
             context.status = script.currentBuild.result
-            Hooks.invoke(AfterStep, script.getBinding(), context)
-            Hooks.invoke(Notifier,  script.getBinding(), context)
+            //Hooks.invoke(AfterStep, script.getBinding(), context)
+            //Hooks.invoke(Notifier, script.getBinding(), context)
         }
         return result
     }

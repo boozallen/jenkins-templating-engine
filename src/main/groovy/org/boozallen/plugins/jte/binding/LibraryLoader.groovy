@@ -62,7 +62,7 @@ import jenkins.model.Jenkins
                             libDir.children().findAll{ it.getName().endsWith(".groovy") }.each{ step ->
                                 String stepName = step.getName() - ".groovy" 
                                 Script stepImpl = Utils.parseScript(step.contentAsString(), script.getBinding())
-                                stepImpl.metaClass.getConfig << { return libConfig }
+                                stepImpl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return libConfig }
                                 StepWrapper sw = new StepWrapper(script, stepImpl, stepName, libName) 
                                 script.getBinding().setVariable(stepName, sw) 
                             }
@@ -81,7 +81,7 @@ import jenkins.model.Jenkins
                         for (step in libDir.list("*.groovy")){
                             String stepName = step.getBaseName()
                             Script stepImpl = Utils.parseScript(step.readToString(), script.getBinding())
-                            stepImpl.metaClass.getConfig << { return libConfig }
+                            stepImpl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return libConfig }
                             StepWrapper sw = new StepWrapper(script, stepImpl, stepName, libName) 
                             script.getBinding().setVariable(stepName, sw) 
                         }
@@ -124,7 +124,7 @@ import jenkins.model.Jenkins
             if (stepConfig.isDefined){
                 Script defaultStepImpl = Utils.parseScript(defaultStepImplString, script.getBinding())
                 //stepConfig["step"] = stepName 
-                defaultStepImpl.metaClass.getConfig << { return stepConfig }
+                defaultStepImpl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return stepConfig }
                 StepWrapper sw = new StepWrapper(script, defaultStepImpl, stepName, "Default Step Implementation") 
                 script.getBinding().setVariable(stepName, sw)
             } else {

@@ -40,9 +40,9 @@ class Stage extends TemplatePrimitive {
     }
 
     void call(){
-        Utils.getLogger().println "[JTE] Executing Stage ${name} -> ${steps}" 
-        for(step in steps){
-            Utils.getLogger().println "RUNNING ${step}" 
+        Utils.getLogger().println "[JTE] Executing Stage ${name}" 
+        for(def i = 0; i < steps.size(); i++){
+            String step = steps.get(i)
             InvokerHelper.getMetaClass(script).invokeMethod(script, step, null)
         }
     }
