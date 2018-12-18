@@ -16,6 +16,7 @@
 
 package org.boozallen.plugins.jte.hooks
 
+import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.binding.* 
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
@@ -26,21 +27,12 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted
 
 class Hooks implements Serializable{
 
-    /*
-        returns an array of maps: 
-        [
-            library: the library contributing this step 
-            impl: the step contributed,
-            name: the name of the step 
-            method: the method within the step annotated 
-        ]
-    */
     @Whitelisted
     static List<AnnotatedMethod> discover(Class<? extends Annotation> a, TemplateBinding b){
         List<AnnotatedMethod> discovered = new ArrayList() 
 
-        List stepWrappers = b.getVariables().collect{ it.value }.findAll{ it instanceof StepWrapper }
-      
+        List<StepWrapper> stepWrappers = b.getVariables().collect{ it.value }.findAll{ it instanceof StepWrapper }
+
         stepWrappers.each{ step ->
             step.impl.class.methods.each{ method ->
                 if (method.getAnnotation(a)){
@@ -55,8 +47,10 @@ class Hooks implements Serializable{
 
     @Whitelisted
     static void invoke(Class<? extends Annotation> a, TemplateBinding b, Map context = [:]){
-        discover(a, b).each{ method -> 
-            method.invoke(context)
+        List<AnnotatedMethod> discovered = discover(a,b)
+        for(def i = 0; i < discovered.size(); i++){
+            AnnotatedMethod method = discovered.get(i)
+            method.invoke(context) 
         }
     }
     

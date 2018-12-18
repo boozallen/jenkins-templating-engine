@@ -35,6 +35,15 @@ class TemplateBinding extends Binding implements Serializable{
 
     @Override
     public void setVariable(String name, Object value) {
+        /*
+            Library steps can access their config through 
+            a variable called "config".  as such, reject 
+            attempts to override this in the binding. 
+        */
+        if (name.equals(StepWrapper.libraryConfigVariable)){
+            throw new TemplateException("Cannot set ${StepWrapper.libraryConfigVariable}. Reserved for use by library steps.")
+        }
+
         if (name in registry){
             if (locked) variables.get(name).throwPostLockException()
             else variables.get(name).throwPreLockException() 

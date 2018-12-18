@@ -36,7 +36,7 @@ def call(CpsClosure body = null){
         status: currentBuild.result 
     ]
     try{
-        Hooks.invoke(Init, getBinding(), context) 
+        Hooks.invoke(Init, getBinding(), context)
         if (body){
             body()
         } else{
@@ -47,7 +47,7 @@ def call(CpsClosure body = null){
         context.status = currentBuild.result 
         throw any 
     }finally{
-        Hooks.invoke(CleanUp, getBinding(), context) 
+        Hooks.invoke(CleanUp, getBinding(), context)
         Hooks.invoke(Notifier, getBinding(), context)
     }
 

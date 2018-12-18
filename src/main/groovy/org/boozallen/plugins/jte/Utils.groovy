@@ -89,7 +89,7 @@ class Utils implements Serializable{
 
             kinda silly all you have to do bypass that is cast to the superclass. 
         */
-        GroovyShell shell = CpsThreadGroup.current().getExecution().getShell()
+        GroovyShell shell = CpsThreadGroup.current().getExecution().getTrustedShell()
 
         // make the shell's CompilerConfiguration accessible
         Field configF = GroovyShell.class.getDeclaredField("config")
@@ -150,14 +150,14 @@ class Utils implements Serializable{
             try {
                 SCMFile f = fs.child(filePath)
                 if (!f.exists()){
-                    logger.println "${filePath} does not exist"
+                    logger.println "[JTE] ${filePath} does not exist"
                     return null 
                 }
                 if(!f.isFile()){
                     throw new Exception("${filePath} is not a file.")
                 } 
                 if (loggingDescription){
-                    logger.println "Obtained ${loggingDescription} ${filePath} from ${scm.getKey()}"
+                    logger.println "[JTE] Obtained ${loggingDescription} ${filePath} from ${scm.getKey()}"
                 }
                 return f.contentAsString()
             } catch(any) {
@@ -179,7 +179,7 @@ class Utils implements Serializable{
                 return null 
             }
             if (loggingDescription){
-                logger.println "Obtained ${loggingDescription} ${filePath} from ${scm.getKey()}"
+                logger.println "[JTE] Obtained ${loggingDescription} ${filePath} from ${scm.getKey()}"
             }
             return configFile.readToString()
         }
@@ -377,7 +377,7 @@ class Utils implements Serializable{
             if (config.allow_scm_jenkinsfile){
                 return repoJenkinsfile
             }else{
-                getLogger().println "Warning: Repository provided Jenkinsfile that will not be used, per organizational policy."
+                getLogger().println "[JTE] Warning: Repository provided Jenkinsfile that will not be used, per organizational policy."
             }
         }
 
