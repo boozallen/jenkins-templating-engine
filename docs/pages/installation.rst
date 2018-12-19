@@ -1,2 +1,2 @@
-Installing JTE
-==============
+Installing the Plugin
+=====================
