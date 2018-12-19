@@ -31,4 +31,5 @@ Build Documentation
 Leveraging Sphinx to build documentation. 
 
 To build docs locally run: ``make docs`` 
+
 To get hot loading of docs during development: ``make livedocs`` 
