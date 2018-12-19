@@ -41,10 +41,18 @@ class Stage extends TemplatePrimitive {
 
     void call(){
         Utils.getLogger().println "[JTE] Executing Stage ${name}" 
-        for(def i = 0; i < steps.size(); i++){
-            String step = steps.get(i)
-            InvokerHelper.getMetaClass(script).invokeMethod(script, step, null)
+        Utils.parseScript("""
+        import org.jenkinsci.plugins.workflow.cps.CpsScript
+        import org.codehaus.groovy.runtime.InvokerHelper
+        import org.codehaus.groovy.runtime.InvokerInvocationException
+        
+        def call(CpsScript script, ArrayList<String> steps){
+            for(def i = 0; i < steps.size(); i++){
+                String step = steps.get(i)
+                InvokerHelper.getMetaClass(script).invokeMethod(script, step, null)
+            }
         }
+        """, script.getBinding())(script, steps)
     }
 
     void throwPreLockException(){
