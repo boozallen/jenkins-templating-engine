@@ -32,4 +32,6 @@ Leveraging Sphinx to build documentation.
 
 To build docs locally run: ``make docs`` 
 
+The docs will be viewable by opening ``docs/_build/html/index.html`` 
+
 To get hot loading of docs during development: ``make livedocs`` 
