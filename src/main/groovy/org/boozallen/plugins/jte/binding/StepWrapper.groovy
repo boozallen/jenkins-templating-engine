@@ -66,7 +66,7 @@ class StepWrapper extends TemplatePrimitive{
             status: script.currentBuild.result
         ]
         try{
-            Hooks.invoke(BeforeStep, script.getBinding(), context)
+            //Hooks.invoke(BeforeStep, script.getBinding(), context)
             Utils.getLogger().println "[JTE] Executing step ${name} from the ${library} Library" 
             result = InvokerHelper.getMetaClass(impl).invokeMethod(impl, "call", args)
         } catch (Exception x) {
