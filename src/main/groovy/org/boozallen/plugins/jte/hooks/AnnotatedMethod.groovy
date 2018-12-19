@@ -22,7 +22,6 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 
-
 class AnnotatedMethod implements Serializable{
     String annotationName 
     StepWrapper stepWrapper 
