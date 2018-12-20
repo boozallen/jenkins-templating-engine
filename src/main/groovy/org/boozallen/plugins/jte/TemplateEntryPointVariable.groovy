@@ -68,7 +68,7 @@ import javax.annotation.Nonnull
             String entryPoint = Jenkins.instance
                                        .pluginManager
                                        .uberClassLoader
-                                       .loadClass("org.boozallen.plugins.jte.TemplateEntryPointVariable")
+                                       .loadClass(getClass().getName())
                                        .getResource("TemplateEntryPoint.groovy")
                                        .text
 

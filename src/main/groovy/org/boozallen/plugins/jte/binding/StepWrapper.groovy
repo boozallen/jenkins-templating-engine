@@ -25,6 +25,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 import hudson.Extension 
+import jenkins.model.Jenkins
 
 /*
     represents a library step
@@ -54,38 +55,17 @@ class StepWrapper extends TemplatePrimitive{
     @Whitelisted
     def call(Object... args){
         /*
-            hackity hack hack 
+            any invocation of pipeline code from a plugin class of more than one
+            executable script or closure requires to be parsed through the execution
+            shell or the method returns prematurely after the first execution
         */
-        return Utils.parseScript("""
-        import org.boozallen.plugins.jte.config.*
-        import org.boozallen.plugins.jte.hooks.*
-        import org.boozallen.plugins.jte.Utils
-        import org.jenkinsci.plugins.workflow.cps.CpsScript
-        import org.codehaus.groovy.runtime.InvokerHelper
-        import org.codehaus.groovy.runtime.InvokerInvocationException
-
-        def call(String name, String library, CpsScript script, Object impl, Object... args){
-            def result
-            def context = [
-                step: name, 
-                library: library,
-                status: script.currentBuild.result
-            ]
-            try{
-                Hooks.invoke(BeforeStep, script.getBinding(), context)
-                Utils.getLogger().println "[JTE] Executing step \${name} from the \${library} Library" 
-                result = InvokerHelper.getMetaClass(impl).invokeMethod(impl, "call", args)
-            } catch (Exception x) {
-                script.currentBuild.result = "Failure"
-                throw new InvokerInvocationException(x)
-            } finally{
-                context.status = script.currentBuild.result
-                Hooks.invoke(AfterStep, script.getBinding(), context)
-                Hooks.invoke(Notify, script.getBinding(), context)
-            }
-            return result 
-        }
-        """, script.getBinding())(name, library, script, impl, args)
+        String invoke =  Jenkins.instance
+                                .pluginManager
+                                .uberClassLoader
+                                .loadClass("org.boozallen.plugins.jte.binding.StepWrapper")
+                                .getResource("StepWrapper.groovy")
+                                .text
+        return Utils.parseScript(invoke, script.getBinding())(name, library, script, impl, args)
     }
 
     void throwPreLockException(){
