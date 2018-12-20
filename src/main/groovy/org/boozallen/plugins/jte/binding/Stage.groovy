@@ -22,6 +22,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.Extension 
+import jenkins.model.Jenkins
 
 /*
     represents a group of library steps to be called. 
@@ -40,19 +41,19 @@ class Stage extends TemplatePrimitive {
     }
 
     void call(){
+        /*
+            any invocation of pipeline code from a plugin class of more than one
+            executable script or closure requires to be parsed through the execution
+            shell or the method returns prematurely after the first execution
+        */
+        String invoke =  Jenkins.instance
+                                .pluginManager
+                                .uberClassLoader
+                                .loadClass("org.boozallen.plugins.jte.binding.Stage")
+                                .getResource("Stage.groovy")
+                                .text
         Utils.getLogger().println "[JTE] Executing Stage ${name}" 
-        Utils.parseScript("""
-        import org.jenkinsci.plugins.workflow.cps.CpsScript
-        import org.codehaus.groovy.runtime.InvokerHelper
-        import org.codehaus.groovy.runtime.InvokerInvocationException
-        
-        def call(CpsScript script, ArrayList<String> steps){
-            for(def i = 0; i < steps.size(); i++){
-                String step = steps.get(i)
-                InvokerHelper.getMetaClass(script).invokeMethod(script, step, null)
-            }
-        }
-        """, script.getBinding())(script, steps)
+        Utils.parseScript(invoke, script.getBinding())(script, steps)
     }
 
     void throwPreLockException(){
