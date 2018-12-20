@@ -37,7 +37,7 @@ class AnnotatedMethod implements Serializable{
     void invoke(Map context){
         def logger = Utils.getLogger()
         try{
-            logger.println "[JTE][${annotationName}] Running ${methodName} method within ${stepWrapper.name} step contributed by the ${stepWrapper.library} Library"
+            logger.println "[JTE][@${annotationName} - ${stepWrapper.library}/${stepWrapper.name}.${methodName}]"
             InvokerHelper.getMetaClass(stepWrapper.impl).invokeMethod(stepWrapper.impl, methodName, context);
         } catch (Exception x) {
             throw new InvokerInvocationException(x);
