@@ -17,7 +17,7 @@ def call(String name, String library, CpsScript script, Object impl, Object... a
     ]
     try{
         Hooks.invoke(BeforeStep, script.getBinding(), context)
-        Utils.getLogger().println "[JTE] Executing step ${name} from the ${library} Library" 
+        Utils.getLogger().println "[JTE][Step - ${library}/${name}]" 
         result = InvokerHelper.getMetaClass(impl).invokeMethod(impl, "call", args)
     } catch (Exception x) {
         script.currentBuild.result = "Failure"
