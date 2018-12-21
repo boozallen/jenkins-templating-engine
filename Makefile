@@ -25,6 +25,7 @@ image:
 
 # build docs 
 docs: 
+	make clean 
 	make image
 	docker run -v $(shell pwd)/$(DOCSDIR):/app sdp-docs $(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
