@@ -12,11 +12,6 @@ pulling out tool specific implementations into library modules.
 How Does It Work? 
 *****************
 
-.. note:: 
-    TLDR: In JTE, there are pipeline templates and configuration files.  Templates define
-    a shareable workflow. Configuration files provide the information to populate the 
-    template with implementations of the actions defined. 
-
 JTE allows you to separate the business logic of your pipeline (what should happen, and when) 
 from the technical implementation by creating pipeline templates and separating the implementation
 of the pipeline actions defined in the template out into pipeline libraries.  
