@@ -22,7 +22,7 @@ built will follow the same workflow regardless of technical stack.
 
 An example workflow might be: 
 
-.. image:: docs/images/sample_template.png
+.. image:: images/sample_template.png
    :scale: 50%
    :align: center
 
@@ -60,7 +60,7 @@ strict governance requirements around types of security testing and approvals, h
 within the source code repository can be problematic as it potentially allows developers to bypass
 these mandatory steps. 
 
-.. image:: docs/images/value.png
+.. image:: images/value.png
    :scale: 50%
    :align: center
 
