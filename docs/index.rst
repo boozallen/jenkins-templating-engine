@@ -102,6 +102,8 @@ updating a pipeline template defined in one location.  Individual tool integrati
 libraries that contribute isolated steps. 
 
 
+testing 
+
 .. toctree::
    :hidden:
    :maxdepth: 2
