@@ -22,7 +22,7 @@ that artifact to an application environment.
 
 An example workflow might be: 
 
-.. image:: docs/images/sample_template.png
+.. image:: docs/images/home/sample_template.png
    :scale: 50%
    :align: center
 
@@ -52,7 +52,7 @@ strict governance requirements around types of security testing and approvals, h
 within the source code repository can be problematic as it potentially allows developers to bypass
 these mandatory steps. 
 
-.. image:: docs/images/value.png
+.. image:: docs/images/home/value.png
    :scale: 50%
    :align: center
 
