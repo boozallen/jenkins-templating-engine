@@ -9,22 +9,20 @@ SOURCEDIR     = .
 BUILDDIR      = _build
 DOCSDIR       = docs
 
-# Put it first so that "make" without argument is like "make help".
-help:
-	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
-
 .PHONY: help Makefile docs build 
 
-# cleanup
-clean: 
+# Put it first so that "make" without argument is like "make help".
+help: ## Show target options
+	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
+
+clean: ## removes compiled documentation and jpi 
 	rm -rf $(DOCSDIR)/$(BUILDDIR) build bin 
 
-# build image 
-image: 
+image: ## builds container image for building the documentation
 	docker build $(DOCSDIR) -t sdp-docs
 
-# build docs 
-docs: 
+docs: ## builds documentation in _build/html 
+      ## run make docs live for hot reloading of edits during development
 	make clean
 	make image 
 	@if [ "$(filter-out $@,$(MAKECMDGOALS))" = "live" ]; then\
@@ -35,15 +33,15 @@ docs:
 		docker run -v $(shell pwd)/$(DOCSDIR):/app sdp-docs $(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O);\
 	fi
 
-pushdocs: 
-	make clean 
-	make image token=$(token)
-	docker run -v $(shell pwd):/app sdp-docs sphinx-versioning push --show-banner docs gh-pages . 
+#pushdocs: 
+#	make clean 
+#	make image token=$(token)
+#	docker run -v $(shell pwd):/app sdp-docs sphinx-versioning push --show-banner docs gh-pages . 
 
-jpi:
+jpi: ## builds the jpi via gradle
 	gradle clean jpi 
 
-test: 
+test: ## runs the plugin's test suite 
 	gradle clean test 
 
 # Catch-all target: route all unknown targets to Sphinx using the new
