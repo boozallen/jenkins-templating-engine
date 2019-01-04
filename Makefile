@@ -25,16 +25,20 @@ image:
 
 # build docs 
 docs: 
-	make clean 
-	make image
-	docker run -v $(shell pwd)/$(DOCSDIR):/app sdp-docs $(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	make clean
+	make image 
+	@if [ "$(filter-out $@,$(MAKECMDGOALS))" = "live" ]; then\
+		cd $(DOCSDIR);\
+		docker run -p 8000:8000 -v $(shell pwd)/$(DOCSDIR):/app sdp-docs sphinx-autobuild -b html $(ALLSPHINXOPTS) . $(BUILDDIR)/html -H 0.0.0.0;\
+		cd -;\
+	else\
+		docker run -v $(shell pwd)/$(DOCSDIR):/app sdp-docs $(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O);\
+	fi
 
-# hot reload
-livedocs:
-	make image
-	cd $(DOCSDIR)
-	docker run -p 8000:8000 -v $(shell pwd)/$(DOCSDIR):/app sdp-docs sphinx-autobuild -b html $(ALLSPHINXOPTS) . $(BUILDDIR)/html -H 0.0.0.0 
-	cd - 
+pushdocs: 
+	make clean 
+	make image token=$(token)
+	docker run -v $(shell pwd):/app sdp-docs sphinx-versioning push --show-banner docs gh-pages . 
 
 jpi:
 	gradle clean jpi 

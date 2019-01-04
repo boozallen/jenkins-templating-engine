@@ -1,4 +1,4 @@
-Pipeline Templating
+Configuration Files
 -------------------
 
 .. toctree::
@@ -7,6 +7,4 @@ Pipeline Templating
    :glob:
    :titlesonly:
 
-   configuration_files/index
-   templates/index
-   primitives/index
+   **
