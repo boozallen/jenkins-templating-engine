@@ -59,6 +59,9 @@ import java.lang.reflect.Field
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
+import org.jenkinsci.plugins.github_branch_source.BranchSCMHead
+import org.jenkinsci.plugins.github_branch_source.PullRequestSCMHead
+
 
 class Utils implements Serializable{
 
@@ -249,24 +252,34 @@ class Utils implements Serializable{
         null in case of regular pipeline job
     */
     static SCM getSCMFromJob(WorkflowJob job, ItemGroup<?> parent){
+        def logger = getLogger() 
         if (parent instanceof WorkflowMultiBranchProject){
             // ensure branch is defined 
             BranchJobProperty property = job.getProperty(BranchJobProperty.class)
             if (!property){
                 throw new IllegalStateException("inappropriate context")
             }
+
             Branch branch = property.getBranch()
 
             // get scm source for specific branch and ensure present
             // (might not be if branch deleted after job triggered)
-            SCMSource scmSource = parent.getSCMSource(branch.getSourceId())
+            String branchName = branch.getSourceId()
+            SCMSource scmSource = parent.getSCMSource(branchName)
             if (!scmSource) {
                 throw new IllegalStateException("${branch.getSourceId()} not found")
             }
 
-            // attempt lightweight checkout 
+            // attempt lightweight checkout
+            /*
+                some hacky stuff here.. can't make GitSCMFileSystem from a PR.. so if PR -> use source branch
+            */ 
             SCMHead head = branch.getHead()
+            if (head instanceof PullRequestSCMHead){
+                head = new BranchSCMHead(head.sourceBranch)
+            }
             SCMRevision tip = scmSource.fetch(head, listener)
+
             if (tip){
                 SCMRevision rev = scmSource.getTrustedRevision(tip, listener)
                 return scmSource.build(head,rev) 
