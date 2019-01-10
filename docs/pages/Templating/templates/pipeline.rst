@@ -1,2 +1,0 @@
-The Template Step
------------------
