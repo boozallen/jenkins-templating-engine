@@ -1,3 +1,5 @@
+.. _Adding a Custom Primitive: 
+-------------------------
 Adding a Custom Primitive
 -------------------------
 
