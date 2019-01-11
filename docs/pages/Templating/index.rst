@@ -126,8 +126,6 @@ You would then create a :ref:`Governance Tier<Governance Tiers>` to point JTE to
 configuration and place the application specific configurations at the root of their source 
 code repository in a file called ``pipeline_config.groovy``.  
 
-test blahhhhh
-
 :ref:`Go here to learn more about JTE Configuration Files<Configuration Files>`
 
 .. toctree::
