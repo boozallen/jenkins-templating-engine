@@ -10,7 +10,7 @@ repositories {
 }
 
 group = 'org.jenkins-ci.plugins'
-version = '0.9' 
+version = '0.1' 
 description = 'Enables Pipeline Templating and Governance' 
 
 jenkinsPlugin {
@@ -45,21 +45,6 @@ dependencies {
 	jenkinsPlugins "org.jenkins-ci.plugins:scm-api:2.2.7"
 	jenkinsPlugins "org.jenkins-ci.plugins:junit:1.24"
     jenkinsPlugins "org.jenkins-ci.plugins:github-branch-source:2.4.1"
-
-    /*
-    jenkinsTest    "org.jenkins-ci.modules:sshd:2.4"
-    jenkinsTest    "com.cloudbees:groovy-cps:1.24"
-	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-basic-steps:2.9"
-	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-durable-task-step:2.19"
-	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-step-api:2.16"
-	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-support:2.19"
-	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-cps:2.54"
-	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-scm-step:2.6"
-	jenkinsTest    "org.jenkins-ci.plugins:git:3.9.1"
-	jenkinsTest    "org.jenkins-ci.plugins:subversion:2.11.1"
-	jenkinsTest    "org.jenkins-ci.plugins.workflow:workflow-job:2.23"
-    jenkinsTest    "org.jenkins-ci.plugins:matrix-auth:2.3"
-    */ 
 
     testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
     testCompile 'junit:junit:4.12'
