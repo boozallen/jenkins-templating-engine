@@ -1,4 +1,5 @@
-.. _Governance Tier: 
+.. _Governance Model: 
+----------------
 Governance Model
 ----------------
 
