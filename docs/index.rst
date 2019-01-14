@@ -61,8 +61,6 @@ similar Jenkinsfiles with distinct differences around how specific parts of the 
 JTE embraces the traditional software development practices of modularity and separation of concerns to 
 create a more organized code base for your pipelines. 
 
-test 
-
 .. important::
     At Booz Allen, we created the Jenkins Templating Engine to support our Solutions Delivery Platform; a 
     DevSecOps platform accelerating adoption of modern software development best practices. 
@@ -77,4 +75,4 @@ test
    pages/Governance/index
    pages/Library_Development/index
    pages/Plugin_Development/index
-   pages/Custom_Primitives/index
+   
