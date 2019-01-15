@@ -28,5 +28,5 @@ For example, the following configuration file:
 
 would result in: 
 
-.. image:: /images/templating/jte_security_exception.png
+.. image:: ../../../images/templating/jte_security_exception.png
 
