@@ -17,7 +17,7 @@ or Nginx instance, the steps in your pipeline are the same.
 In this example, both applications could have a pipeline workflow that performs unit testing, 
 static code analysis, packaging an artifact, and deploying that artifact to an application environment. 
 
-.. figure:: /images/home/sample_template.png
+.. figure:: ../../images/home/sample_template.png
    :scale: 50%
    :align: center
 

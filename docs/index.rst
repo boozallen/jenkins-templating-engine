@@ -29,7 +29,7 @@ implementations across an organization while standardizing on the required softw
 For organizations with strict governance requirements having a Jenkinsfile within the source code repository 
 can allow developers to bypass these mandatory requirements. 
 
-.. figure:: /images/home/value.png
+.. figure:: images/home/value.png
    :scale: 50%
    :align: center
 

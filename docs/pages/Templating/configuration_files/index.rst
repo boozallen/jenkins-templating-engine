@@ -9,8 +9,6 @@ the information necessary to execute.
 The configuration file is a groovy file named ``pipeline_config.groovy`` that gets placed at
 the root of the source code repository or within a pipeline configuration repository.
 
-
-
 ******
 Syntax 
 ******
