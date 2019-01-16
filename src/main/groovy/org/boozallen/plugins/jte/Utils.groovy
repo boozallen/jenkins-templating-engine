@@ -395,7 +395,6 @@ class Utils implements Serializable{
         }
 
         // specified pipeline template from pipeline template directories in governance tiers
-        
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy()
         if (config.pipeline_template){ 
             for (tier in tiers){
@@ -405,7 +404,6 @@ class Utils implements Serializable{
                 }
             }
             throw new TemplateConfigException("Pipeline Template ${config.pipeline_template} could not be found in hierarchy.")
-
         }
 
         /*
