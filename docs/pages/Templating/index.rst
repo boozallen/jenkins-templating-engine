@@ -136,5 +136,4 @@ code repository in a file called ``pipeline_config.groovy``.
 
    configuration_files/index
    primitives/index
-   libraries
 
