@@ -1,8 +1,8 @@
 Job DSL Examples for Utilizing the Jenkins Templating Engine
-=========================
+============================================================
 
 What are Job DSL Scripts?
-^^^^^^^^^^^^^^^^^^^^^^^^^
+*************************
 Job DSL scripts can be used to create and configure Jenkins jobs programatically. These scripts are used through the `Job DSL Plugin
 <https://github.com/jenkinsci/job-dsl-plugin>`_
 
