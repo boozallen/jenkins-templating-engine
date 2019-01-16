@@ -2,13 +2,13 @@ Job DSL Examples for Utilizing the Jenkins Templating Engine
 =========================
 
 What are Job DSL Scripts?
-*****************
+*************************
 Job DSL scripts can be used to create and configure Jenkins jobs programatically. These scripts are used through the `Job DSL Plugin
-found here <https://github.com/jenkinsci/job-dsl-plugin>`_
+<https://github.com/jenkinsci/job-dsl-plugin>`_
 
 
 Github Organization Job DSL Script (github_organization.groovy)
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This script will create and configure a Github Organization job in Jenkins by doing the following:
 
 - Under "Projects"
