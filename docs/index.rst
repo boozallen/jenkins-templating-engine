@@ -1,5 +1,6 @@
 .. _`Jenkins Templating Engine`: 
 
+=========================
 Jenkins Templating Engine
 =========================
 
@@ -52,7 +53,7 @@ common pipeline libraries.
 
 
 Simplify Pipeline Maintainability
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When supporting pipelines for multiple applications it becomes more challenging to maintain 
 the associated complexity.  Multiple tech stacks and tool integrations can lead to largely 
