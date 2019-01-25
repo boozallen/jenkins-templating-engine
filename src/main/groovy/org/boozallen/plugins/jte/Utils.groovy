@@ -145,10 +145,59 @@ class Utils implements Serializable{
         ItemGroup<?> parent = job.getParent()
         PrintStream logger = getLogger() 
 
-        if (!scm) scm = getSCMFromJob(job, parent)
+        // create SCMFileSystem 
+        SCMFileSystem fs = null
 
-        // try lightweight checkout 
-        SCMFileSystem fs = createSCMFileSystemOrNull(scm, job, parent)
+        // if provided a SCM, try to build directly: 
+        if (scm){
+            if (SCMFileSystem.supports(scm)){
+                fs = SCMFileSystem.of(job, scm) 
+            }else{
+                return null 
+            }
+        }else{ // try to infer SCM info from job properties 
+            
+            // for multibranch projects, need to determine SCM from parent 
+            // and branch specific info from job 
+            if (parent instanceof WorkflowMultiBranchProject){
+                // ensure branch is defined 
+                BranchJobProperty property = job.getProperty(BranchJobProperty.class)
+                if (!property){
+                    throw new IllegalStateException("inappropriate context")
+                }
+
+                Branch branch = property.getBranch()
+
+                // get scm source for specific branch and ensure present
+                // (might not be if branch deleted after job triggered)
+                String branchName = branch.getSourceId()
+                SCMSource scmSource = parent.getSCMSource(branchName)
+                if (!scmSource) {
+                    throw new IllegalStateException("${branch.getSourceId()} not found")
+                }
+
+                // attempt lightweight checkout
+                /*
+                    some hacky stuff here.. can't make GitSCMFileSystem from a PR.. so if PR -> use source branch
+                */ 
+                SCMHead head = branch.getHead()
+                if (head instanceof PullRequestSCMHead){
+                    head = new BranchSCMHead(head.sourceBranch)
+                }
+                
+                fs = SCMFileSystem.of(scmSource, head) 
+
+            } else { // then just a regular pipeline job: 
+                FlowDefinition definition = job.getDefinition() 
+                if (definition instanceof CpsScmFlowDefinition){
+                    scm = definition.getScm()
+                    if (SCMFileSystem.supports(scm)){
+                        fs = SCMFileSystem.of(job, scm) 
+                    }
+                }
+            }   
+        }
+
         if (fs){
             try {
                 SCMFile f = fs.child(filePath)
@@ -168,84 +217,11 @@ class Utils implements Serializable{
             } finally{
                 fs.close() 
             }
-            
-        }
-
-        // lightweight apparently didn't work out.
-        if (scm){
-            FilePath dir = doHeavyWeightCheckout(scm, job, parent) 
-            FilePath configFile = dir.child(filePath)
-            if (!configFile.absolutize().getRemote().replace('\\', '/').startsWith(dir.absolutize().getRemote().replace('\\', '/') + '/')) { // TODO JENKINS-26838
-                throw new IOException("${configFile} is not inside ${dir}")
-            }
-            if (!configFile.exists()) {
-                return null 
-            }
-            if (loggingDescription){
-                logger.println "[JTE] Obtained ${loggingDescription} ${filePath} from ${scm.getKey()}"
-            }
-            return configFile.readToString()
         }
 
         return null 
     }
 
-    /*
-        attempts to checkout the SCM to a node.
-        returns the directory w/ the SCM contents. 
-    */
-    static FilePath doHeavyWeightCheckout(SCM scm, WorkflowJob job, ItemGroup<?> parent, FilePath providedDir = null){
-        FilePath dir
-        Node node = Jenkins.getActiveInstance()
-        PrintStream logger = getLogger() 
-        if (providedDir){
-            dir = providedDir 
-        }else{
-            if (job instanceof TopLevelItem) {
-                FilePath baseWorkspace = node.getWorkspaceFor((TopLevelItem) job)
-                if (!baseWorkspace) {
-                    throw new IOException("${node.getDisplayName()} may be offline")
-                }
-                dir = baseWorkspace.withSuffix("${System.getProperty(WorkspaceList.class.getName(), "@")}script")
-            } else { // should not happen, but just in case:
-                dir = new FilePath(owner.getRootDir())
-            }
-        }
-        Computer computer = node.toComputer()
-        if (!computer) {
-            throw new IOException("${node.getDisplayName()} may be offline")
-        }
-        SCMStep delegate = new GenericSCMStep(scm)
-        WorkspaceList.Lease lease = computer.getWorkspaceList().acquire(dir)
-
-        // do the checkout.  try the number of times configured in Jenkins
-        for (int retryCount = Jenkins.getInstance().getScmCheckoutRetryCount(); retryCount >= 0; retryCount--) {
-            try {
-                delegate.checkout(build, dir, listener, node.createLauncher(listener))
-                break
-            } catch (AbortException e) {
-                // abort exception might have a null message.
-                // If so, just skip echoing it.
-                if (e.getMessage()) {
-                    logger.println e.getMessage()
-                }
-            } catch (InterruptedIOException e) {
-                throw e
-            } catch (IOException e) {
-                logger.println "Checkout failed: ${e}"
-            }
-
-            if (retryCount == 0){
-                // all attempts failed
-                throw new AbortException("Maximum checkout retry attempts reached, aborting")
-            }
-                
-            logger.println("Retrying after 10 seconds")
-            Thread.sleep(10000)
-        }
-
-        return dir 
-    }
 
     /*
         returns an SCM from the current running job 
