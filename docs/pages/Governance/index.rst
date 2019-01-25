@@ -1,4 +1,5 @@
 .. _Governance Model: 
+
 ----------------
 Governance Model
 ----------------
@@ -98,9 +99,10 @@ Pipeline Template Selection
 Pipeline Templates can either come from the application's source code repository, from the default 
 template in a governance tier, or from a named template in a governance tier.  
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 1. Application Source Code Repository
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 By default, if there is a Jenkinsfile within the application's source code repository it will be used 
 as the pipeline template. 
 

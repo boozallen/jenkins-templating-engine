@@ -1,4 +1,5 @@
 .. _default step implementation: 
+
 ---------------------------
 Default Step Implementation
 ---------------------------
@@ -22,12 +23,12 @@ Configuration
 .. csv-table:: Configuration Options 
    :header:  "Field", "Description", "Default Value", "Required?"
 
-   "stage", "Display name for this step.", "<step_name>", "false"
+   "stage", "Display name for this step.", "step_name", "false"
    "image", "Container image to run the step within.", ,"true"
    "command", "The shell command to run inside the step container image", ,"if script is not set"
    "script", "The path to a shell script to execute", ,"if command is not set"
    "stash.name", "The ID of the resultant stash of files from the step", ,"required if a stash is to be used"
-   "stash.includes", "The files to preserve.", "**", "false"
+   "stash.includes", "The files to preserve.", "``**``", "false"
    "stash.excludes", "The files to ignore.", , "false"
    "stash.useDefaultExcludes", "Whether to use the default exludes of the Jenkins stash step.", "true", "false"
    "stash.allowEmpty", "Whether or not the stash may contain no files", "false", "false"

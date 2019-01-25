@@ -1,4 +1,5 @@
 .. _Pipeline Templating: 
+
 -------------------
 Pipeline Templating
 -------------------
@@ -122,7 +123,7 @@ For the React application:
        s3    // supplies the deploy_to step  
    }
 
-You would then create a :ref:`Governance Tier<Governance Tiers>` to point JTE to your common 
+You would then create a :ref:`Governance Tier<Governance Model>` to point JTE to your common 
 configuration and place the application specific configurations at the root of their source 
 code repository in a file called ``pipeline_config.groovy``.  
 
