@@ -1,2 +1,0 @@
-Accessing Configuration
------------------------
