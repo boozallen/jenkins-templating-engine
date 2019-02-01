@@ -386,8 +386,7 @@ class Utils implements Serializable{
     }
 
     static class Logger {
-        // move these into a logging related class
-        boolean logMissingFile = false
+
         String desc = ""
         String key = ""
         String prologue = "[JTE] "
@@ -402,22 +401,25 @@ class Utils implements Serializable{
         SCMFileSystem fs
         Logger log
 
+        // move these into a logging related class
+        boolean logMissingFile = false
+
         Logger getLogger(){
             log ?: new Logger()
         }
 
         String getFileContents(String filePath){
-            return FileSystemWrapper.getFileContents( filePath, fs, logger)
+            return FileSystemWrapper.getFileContents( filePath, fs, logger, logMissingFile)
         }
 
         static String getFileContents(String filePath, SCMFileSystem fs,
-                                      Logger log = new Logger() ){
+                                      Logger log = new Logger(), boolean logMissingFile = true ){
 
             if (fs){
                 try {
                     SCMFile f = fs.child(filePath)
                     if (!f.exists()){
-                        if( log.logMissingFile ) {
+                        if( logMissingFile ) {
                             log.logger.println "${log.prologue}${filePath} does not exist"
                         }
                         return null
