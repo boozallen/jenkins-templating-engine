@@ -157,45 +157,7 @@ class Utils implements Serializable{
             }
         }else{ // try to infer SCM info from job properties 
 
-            // for multibranch projects, need to determine SCM from parent 
-            // and branch specific info from job 
-            if (parent instanceof WorkflowMultiBranchProject){
-                // ensure branch is defined 
-                BranchJobProperty property = job.getProperty(BranchJobProperty.class)
-                if (!property){
-                    throw new IllegalStateException("inappropriate context")
-                }
-
-                Branch branch = property.getBranch()
-
-                // get scm source for specific branch and ensure present
-                // (might not be if branch deleted after job triggered)
-                String branchName = branch.getSourceId()
-                SCMSource scmSource = parent.getSCMSource(branchName)
-                if (!scmSource) {
-                    throw new IllegalStateException("${branch.getSourceId()} not found")
-                }
-
-                // attempt lightweight checkout
-                /*
-                    some hacky stuff here.. can't make GitSCMFileSystem from a PR.. so if PR -> use source branch
-                */ 
-                SCMHead head = branch.getHead()
-                if (head instanceof PullRequestSCMHead){
-                    head = new BranchSCMHead(head.sourceBranch)
-                }
-                
-                fs = SCMFileSystem.of(scmSource, head) 
-
-            } else { // then just a regular pipeline job:
-                FlowDefinition definition = job.getDefinition() 
-                if (definition instanceof CpsScmFlowDefinition){
-                    scm = definition.getScm()
-                    if (SCMFileSystem.supports(scm)){
-                        fs = SCMFileSystem.of(job, scm) 
-                    }
-                }
-            }   
+            fs = FileSystemWrapper.fsFrom(job, listener, logger)
         }
 
         if (fs){
@@ -397,6 +359,20 @@ class Utils implements Serializable{
         }
     }
 
+    static class JTEException extends Exception {
+        JTEException(String message){
+            super(message)
+        }
+
+        JTEException(String message, Throwable t){
+            super(message, t)
+        }
+
+        JTEException(Throwable t){
+            super(t)
+        }
+    }
+
     static class FileSystemWrapper {// inner class
         SCMFileSystem fs
         Logger log
@@ -406,6 +382,52 @@ class Utils implements Serializable{
 
         Logger getLogger(){
             log ?: new Logger()
+        }
+
+        static SCMFileSystem fsFrom(WorkflowJob job, TaskListener listener, PrintStream logger){
+            ItemGroup<?> parent = job.getParent()
+            try {
+                if (parent instanceof WorkflowMultiBranchProject) {
+                    // ensure branch is defined
+                    BranchJobProperty property = job.getProperty(BranchJobProperty.class)
+                    if (!property) {
+                        throw new JTEException("inappropriate context") // removed IllegalStateEx as an example
+                    }
+                    Branch branch = property.getBranch()
+
+                    // get scm source for specific branch and ensure present
+                    // (might not be if branch deleted after job triggered)
+                    SCMSource scmSource = parent.getSCMSource(branch.getSourceId())
+                    if (!scmSource) {
+                        throw new JTEException(new IllegalStateException("${branch.getSourceId()} not found"))
+                    }
+
+                    SCMHead head = branch.getHead()
+                    SCMRevision tip = scmSource.fetch(head, listener)
+
+                    if (tip) {
+                        SCMRevision rev = scmSource.getTrustedRevision(tip, listener)
+                        return SCMFileSystem.of(scmSource, head, rev)
+                    } else {
+                        SCM scm = branch.getScm()
+                        return SCMFileSystem.of(job, scm)
+                    }
+                } else {
+                    FlowDefinition definition = job.getDefinition()
+                    if (definition instanceof CpsScmFlowDefinition) {
+                        SCM scm = definition.getScm()
+                        return SCMFileSystem.of(job, scm)
+                    } else {
+                        return null
+                    }
+                }
+            }catch(JTEException jteex){//throw our exception
+                throw (jteex.cause ?: jteex)
+            }catch(any){// ignore but print every other exception
+                logger.println any
+            }
+
+            return null
         }
 
         String getFileContents(String filePath){
