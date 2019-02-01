@@ -148,15 +148,15 @@ class Utils implements Serializable{
         // create SCMFileSystem 
         SCMFileSystem fs = null
 
-        // if provided a SCM, try to build directly: 
+        // if provided a SCM, try to build directly:
         if (scm){
             if (SCMFileSystem.supports(scm)){
-                fs = SCMFileSystem.of(job, scm) 
+                fs = SCMFileSystem.of(job, scm)
             }else{
                 return null 
             }
         }else{ // try to infer SCM info from job properties 
-            
+
             // for multibranch projects, need to determine SCM from parent 
             // and branch specific info from job 
             if (parent instanceof WorkflowMultiBranchProject){
@@ -187,7 +187,7 @@ class Utils implements Serializable{
                 
                 fs = SCMFileSystem.of(scmSource, head) 
 
-            } else { // then just a regular pipeline job: 
+            } else { // then just a regular pipeline job:
                 FlowDefinition definition = job.getDefinition() 
                 if (definition instanceof CpsScmFlowDefinition){
                     scm = definition.getScm()
@@ -199,24 +199,7 @@ class Utils implements Serializable{
         }
 
         if (fs){
-            try {
-                SCMFile f = fs.child(filePath)
-                if (!f.exists()){
-                    logger.println "[JTE] ${filePath} does not exist"
-                    return null 
-                }
-                if(!f.isFile()){
-                    throw new Exception("${filePath} is not a file.")
-                } 
-                if (loggingDescription){
-                    logger.println "[JTE] Obtained ${loggingDescription} ${filePath} from ${scm.getKey()}"
-                }
-                return f.contentAsString()
-            } catch(any) {
-
-            } finally{
-                fs.close() 
-            }
+            return new FileSystemWrapper(fs: fs).getFileContents(filePath)
         }
 
         return null 
@@ -401,5 +384,64 @@ class Utils implements Serializable{
         String template = getTemplate(pipelineConfig)
         parseScript(template, binding).run() 
     }
+
+    static class Logger {
+        // move these into a logging related class
+        boolean logMissingFile = false
+        String desc = ""
+        String key = ""
+        String prologue = "[JTE] "
+        PrintStream printStream
+
+        PrintStream getLogger() {
+            return printStream ?: Utils.getLogger()
+        }
+    }
+
+    static class FileSystemWrapper {// inner class
+        SCMFileSystem fs
+        Logger log
+
+        Logger getLogger(){
+            log ?: new Logger()
+        }
+
+        String getFileContents(String filePath){
+            return FileSystemWrapper.getFileContents( filePath, fs, logger)
+        }
+
+        static String getFileContents(String filePath, SCMFileSystem fs,
+                                      Logger log = new Logger() ){
+
+            if (fs){
+                try {
+                    SCMFile f = fs.child(filePath)
+                    if (!f.exists()){
+                        if( log.logMissingFile ) {
+                            log.logger.println "${log.prologue}${filePath} does not exist"
+                        }
+                        return null
+                    }
+                    if(!f.isFile()){
+                        throw new Exception("${filePath} is not a file.")
+                    }
+                    if (log.desc){
+                        log.logger.println "${log.prologue}Obtained ${log.desc} ${filePath} from ${log.key}"
+                    }
+
+                    return f.contentAsString()
+
+                } catch(any) {
+                    log.logger.println "${log.prologue}exception ${any} for ${filePath} from ${log.key}"
+                } finally{
+                    fs.close()
+                }
+            }
+
+            return null
+        }
+
+    }
+
 
 }
