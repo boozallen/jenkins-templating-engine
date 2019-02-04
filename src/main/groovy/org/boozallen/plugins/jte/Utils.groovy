@@ -161,7 +161,8 @@ class Utils implements Serializable{
         }
 
         if (fs){
-            return new FileSystemWrapper(fs: fs).getFileContents(filePath)
+            FileSystemWrapper fsw = new FileSystemWrapper(fs: fs, log: new Logger(desc: loggingDescription), scmKey: scm?.key)
+            return fsw.getFileContents(filePath)
         }
 
         return null 
@@ -325,13 +326,14 @@ class Utils implements Serializable{
 
     static class FileSystemWrapper {// inner class
         SCMFileSystem fs
+        String scmKey
         Logger log
 
         // move these into a logging related class
-        boolean logMissingFile = false
+        boolean logMissingFile = true
 
         Logger getLogger(){
-            log ?: new Logger()
+            log ?: new Logger(key: scmKey)
         }
 
         static SCMFileSystem fsFrom(WorkflowJob job, TaskListener listener, PrintStream logger){
@@ -392,21 +394,21 @@ class Utils implements Serializable{
                     SCMFile f = fs.child(filePath)
                     if (!f.exists()){
                         if( logMissingFile ) {
-                            log.logger.println "${log.prologue}${filePath} does not exist"
+                            log?.logger?.println "${log?.prologue}${filePath} does not exist"
                         }
                         return null
                     }
                     if(!f.isFile()){
                         throw new Exception("${filePath} is not a file.")
                     }
-                    if (log.desc){
-                        log.logger.println "${log.prologue}Obtained ${log.desc} ${filePath} from ${log.key}"
+                    if (log?.desc){
+                        log?.logger?.println "${log?.prologue}Obtained ${log?.desc} ${filePath} from ${log?.key ?:"[inferred]"}"
                     }
 
                     return f.contentAsString()
 
                 } catch(any) {
-                    log.logger.println "${log.prologue}exception ${any} for ${filePath} from ${log.key}"
+                    log?.logger.println "${log?.prologue}exception ${any} for ${filePath} from ${log?.key ?:"[inferred]"}"
                 } finally{
                     fs.close()
                 }
