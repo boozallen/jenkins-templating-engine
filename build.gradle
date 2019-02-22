@@ -10,30 +10,24 @@ repositories {
 }
 
 group = 'org.jenkins-ci.plugins'
-version = '0.1' 
-description = 'Enables Pipeline Templating and Governance' 
+version = '1.0' 
+description = 'Allows users to create tool-agnostic, templated pipelines to be shared by multiple teams' 
 
 jenkinsPlugin {
     coreVersion = '2.121.3'
-    shortName = 'jte'
-    displayName = 'Jenkins Templating Engine'
-    url = 'https://boozallen.github.io/sdp-pipeline-framework/index.html'
+    shortName = 'templating-engine'
+    displayName = 'Templating Engine'
+    url = 'https://boozallen.github.io/jenkins-templating-engine/'
     disabledTestInjection = true
     localizerOutputDir = "${project.buildDir}/generated-src/localizer"
     configureRepositories = false
-    configurePublishing = false
+    configurePublishing = true
     fileExtension = 'jpi'
     developers {
         developer {
             id 'steven-terrana'
             name 'Steven Terrana'
             email 'terrana_steven@bah.com'
-        }
-    }
-    licenses {
-        license {
-            name 'Booz Allen Public License, Version 1.0'
-            url 'http://boozallen.github.io/licenses/bapl'
         }
     }
 }
