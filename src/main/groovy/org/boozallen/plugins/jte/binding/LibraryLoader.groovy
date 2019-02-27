@@ -50,7 +50,7 @@ import jenkins.model.Jenkins
 
             boolean foundLibrary = false 
             // check folders in ascending order for library in defined sources
-            tierLoop: 
+            tierLoop:
             for (tier in tiers){
                 for(librarySource in tier.librarySources){
                     // try lighweight checkout 
@@ -71,22 +71,6 @@ import jenkins.model.Jenkins
                         }else{
                             continue 
                         }
-                    }
-                    // try heavyweight checkout 
-                    logger.println "[JTE] Checking ${librarySource.scm.getKey()} for ${libName} Library" 
-                    FilePath dir = doHeavyWeightCheckout(librarySource.scm, job, parent) 
-                    FilePath libDir = dir.child(libName)
-                    if (libDir.isDirectory()){
-                        logger.println "[JTE] Loading Library ${libName} from ${librarySource.scm.getKey()}"
-                        for (step in libDir.list("*.groovy")){
-                            String stepName = step.getBaseName()
-                            Script stepImpl = Utils.parseScript(step.readToString(), script.getBinding())
-                            stepImpl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return libConfig }
-                            StepWrapper sw = new StepWrapper(script, stepImpl, stepName, libName) 
-                            script.getBinding().setVariable(stepName, sw) 
-                        }
-                        foundLibrary = true 
-                        break tierLoop 
                     }
                 }
             }

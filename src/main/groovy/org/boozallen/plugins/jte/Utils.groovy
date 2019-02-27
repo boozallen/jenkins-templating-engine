@@ -153,9 +153,9 @@ class Utils implements Serializable{
             if (SCMFileSystem.supports(scm)){
                 fs = SCMFileSystem.of(job, scm)
             }else{
-                return null 
+                return null
             }
-        }else{ // try to infer SCM info from job properties 
+        }else{ // try to infer SCM info from job properties
 
             fs = FileSystemWrapper.fsFrom(job, listener, logger)
         }
@@ -171,8 +171,8 @@ class Utils implements Serializable{
     /*
         this code is not the greatest. TODO: refactor
     */
-    static SCMFileSystem createSCMFileSystemOrNull(SCM scm, WorkflowJob job, ItemGroup<?> parent){
-        PrintStream logger = getLogger() 
+    static SCMFileSystem createSCMFileSystemOrNull(SCM scm, WorkflowJob job, ItemGroup<?> parent, PrintStream logger = getLogger() ){
+
         if (scm){
             try{
                 return SCMFileSystem.of(job, scm)
@@ -181,54 +181,7 @@ class Utils implements Serializable{
                 return null 
             }
         }else{              
-            if (parent instanceof WorkflowMultiBranchProject){
-                // ensure branch is defined 
-                BranchJobProperty property = job.getProperty(BranchJobProperty.class)
-                if (!property){
-                    throw new IllegalStateException("inappropriate context")
-                }
-                Branch branch = property.getBranch()
-
-                // get scm source for specific branch and ensure present
-                // (might not be if branch deleted after job triggered)
-                SCMSource scmSource = parent.getSCMSource(branch.getSourceId())
-                if (!scmSource) {
-                    throw new IllegalStateException("${branch.getSourceId()} not found")
-                }
-
-                SCMHead head = branch.getHead()
-                SCMRevision tip = scmSource.fetch(head, listener)
-                if (tip){
-                    SCMRevision rev = scmSource.getTrustedRevision(tip, listener)
-                    try{
-                        return SCMFileSystem.of(scmSource, head, rev)
-                    }catch(any){
-                        logger.println any 
-                        return null 
-                    }
-                }else{
-                    scm = branch.getScm()
-                    try{
-                        return SCMFileSystem.of(job, scm)
-                    }catch(any){
-                        logger.println any 
-                        return null 
-                    }
-                }
-            } else {
-                FlowDefinition definition = job.getDefinition() 
-                if (definition instanceof CpsScmFlowDefinition){
-                    scm = definition.getScm()
-                    try{
-                        return SCMFileSystem.of(job, scm)
-                    }catch(any){
-                        logger.println any 
-                        return null 
-                    }
-                }else{
-                    return null 
-                }
-            }
+            return FileSystemWrapper.fsFrom(job, listener, logger)
         } 
     }
 
@@ -324,6 +277,91 @@ class Utils implements Serializable{
         }
     }
 
+    static class CpsContext {
+        TaskListener listener
+        FlowExecutionOwner owner
+        WorkflowRun build
+        WorkflowJob job
+        PrintStream log
+        private boolean initialized = false
+
+        static CpsContext create(){
+            return new CpsContext().init()
+        }
+
+        boolean isInitialized(){
+            return this.initialized
+        }
+
+        CpsContext ensureInit() {
+            if (this.initialized) {
+                return this
+            }
+
+            return this.init()
+        }
+
+        CpsContext init(){
+            // assumed this is being run from a job
+            CpsThread thread = CpsThread.current()
+            if (!thread){
+                throw new Utils.JTEException("CpsThread not present")
+            }
+
+            this.owner = thread.getExecution().getOwner()
+            this.listener = owner.getListener()
+
+            Queue.Executable exec = owner.getExecutable()
+            if (!(exec instanceof WorkflowRun)) {
+                throw new Utils.JTEException("Must be run from a WorkflowRun, found: ${exec.getClass()}")
+            }
+
+            this.build = (WorkflowRun) exec
+            this.job = build.getParent()
+            this.log = listener.getLogger()
+
+            this.initialized = true
+            return this
+        }
+
+        String getFileContents(String filePath, SCM scm, String loggingDescription){
+
+            String file
+
+            // create SCMFileSystem
+            SCMFileSystem fs = createSCMFileSystemOrNull(scm)
+
+            if (fs){
+                Utils.FileSystemWrapper fsw = new Utils.FileSystemWrapper(fs: fs, log: new Utils.Logger(desc: loggingDescription, printStream: this.log), scmKey: scm?.key)
+                return fsw.getFileContents(filePath)
+            }
+
+            return null
+        }
+
+        SCMFileSystem createSCMFileSystemOrNull(SCM scm){// to replace Utils.createSCMFileSystemOrNull
+            if (scm){
+                try{
+                    return SCMFileSystem.of(job, scm)
+                }catch(any){
+                    log.println any
+                    return null
+                }
+            }else{
+                return Utils.FileSystemWrapper.fsFrom(job, listener, log)
+            }
+        }
+
+        WorkflowJob getCurrentJob(){
+            return this.init().job
+        }
+
+        PrintStream getLogger(){
+            return this.init().log
+        }
+
+    }
+
     static class FileSystemWrapper {// inner class
         SCMFileSystem fs
         String scmKey
@@ -399,7 +437,9 @@ class Utils implements Serializable{
                         return null
                     }
                     if(!f.isFile()){
-                        throw new Exception("${filePath} is not a file.")
+                        log?.logger?.println "${log?.prologue}${filePath} is not a file."
+                        return null
+                        //throw new JTEException("${filePath} is not a file.")
                     }
                     if (log?.desc){
                         log?.logger?.println "${log?.prologue}Obtained ${log?.desc} ${filePath} from ${log?.key ?:"[inferred]"}"
@@ -418,6 +458,4 @@ class Utils implements Serializable{
         }
 
     }
-
-
 }
