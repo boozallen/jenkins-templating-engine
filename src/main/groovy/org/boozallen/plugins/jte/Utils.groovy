@@ -278,12 +278,32 @@ class Utils implements Serializable{
     }
 
     static class CpsContext {
-        TaskListener listener
-        FlowExecutionOwner owner
-        WorkflowRun build
-        WorkflowJob job
-        PrintStream log
+        protected TaskListener listener
+        protected FlowExecutionOwner owner
+        protected WorkflowRun build
+        protected WorkflowJob job
+        protected PrintStream log
         private boolean initialized = false
+
+        TaskListener getListener(){
+            return this.listener
+        }
+
+        FlowExecutionOwner getOwner(){
+            return this.owner
+        }
+
+        WorkflowRun getBuild(){
+            return this.build
+        }
+
+        WorkflowJob getJob(){
+            return this.job
+        }
+
+        PrintStream getLog(){
+            return this.log
+        }
 
         static CpsContext create(){
             return new CpsContext().init()
@@ -325,9 +345,7 @@ class Utils implements Serializable{
         }
 
         String getFileContents(String filePath, SCM scm, String loggingDescription){
-
-            String file
-
+            ensureInit()
             // create SCMFileSystem
             SCMFileSystem fs = createSCMFileSystemOrNull(scm)
 
@@ -340,9 +358,10 @@ class Utils implements Serializable{
         }
 
         SCMFileSystem createSCMFileSystemOrNull(SCM scm){// to replace Utils.createSCMFileSystemOrNull
+            ensureInit()
             if (scm){
                 try{
-                    return SCMFileSystem.of(job, scm)
+                    return SCMFileSystem.of(currentJob, scm)
                 }catch(any){
                     log.println any
                     return null
@@ -350,14 +369,6 @@ class Utils implements Serializable{
             }else{
                 return Utils.FileSystemWrapper.fsFrom(job, listener, log)
             }
-        }
-
-        WorkflowJob getCurrentJob(){
-            return this.init().job
-        }
-
-        PrintStream getLogger(){
-            return this.init().log
         }
 
     }
