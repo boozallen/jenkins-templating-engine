@@ -278,11 +278,11 @@ class Utils implements Serializable{
     }
 
     static class CpsContext {
-        protected TaskListener listener
-        protected FlowExecutionOwner owner
-        protected WorkflowRun build
-        protected WorkflowJob job
-        protected PrintStream log
+        TaskListener listener
+        FlowExecutionOwner owner
+        WorkflowRun build
+        WorkflowJob job
+        PrintStream log
         private boolean initialized = false
 
         TaskListener getListener(){
@@ -303,10 +303,6 @@ class Utils implements Serializable{
 
         PrintStream getLog(){
             return this.log
-        }
-
-        static CpsContext create(){
-            return new CpsContext().init()
         }
 
         boolean isInitialized(){
@@ -361,9 +357,9 @@ class Utils implements Serializable{
             ensureInit()
             if (scm){
                 try{
-                    return SCMFileSystem.of(currentJob, scm)
+                    return SCMFileSystem.of(job, scm)
                 }catch(any){
-                    log.println any
+                    log?.println any
                     return null
                 }
             }else{
