@@ -14,6 +14,7 @@ class CpsSpec extends Specification {
 
     }
 
+    @Ignore
     def "with CPS Thread yields, job"(){
         WorkflowJob job = GroovyMock(WorkflowJob)
         WorkflowRun workflowRun = GroovyMock(WorkflowRun)
@@ -46,8 +47,11 @@ class CpsSpec extends Specification {
         1 * execution.getOwner() >> owner
         1 * owner.getExecutable() >> workflowRun
         1 * workflowRun.getParent() >> job
-        null != currentJob
-        currentJob == job
+        verifyAll {
+
+            null != currentJob
+            currentJob == job
+        }
     }
 
     def "with CPS Thread yields, thread.execution"(){
