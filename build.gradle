@@ -44,4 +44,8 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile 'cglib:cglib-nodep:3.2.5'       // used by Spock
     testCompile 'org.objenesis:objenesis:2.5.1' // used by Spock
+
+    // testCompile did not work
+    jenkinsTest 'org.jenkins-ci.plugins.workflow:workflow-aggregator:2.5' // for unit testing
+
 }
