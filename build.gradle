@@ -17,7 +17,7 @@ jenkinsPlugin {
     coreVersion = '2.121.3'
     shortName = 'templating-engine'
     displayName = 'Templating Engine'
-    url = 'https://boozallen.github.io/jenkins-templating-engine/'
+    url = 'https://wiki.jenkins.io/display/JENKINS/Templating+Engine+Plugin'
     disabledTestInjection = true
     localizerOutputDir = "${project.buildDir}/generated-src/localizer"
     configureRepositories = false
@@ -38,10 +38,9 @@ dependencies {
 	jenkinsPlugins "org.jenkins-ci.plugins:branch-api:2.0.20"
 	jenkinsPlugins "org.jenkins-ci.plugins:scm-api:2.2.7"
 	jenkinsPlugins "org.jenkins-ci.plugins:junit:1.24"
-    jenkinsPlugins "org.jenkins-ci.plugins:github-branch-source:2.4.1"
-
-    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
-    testCompile 'junit:junit:4.12'
-    testCompile 'cglib:cglib-nodep:3.2.5'       // used by Spock
-    testCompile 'org.objenesis:objenesis:2.5.1' // used by Spock
+	jenkinsPlugins "org.jenkins-ci.plugins:github-branch-source:2.4.1"
+	testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+	testCompile 'junit:junit:4.12'
+	testCompile 'cglib:cglib-nodep:3.2.5'       // used by Spock
+	testCompile 'org.objenesis:objenesis:2.5.1' // used by Spock
 }
