@@ -22,7 +22,6 @@ jenkinsPlugin {
     localizerOutputDir = "${project.buildDir}/generated-src/localizer"
     configureRepositories = false
     configurePublishing = true
-    fileExtension = 'jpi'
     developers {
         developer {
             id 'steven-terrana'
