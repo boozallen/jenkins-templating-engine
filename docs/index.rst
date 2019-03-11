@@ -75,5 +75,4 @@ create a more organized code base for your pipelines.
    pages/Templating/index
    pages/Governance/index
    pages/Library_Development/index
-   pages/Plugin_Development/index
    
