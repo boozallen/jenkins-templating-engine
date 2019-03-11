@@ -62,18 +62,26 @@ class GovernanceTierSpec extends Specification{
         tier = new GovernanceTier(scm, baseDir, librarySources)
     }
 
-    def "Validate getConfig"(){
-        WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
-        def utilsMock = GroovySpy(Utils, global: true)
-        _ * Utils.getCurrentJob() >> job
-        def config  
+    def "getConfig() returns TemplateConfigObject based on SCM pipeline_config.groovy"(){
+        
+        setup: 
+            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
+            def utilsMock = GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> job
+            def config  
 
-        when: 
-        config = tier.getConfig()
-        println "config -> ${config} -> ${config.getConfig()}" 
-
+        when:
+            config = tier.getConfig()
+        
         then: 
-        assert true
+            assert config instanceof TemplateConfigObject
+            assert config.getConfig() == [
+                libraries: [
+                    openshift: [
+                        url: "whatever" 
+                    ]
+                ]
+            ]
     }
 
 }
