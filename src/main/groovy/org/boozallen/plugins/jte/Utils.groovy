@@ -68,6 +68,8 @@ class Utils implements Serializable{
     static TaskListener listener
     static FlowExecutionOwner owner 
     static WorkflowRun build 
+    static PrintStream logger 
+    static WorkflowJob currentJob 
 
     /*
         We do a lot of executing the code inside files and we're also
@@ -126,7 +128,19 @@ class Utils implements Serializable{
     }
 
     static PrintStream getLogger(){
-        return CpsThread.current().getExecution().getOwner().getListener().getLogger()
+        if (logger){
+            return logger 
+        }
+        getCurrentJob()
+        return logger 
+    }
+
+    static TaskListener getListener(){
+        if (listener){
+            return listener
+        }
+        getCurrentJob()
+        return listener 
     }
 
     /*
@@ -232,7 +246,14 @@ class Utils implements Serializable{
         } 
     }
 
+    
+
     static WorkflowJob getCurrentJob(){
+
+        if (currentJob){
+            return currentJob
+        }
+
         // assumed this is being run from a job
         CpsThread thread = CpsThread.current()
         if (!thread){
@@ -240,7 +261,8 @@ class Utils implements Serializable{
         }
 
         this.owner = thread.getExecution().getOwner()
-        this.listener = owner.getListener()      
+        this.listener = owner.getListener()    
+        this.logger = listener.getLogger()   
 
         Queue.Executable exec = owner.getExecutable()
         if (!(exec instanceof WorkflowRun)) {
