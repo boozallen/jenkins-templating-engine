@@ -42,8 +42,8 @@ dependencies {
     jenkinsPlugins "org.jenkins-ci.plugins:junit:1.24"
     jenkinsPlugins "org.jenkins-ci.plugins:github-branch-source:2.4.1"
 
-    // spock 
-    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+    // unit test deps 
+    testCompile 'org.spockframework:spock-core:1.2-groovy-2.4'
     testCompile 'junit:junit:4.12'
 
     // test plugins 

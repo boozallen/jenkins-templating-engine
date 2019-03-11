@@ -167,9 +167,9 @@ class Utils implements Serializable{
             if (SCMFileSystem.supports(scm)){
                 fs = SCMFileSystem.of(job, scm)
             }else{
-                return null 
+                return null
             }
-        }else{ // try to infer SCM info from job properties 
+        }else{ // try to infer SCM info from job properties
 
             fs = FileSystemWrapper.fsFrom(job, listener, logger)
         }
@@ -185,8 +185,8 @@ class Utils implements Serializable{
     /*
         this code is not the greatest. TODO: refactor
     */
-    static SCMFileSystem createSCMFileSystemOrNull(SCM scm, WorkflowJob job, ItemGroup<?> parent){
-        PrintStream logger = getLogger() 
+    static SCMFileSystem createSCMFileSystemOrNull(SCM scm, WorkflowJob job, ItemGroup<?> parent, PrintStream logger = getLogger() ){
+
         if (scm){
             try{
                 return SCMFileSystem.of(job, scm)
@@ -195,54 +195,7 @@ class Utils implements Serializable{
                 return null 
             }
         }else{              
-            if (parent instanceof WorkflowMultiBranchProject){
-                // ensure branch is defined 
-                BranchJobProperty property = job.getProperty(BranchJobProperty.class)
-                if (!property){
-                    throw new IllegalStateException("inappropriate context")
-                }
-                Branch branch = property.getBranch()
-
-                // get scm source for specific branch and ensure present
-                // (might not be if branch deleted after job triggered)
-                SCMSource scmSource = parent.getSCMSource(branch.getSourceId())
-                if (!scmSource) {
-                    throw new IllegalStateException("${branch.getSourceId()} not found")
-                }
-
-                SCMHead head = branch.getHead()
-                SCMRevision tip = scmSource.fetch(head, listener)
-                if (tip){
-                    SCMRevision rev = scmSource.getTrustedRevision(tip, listener)
-                    try{
-                        return SCMFileSystem.of(scmSource, head, rev)
-                    }catch(any){
-                        logger.println any 
-                        return null 
-                    }
-                }else{
-                    scm = branch.getScm()
-                    try{
-                        return SCMFileSystem.of(job, scm)
-                    }catch(any){
-                        logger.println any 
-                        return null 
-                    }
-                }
-            } else {
-                FlowDefinition definition = job.getDefinition() 
-                if (definition instanceof CpsScmFlowDefinition){
-                    scm = definition.getScm()
-                    try{
-                        return SCMFileSystem.of(job, scm)
-                    }catch(any){
-                        logger.println any 
-                        return null 
-                    }
-                }else{
-                    return null 
-                }
-            }
+            return FileSystemWrapper.fsFrom(job, listener, logger)
         } 
     }
 
@@ -421,7 +374,9 @@ class Utils implements Serializable{
                         return null
                     }
                     if(!f.isFile()){
-                        throw new Exception("${filePath} is not a file.")
+                        log?.logger?.println "${log?.prologue}${filePath} is not a file."
+                        return null
+                        //throw new JTEException("${filePath} is not a file.")
                     }
                     if (log?.desc){
                         log?.logger?.println "${log?.prologue}Obtained ${log?.desc} ${filePath} from ${log?.key ?:"[inferred]"}"
@@ -440,6 +395,4 @@ class Utils implements Serializable{
         }
 
     }
-
-
 }
