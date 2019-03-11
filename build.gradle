@@ -17,12 +17,11 @@ jenkinsPlugin {
     coreVersion = '2.121.3'
     shortName = 'templating-engine'
     displayName = 'Templating Engine'
-    url = 'https://boozallen.github.io/jenkins-templating-engine/'
+    url = 'https://wiki.jenkins.io/display/JENKINS/Templating+Engine+Plugin'
     disabledTestInjection = true
     localizerOutputDir = "${project.buildDir}/generated-src/localizer"
     configureRepositories = false
     configurePublishing = true
-    fileExtension = 'jpi'
     developers {
         developer {
             id 'steven-terrana'
@@ -32,20 +31,29 @@ jenkinsPlugin {
     }
 }
 
-dependencies {
-	jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-multibranch:2.20"
+
+
+dependencies {    
+    // plugin dependencies
+    jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-multibranch:2.20"
 	jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-api:2.28"
 	jenkinsPlugins "org.jenkins-ci.plugins:branch-api:2.0.20"
 	jenkinsPlugins "org.jenkins-ci.plugins:scm-api:2.2.7"
 	jenkinsPlugins "org.jenkins-ci.plugins:junit:1.24"
-    jenkinsPlugins "org.jenkins-ci.plugins:github-branch-source:2.4.1"
-
-    testCompile 'org.spockframework:spock-core:1.2-groovy-2.4'
+	jenkinsPlugins "org.jenkins-ci.plugins:github-branch-source:2.4.1"
+    
+    // spock 
+    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
     testCompile 'junit:junit:4.12'
-    testCompile 'cglib:cglib-nodep:3.2.5'       // used by Spock
-    testCompile 'org.objenesis:objenesis:2.5.1' // used by Spock
 
-    // testCompile did not work
-    jenkinsTest 'org.jenkins-ci.plugins.workflow:workflow-aggregator:2.5' // for unit testing
-
+    // test plugins 
+    jenkinsTest(group: "org.jenkins-ci.plugins", name: "scm-api", version: "2.3.0", classifier: "tests")
+    jenkinsTest(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3') {
+        exclude(module: 'httpclient')
+        exclude(module: 'annotation-indexer')
+    }
+    testCompile(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3', , classifier:'tests') {
+        exclude(module: 'httpclient')
+        exclude(module: 'annotation-indexer')
+    }
 }
