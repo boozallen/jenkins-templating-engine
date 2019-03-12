@@ -41,28 +41,16 @@ class GovernanceTierSpec extends Specification{
         sampleRepo.init()
         
         // write tier 1 files
-        sampleRepo.write("pipeline_config.groovy", """
-        tier1 = true
-        """)
-        sampleRepo.write("Jenkinsfile", """
-        Jenkinsfile 1 
-        """)
-        sampleRepo.write("pipeline_templates/test", """
-        test template 1
-        """)
+        sampleRepo.write("pipeline_config.groovy", "tier1 = true")
+        sampleRepo.write("Jenkinsfile", "Jenkinsfile 1")
+        sampleRepo.write("pipeline_templates/test", "test template 1")
         
 
         // write tier 2 files 
         String baseDir2 = "suborg"
-        sampleRepo.write("${baseDir2}/pipeline_config.groovy", """
-        tier2 = true
-        """)
-        sampleRepo.write("${baseDir2}/Jenkinsfile", """
-        Jenkinsfile 2 
-        """)
-        sampleRepo.write("${baseDir2}/pipeline_templates/test", """
-        test template 2
-        """)
+        sampleRepo.write("${baseDir2}/pipeline_config.groovy", "tier2 = true")
+        sampleRepo.write("${baseDir2}/Jenkinsfile", "Jenkinsfile 2")
+        sampleRepo.write("${baseDir2}/pipeline_templates/test", "test template 2")
 
         // commit files 
         sampleRepo.git("add", "*")
