@@ -32,7 +32,6 @@ jenkinsPlugin {
 }
 
 
-
 dependencies {    
     // plugin dependencies
     jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-multibranch:2.20"
@@ -54,8 +53,21 @@ dependencies {
         exclude(module: 'httpclient')
         exclude(module: 'annotation-indexer')
     }
-    testCompile(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3', , classifier:'tests') {
+    testCompile(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3', classifier:'tests') {
         exclude(module: 'httpclient')
         exclude(module: 'annotation-indexer')
+    }
+}
+
+task testStable(type: Test) {
+    useJUnit {
+        excludeCategories 'org.boozallen.plugins.jte.testcategories.Unstable'
+        excludeCategories 'org.boozallen.plugins.jte.testcategories.InProgress'
+    }
+}
+
+task testIntegration(type: Test) {
+    useJUnit {
+        includeCategories 'org.boozallen.plugins.jte.testcategories.Integration'
     }
 }
