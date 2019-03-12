@@ -86,15 +86,16 @@ class GovernanceTierSpec extends Specification{
         // create tier 2 
         List<TemplateLibrarySource> librarySources2 = [] 
         tier2 = new GovernanceTier(scm, baseDir2, librarySources2)
+
+        // mock Utils getCurrentJob
+        WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
+        def utilsMock = GroovySpy(Utils, global: true)
+        _ * Utils.getCurrentJob() >> currentJob 
     }
 
     // test baseDir is root of repository 
     def "Get root level pipeline_config.groovy as TemplateConfigObject"(){
-        
         setup: 
-            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
-            def utilsMock = GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> job
             def config  
 
         when:
@@ -106,11 +107,7 @@ class GovernanceTierSpec extends Specification{
     }
 
     def "Get root level Jenkinsfile"(){
-        
         setup: 
-            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
-            def utilsMock = GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> job
             def jenkinsfile  
 
         when:
@@ -119,15 +116,10 @@ class GovernanceTierSpec extends Specification{
         then: 
             assert jenkinsfile instanceof String
             assert jenkinsfile.contains("Jenkinsfile 1")
-
     }
 
     def "Get pipeline template 'test'"(){
-        
         setup: 
-            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
-            def utilsMock = GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> job
             def jenkinsfile  
 
         when:
@@ -136,16 +128,11 @@ class GovernanceTierSpec extends Specification{
         then: 
             assert jenkinsfile instanceof String
             assert jenkinsfile.contains("test template 1")
-            
     }
 
     // test basedir is nested 
     def "Get nested level pipeline_config.groovy as TemplateConfigObject"(){
-        
         setup: 
-            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
-            def utilsMock = GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> job
             def config  
 
         when:
@@ -156,12 +143,8 @@ class GovernanceTierSpec extends Specification{
             assert config.getConfig().tier2
     }
 
-    def "Get nested level Jenkinsfile"(){
-        
+    def "Get nested level Jenkinsfile"(){        
         setup: 
-            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
-            def utilsMock = GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> job
             def jenkinsfile  
 
         when:
@@ -170,15 +153,10 @@ class GovernanceTierSpec extends Specification{
         then: 
             assert jenkinsfile instanceof String
             assert jenkinsfile.contains("Jenkinsfile 2")
-
     }
 
     def "Get nested pipeline template 'test'"(){
-        
         setup: 
-            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
-            def utilsMock = GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> job
             def jenkinsfile  
 
         when:
@@ -187,7 +165,6 @@ class GovernanceTierSpec extends Specification{
         then: 
             assert jenkinsfile instanceof String
             assert jenkinsfile.contains("test template 2")
-            
     }
 
 }
