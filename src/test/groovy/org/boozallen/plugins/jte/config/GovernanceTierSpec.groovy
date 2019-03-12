@@ -17,6 +17,7 @@ import org.boozallen.plugins.jte.Utils
 import spock.lang.* 
 import org.junit.Rule
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
+import com.cloudbees.hudson.plugins.folder.Folder
 import jenkins.plugins.git.GitSampleRepoRule
 import jenkins.plugins.git.GitSCMSource
 import hudson.plugins.git.GitSCM
@@ -74,55 +75,55 @@ class GovernanceTierSpec extends Specification{
         // create tier 2 
         List<TemplateLibrarySource> librarySources2 = [] 
         tier2 = new GovernanceTier(scm, baseDir2, librarySources2)
-
-        // mock Utils getCurrentJob
-        WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
-        def utilsMock = GroovySpy(Utils, global: true)
-        _ * Utils.getCurrentJob() >> currentJob 
     }
 
     // test baseDir is root of repository 
-    def "Get root level pipeline_config.groovy as TemplateConfigObject"(){
+    def "Get Config: root base directory"(){
         setup: 
+            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
             def config  
-
         when:
             config = tier1.getConfig()
-        
         then: 
             assert config instanceof TemplateConfigObject
             assert config.getConfig().tier1 
     }
 
-    def "Get root level Jenkinsfile"(){
+    def "Get Jenkinsfile: root base directory"(){
         setup: 
-            def jenkinsfile  
-
+            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
+            def jenkinsfile 
         when:
             jenkinsfile = tier1.getJenkinsfile()
-        
         then: 
             assert jenkinsfile instanceof String
             assert jenkinsfile.contains("Jenkinsfile 1")
     }
 
-    def "Get pipeline template 'test'"(){
+    def "Get Pipeline Template: root base directory"(){
         setup: 
+            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
             def jenkinsfile  
-
         when:
             jenkinsfile = tier1.getTemplate("test")
-        
         then: 
             assert jenkinsfile instanceof String
             assert jenkinsfile.contains("test template 1")
     }
 
     // test basedir is nested 
-    def "Get nested level pipeline_config.groovy as TemplateConfigObject"(){
+    def "Get Config: nested base directory"(){
         setup: 
-            def config  
-
+            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
+            def config 
         when:
             config = tier2.getConfig()
         
@@ -131,28 +132,138 @@ class GovernanceTierSpec extends Specification{
             assert config.getConfig().tier2
     }
 
-    def "Get nested level Jenkinsfile"(){        
+    def "Get Jenkinsfile: nested base directory"(){        
         setup: 
-            def jenkinsfile  
-
+            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
+            def jenkinsfile
         when:
             jenkinsfile = tier2.getJenkinsfile()
-        
         then: 
             assert jenkinsfile instanceof String
             assert jenkinsfile.contains("Jenkinsfile 2")
     }
 
-    def "Get nested pipeline template 'test'"(){
+    def "Get Pipeline Template: nested base directory"(){
         setup: 
+            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
             def jenkinsfile  
-
         when:
             jenkinsfile = tier2.getTemplate("test")
-        
         then: 
             assert jenkinsfile instanceof String
             assert jenkinsfile.contains("test template 2")
     }
+
+    
+    def "Get Governance Hierarchy: no hierarchy"(){
+        setup: 
+            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
+            def list 
+        when: 
+            list = GovernanceTier.getHierarchy()
+        then: 
+            assert list instanceof List<GovernanceTier> 
+            assert list.isEmpty()
+    }
+
+    def "Get Governance Hierarchy: 1 deep folder structure, no global config"(){
+        setup:             
+            // setup job hierarchy 
+            Folder folder = jenkinsRule.jenkins.createProject(Folder, "testFolder")
+            TemplateConfigFolderProperty prop = new TemplateConfigFolderProperty(tier1) 
+            folder.getProperties().add(prop) 
+
+            WorkflowJob currentJob = folder.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
+
+            // define expected result 
+            def list 
+            List<GovernanceTier> expectedResult = [ tier1 ]
+        when: 
+            list = GovernanceTier.getHierarchy()
+        then: 
+            assert list instanceof List<GovernanceTier> 
+            assert list == expectedResult 
+    }
+
+    def "Get Governance Hierarchy: 2 deep folder structure, no global config"(){
+        setup: 
+            // setup job hierarchy 
+            Folder folder1 = jenkinsRule.jenkins.createProject(Folder, "folder1")
+            TemplateConfigFolderProperty prop1 = new TemplateConfigFolderProperty(tier1) 
+            folder1.getProperties().add(prop1)
+
+            Folder folder2 = folder1.createProject(Folder, "folder2")
+            TemplateConfigFolderProperty prop2 = new TemplateConfigFolderProperty(tier2)
+            folder2.getProperties().add(prop2)
+
+            WorkflowJob currentJob = folder2.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
+
+            // define expected result
+            def list  
+            List<GovernanceTier> expectedResult = [ tier2, tier1 ]
+
+        when: 
+            list = GovernanceTier.getHierarchy()
+
+        then: 
+            assert list instanceof List<GovernanceTier> 
+            assert list == expectedResult 
+    }
+
+
+    def "Get Governance Hierarchy: global config"(){
+        setup: 
+            TemplateGlobalConfig global = TemplateGlobalConfig.get() 
+            global.setTier(tier1) 
+
+            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
+            
+            // define expected result 
+            def list  
+            List<GovernanceTier> expectedResult = [ tier1 ]
+        when: 
+            list = GovernanceTier.getHierarchy()
+        then: 
+            assert list instanceof List<GovernanceTier> 
+            assert list == expectedResult 
+    }
+
+    def "Get Governance Hierarchy: 1 deep folder structure, global config"(){
+        setup: 
+            TemplateGlobalConfig global = TemplateGlobalConfig.get() 
+            global.setTier(tier1) 
+
+            // setup job hierarchy 
+            Folder folder = jenkinsRule.jenkins.createProject(Folder, "testFolder")
+            TemplateConfigFolderProperty prop = new TemplateConfigFolderProperty(tier2) 
+            folder.getProperties().add(prop) 
+
+            WorkflowJob currentJob = folder.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
+            
+            // define expected result 
+            def list  
+            List<GovernanceTier> expectedResult = [ tier2, tier1 ]
+        when: 
+            list = GovernanceTier.getHierarchy()
+        then: 
+            assert list instanceof List<GovernanceTier> 
+            assert list == expectedResult 
+    }
+
+    
 
 }
