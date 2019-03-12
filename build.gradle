@@ -45,6 +45,8 @@ dependencies {
     // unit test deps 
     testCompile 'org.spockframework:spock-core:1.2-groovy-2.4'
     testCompile 'junit:junit:4.12'
+    testCompile 'cglib:cglib-nodep:3.2.5'       // used by Spock
+    testCompile 'org.objenesis:objenesis:2.5.1' // used by Spock
 
     // test plugins 
     jenkinsTest(group: "org.jenkins-ci.plugins", name: "scm-api", version: "2.3.0", classifier: "tests")

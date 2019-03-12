@@ -33,21 +33,42 @@ class GovernanceTierSpec extends Specification{
 
     @Rule JenkinsRule jenkinsRule = new JenkinsRule()
     @Rule GitSampleRepoRule sampleRepo = new GitSampleRepoRule()
-    GovernanceTier tier 
+    GovernanceTier tier1
+    GovernanceTier tier2 
 
     def setup(){
         // initialize repository 
         sampleRepo.init()
+        
+        // write tier 1 files
         sampleRepo.write("pipeline_config.groovy", """
-        libraries{
-            openshift{
-                url = "whatever" 
-            }
-        }
+        tier1 = true
         """)
+        sampleRepo.write("Jenkinsfile", """
+        Jenkinsfile 1 
+        """)
+        sampleRepo.write("pipeline_templates/test", """
+        test template 1
+        """)
+        
+
+        // write tier 2 files 
+        String baseDir2 = "suborg"
+        sampleRepo.write("${baseDir2}/pipeline_config.groovy", """
+        tier2 = true
+        """)
+        sampleRepo.write("${baseDir2}/Jenkinsfile", """
+        Jenkinsfile 2 
+        """)
+        sampleRepo.write("${baseDir2}/pipeline_templates/test", """
+        test template 2
+        """)
+
+        // commit files 
         sampleRepo.git("add", "*")
         sampleRepo.git("commit", "--message=init")
-        // create Governance Tier 
+        
+        // create common SCM  
         GitSCM scm = new GitSCM(
             GitSCM.createRepoList(sampleRepo.toString(), null), 
             Collections.singletonList(new BranchSpec("*/master")), 
@@ -57,12 +78,18 @@ class GovernanceTierSpec extends Specification{
             null, 
             Collections.<GitSCMExtension>emptyList()
         )
-        String baseDir = "" 
-        List<TemplateLibrarySource> librarySources = []
-        tier = new GovernanceTier(scm, baseDir, librarySources)
+
+        // create tier 1 
+        List<TemplateLibrarySource> librarySources1 = []
+        tier1 = new GovernanceTier(scm, "", librarySources1)
+
+        // create tier 2 
+        List<TemplateLibrarySource> librarySources2 = [] 
+        tier2 = new GovernanceTier(scm, baseDir2, librarySources2)
     }
 
-    def "getConfig() returns TemplateConfigObject based on SCM pipeline_config.groovy"(){
+    // test baseDir is root of repository 
+    def "Get root level pipeline_config.groovy as TemplateConfigObject"(){
         
         setup: 
             WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
@@ -71,17 +98,96 @@ class GovernanceTierSpec extends Specification{
             def config  
 
         when:
-            config = tier.getConfig()
+            config = tier1.getConfig()
         
         then: 
             assert config instanceof TemplateConfigObject
-            assert config.getConfig() == [
-                libraries: [
-                    openshift: [
-                        url: "whatever" 
-                    ]
-                ]
-            ]
+            assert config.getConfig().tier1 
+    }
+
+    def "Get root level Jenkinsfile"(){
+        
+        setup: 
+            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
+            def utilsMock = GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> job
+            def jenkinsfile  
+
+        when:
+            jenkinsfile = tier1.getJenkinsfile()
+        
+        then: 
+            assert jenkinsfile instanceof String
+            assert jenkinsfile.contains("Jenkinsfile 1")
+
+    }
+
+    def "Get pipeline template 'test'"(){
+        
+        setup: 
+            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
+            def utilsMock = GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> job
+            def jenkinsfile  
+
+        when:
+            jenkinsfile = tier1.getTemplate("test")
+        
+        then: 
+            assert jenkinsfile instanceof String
+            assert jenkinsfile.contains("test template 1")
+            
+    }
+
+    // test basedir is nested 
+    def "Get nested level pipeline_config.groovy as TemplateConfigObject"(){
+        
+        setup: 
+            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
+            def utilsMock = GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> job
+            def config  
+
+        when:
+            config = tier2.getConfig()
+        
+        then: 
+            assert config instanceof TemplateConfigObject
+            assert config.getConfig().tier2
+    }
+
+    def "Get nested level Jenkinsfile"(){
+        
+        setup: 
+            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
+            def utilsMock = GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> job
+            def jenkinsfile  
+
+        when:
+            jenkinsfile = tier2.getJenkinsfile()
+        
+        then: 
+            assert jenkinsfile instanceof String
+            assert jenkinsfile.contains("Jenkinsfile 2")
+
+    }
+
+    def "Get nested pipeline template 'test'"(){
+        
+        setup: 
+            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "job"); 
+            def utilsMock = GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> job
+            def jenkinsfile  
+
+        when:
+            jenkinsfile = tier2.getTemplate("test")
+        
+        then: 
+            assert jenkinsfile instanceof String
+            assert jenkinsfile.contains("test template 2")
+            
     }
 
 }
