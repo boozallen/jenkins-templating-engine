@@ -1,5 +1,7 @@
 plugins {
   id 'org.jenkins-ci.jpi' version '0.27.0'
+  id 'jacoco' 
+  id 'application'
 }
 
 repositories {
@@ -56,6 +58,12 @@ dependencies {
     testCompile(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3', classifier:'tests') {
         exclude(module: 'httpclient')
         exclude(module: 'annotation-indexer')
+    }
+}
+
+jacocoTestReport{
+    reports{
+        html.enabled true 
     }
 }
 

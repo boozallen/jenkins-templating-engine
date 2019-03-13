@@ -102,14 +102,12 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
         WorkflowJob job = Utils.getCurrentJob() 
         ItemGroup<?> parent = job.getParent()
         
-        while(parent){
-            if (parent instanceof AbstractFolder){
-                GovernanceTier tier = parent.getProperties().get(TemplateConfigFolderProperty)?.getTier()
-                if (tier){
-                    h.push(tier)
-                }
-                parent = parent.getParent()
-            } else break
+        while(parent instanceof AbstractFolder){
+            GovernanceTier tier = parent.getProperties().get(TemplateConfigFolderProperty)?.getTier()
+            if (tier){
+                h.push(tier)
+            }
+            parent = parent.getParent()
         }
 
         // global config 

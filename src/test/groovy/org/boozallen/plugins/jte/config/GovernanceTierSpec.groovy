@@ -194,7 +194,7 @@ class GovernanceTierSpec extends Specification{
     }
 
     def "Get Governance Hierarchy: 2 deep folder structure, no global config"(){
-        setup: 
+        given: "a job within a nested folder structure" 
             // setup job hierarchy 
             Folder folder1 = jenkinsRule.jenkins.createProject(Folder, "folder1")
             TemplateConfigFolderProperty prop1 = new TemplateConfigFolderProperty(tier1) 
@@ -212,10 +212,10 @@ class GovernanceTierSpec extends Specification{
             def list  
             List<GovernanceTier> expectedResult = [ tier2, tier1 ]
 
-        when: 
+        when: "I get the Governance Tier Hierarchy"
             list = GovernanceTier.getHierarchy()
 
-        then: 
+        then: "The hierarchy listed matches the folder structure hierarchy"
             assert list instanceof List<GovernanceTier> 
             assert list == expectedResult 
     }
