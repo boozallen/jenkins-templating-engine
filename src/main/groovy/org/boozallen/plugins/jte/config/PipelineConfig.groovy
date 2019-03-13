@@ -43,6 +43,9 @@ class PipelineConfig implements Serializable{
       return currentConfigObject
     }
 
+    /*
+      
+    */
     void join(TemplateConfigObject child){
       def pipeline_config
       if (firstJoin){
