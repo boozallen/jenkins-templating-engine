@@ -16,7 +16,6 @@
 
 package org.boozallen.plugins.jte.binding
 
-import groovy.lang.Binding
 import org.jenkinsci.plugins.workflow.cps.CpsThread
 import org.jenkinsci.plugins.workflow.cps.DSL
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -45,8 +44,12 @@ class TemplateBinding extends Binding implements Serializable{
         }
 
         if (name in registry){
-            if (locked) variables.get(name).throwPostLockException()
-            else variables.get(name).throwPreLockException() 
+            if (locked){
+                variables.get(name).throwPostLockException()
+            }
+            else{
+                variables.get(name).throwPreLockException() 
+            } 
         }
         if (value in TemplatePrimitive) registry << name
         super.setVariable(name, value)
