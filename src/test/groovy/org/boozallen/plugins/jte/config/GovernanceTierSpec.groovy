@@ -13,7 +13,7 @@
 
 package org.boozallen.plugins.jte.config
 
-import org.boozallen.plugins.jte.Utils 
+
 import spock.lang.* 
 import org.junit.Rule
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
@@ -24,15 +24,13 @@ import hudson.plugins.git.GitSCM
 import hudson.plugins.git.BranchSpec
 import hudson.plugins.git.extensions.GitSCMExtension
 import hudson.plugins.git.SubmoduleConfig
-import static hudson.model.Result.FAILURE
-import static hudson.model.Result.SUCCESS
-
 import org.jvnet.hudson.test.JenkinsRule
-import org.jvnet.hudson.test.WithoutJenkins
+
 
 class GovernanceTierSpec extends Specification{
 
     @Rule JenkinsRule jenkinsRule = new JenkinsRule()
+
     @Rule GitSampleRepoRule sampleRepo = new GitSampleRepoRule()
     GovernanceTier tier1
     GovernanceTier tier2 
@@ -211,6 +209,30 @@ class GovernanceTierSpec extends Specification{
             // define expected result
             def list  
             List<GovernanceTier> expectedResult = [ tier2, tier1 ]
+
+        when: "I get the Governance Tier Hierarchy"
+            list = GovernanceTier.getHierarchy()
+
+        then: "The hierarchy listed matches the folder structure hierarchy"
+            assert list instanceof List<GovernanceTier> 
+            assert list == expectedResult 
+    }
+
+    def "Get Governance Hierarchy: folder with no tier"(){
+        given: "a job within a nested folder structure" 
+            // setup job hierarchy 
+            Folder folder1 = jenkinsRule.jenkins.createProject(Folder, "folder1")
+            Folder folder2 = folder1.createProject(Folder, "folder2")
+            TemplateConfigFolderProperty prop2 = new TemplateConfigFolderProperty(tier1)
+            folder2.getProperties().add(prop2)
+
+            WorkflowJob currentJob = folder2.createProject(WorkflowJob, "job"); 
+            GroovySpy(Utils, global: true)
+            _ * Utils.getCurrentJob() >> currentJob 
+
+            // define expected result
+            def list  
+            List<GovernanceTier> expectedResult = [ tier1 ]
 
         when: "I get the Governance Tier Hierarchy"
             list = GovernanceTier.getHierarchy()
