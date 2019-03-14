@@ -13,12 +13,9 @@
 
 package org.boozallen.plugins.jte.binding
 
-import org.jenkinsci.plugins.workflow.cps.CpsThread
-
-import org.boozallen.plugins.jte.Utils 
 import spock.lang.* 
-import org.junit.Rule
-import org.jenkinsci.plugins.workflow.job.WorkflowJob
+import org.junit.*
+
 import com.cloudbees.hudson.plugins.folder.Folder
 import jenkins.plugins.git.GitSampleRepoRule
 import jenkins.plugins.git.GitSCMSource
@@ -30,15 +27,17 @@ import static hudson.model.Result.FAILURE
 import static hudson.model.Result.SUCCESS
 
 import org.jvnet.hudson.test.JenkinsRule
+import org.jvnet.hudson.test.BuildWatcher
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
+import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jvnet.hudson.test.WithoutJenkins
 
 class TemplateBindingSpec extends Specification{
 
+    @Rule JenkinsRule jenkinsRule = new JenkinsRule()
+    @ClassRule public static BuildWatcher bw = new BuildWatcher()
+
     TemplateBinding binding = new TemplateBinding() 
-
-    def setup(){
-
-    }
 
     /*
         dummy primitive to be used for testing 
@@ -70,6 +69,7 @@ class TemplateBindingSpec extends Specification{
         }
     }
 
+    @WithoutJenkins
     def "non-primitive variable set in binding maintains value"(){
         when: 
             binding.setVariable("x", 3)
@@ -77,6 +77,7 @@ class TemplateBindingSpec extends Specification{
             assert binding.getVariable("x") == 3 
     }
 
+    @WithoutJenkins
     def "Normal variable does not get inserted into registry"(){
         when: 
             binding.setVariable("x", 3)
@@ -84,6 +85,7 @@ class TemplateBindingSpec extends Specification{
             assert !("x" in binding.registry)
     }
 
+    @WithoutJenkins
     def "template primitive inserted into registry"(){
         when: 
             binding.setVariable("x", new TestPrimitive())
@@ -91,6 +93,7 @@ class TemplateBindingSpec extends Specification{
             assert "x" in binding.registry 
     }
 
+    @WithoutJenkins
     def "binding collision pre-lock throws pre-lock exception"(){
         when: 
             binding.setVariable("x", new TestPrimitive())
@@ -100,6 +103,7 @@ class TemplateBindingSpec extends Specification{
             assert ex.message == "pre-lock exception"
     }
 
+    @WithoutJenkins
     def "binding collision post-lock throws post-lock exception"(){
         when: 
             binding.setVariable("x", new TestPrimitive())
@@ -110,6 +114,7 @@ class TemplateBindingSpec extends Specification{
             assert ex.message == "post-lock exception"
     }
     
+    @WithoutJenkins
     def "missing variable throws MissingPropertyException"(){
         when: 
             binding.getVariable("doesntexist")
@@ -117,6 +122,7 @@ class TemplateBindingSpec extends Specification{
             thrown MissingPropertyException
     }
     
+    @WithoutJenkins
     def "getValue overrides actual value set"(){
         when: 
             binding.setVariable("x", new TestPrimitiveGetValue())
@@ -124,6 +130,7 @@ class TemplateBindingSpec extends Specification{
             assert binding.getVariable("x") == "dummy value" 
     }
 
+    @WithoutJenkins
     def "primitive with no getValue returns same object set"(){
         setup: 
             TestPrimitive test = new TestPrimitive() 
@@ -131,6 +138,26 @@ class TemplateBindingSpec extends Specification{
             binding.setVariable("x", test)
         then:
             assert binding.getVariable("x") == test 
+    }
+
+    @WithoutJenkins
+    def "can't overwrite library config variable"(){
+        when: 
+            binding.setVariable(StepWrapper.libraryConfigVariable, "test")
+        then: 
+            thrown(TemplateException)
+    }
+
+    def "validate TemplateBinding sets 'steps' var"(){
+        given: 
+            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            job.setDefinition(new CpsFlowDefinition("""
+            node{
+                sh "echo hello" 
+            }
+            """))
+        expect: 
+            jenkinsRule.assertLogContains("hello", jenkinsRule.buildAndAssertSuccess(job))
     }
 
 }

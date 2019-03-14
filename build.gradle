@@ -59,6 +59,7 @@ dependencies {
         exclude(module: 'httpclient')
         exclude(module: 'annotation-indexer')
     }
+    jenkinsTest "org.jenkins-ci.plugins.workflow:workflow-aggregator:2.6"
 }
 
 jacocoTestReport{
