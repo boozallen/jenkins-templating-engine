@@ -14,8 +14,10 @@
 package org.boozallen.plugins.jte.config
 
 
+import org.boozallen.plugins.jte.Utils
 import spock.lang.* 
 import org.junit.Rule
+import org.jvnet.hudson.test.JenkinsRule
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import com.cloudbees.hudson.plugins.folder.Folder
 import jenkins.plugins.git.GitSampleRepoRule
@@ -24,7 +26,8 @@ import hudson.plugins.git.GitSCM
 import hudson.plugins.git.BranchSpec
 import hudson.plugins.git.extensions.GitSCMExtension
 import hudson.plugins.git.SubmoduleConfig
-import org.jvnet.hudson.test.JenkinsRule
+
+
 
 
 class GovernanceTierSpec extends Specification{

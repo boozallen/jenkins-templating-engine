@@ -16,22 +16,13 @@
 
 package org.boozallen.plugins.jte.config
 
-import java.io.IOException
-
 import org.boozallen.plugins.jte.Utils
 import com.cloudbees.hudson.plugins.folder.AbstractFolder
-import com.cloudbees.hudson.plugins.folder.AbstractFolderProperty
-import com.cloudbees.hudson.plugins.folder.AbstractFolderPropertyDescriptor
-
 import hudson.model.ItemGroup
 import hudson.model.Descriptor.FormException
 import org.kohsuke.stapler.DataBoundConstructor
-import org.kohsuke.stapler.DataBoundSetter
 import hudson.scm.SCM
 import hudson.Extension
-import hudson.model.Queue
-import hudson.model.Run
-import hudson.model.TaskListener
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 import net.sf.json.JSONObject
 import org.kohsuke.stapler.StaplerRequest
@@ -39,8 +30,6 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
 import hudson.scm.NullSCM
-import org.jenkinsci.plugins.workflow.cps.CpsThread
-
 
 public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> implements Serializable{
     

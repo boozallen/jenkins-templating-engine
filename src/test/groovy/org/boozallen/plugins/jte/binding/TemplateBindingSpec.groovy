@@ -15,17 +15,6 @@ package org.boozallen.plugins.jte.binding
 
 import spock.lang.* 
 import org.junit.*
-
-import com.cloudbees.hudson.plugins.folder.Folder
-import jenkins.plugins.git.GitSampleRepoRule
-import jenkins.plugins.git.GitSCMSource
-import hudson.plugins.git.GitSCM
-import hudson.plugins.git.BranchSpec
-import hudson.plugins.git.extensions.GitSCMExtension
-import hudson.plugins.git.SubmoduleConfig
-import static hudson.model.Result.FAILURE
-import static hudson.model.Result.SUCCESS
-
 import org.jvnet.hudson.test.JenkinsRule
 import org.jvnet.hudson.test.BuildWatcher
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
@@ -35,7 +24,7 @@ import org.jvnet.hudson.test.WithoutJenkins
 class TemplateBindingSpec extends Specification{
 
     @Rule JenkinsRule jenkinsRule = new JenkinsRule()
-    @ClassRule public static BuildWatcher bw = new BuildWatcher()
+    @Shared @ClassRule BuildWatcher bw = new BuildWatcher()
 
     TemplateBinding binding = new TemplateBinding() 
 
