@@ -16,8 +16,6 @@
 
 package org.boozallen.plugins.jte.binding
 
-import org.boozallen.plugins.jte.config.TemplateConfigObject
-
 /*
     A base class for objects that will be stored in the 
     script binding.  Extending this base class will protect

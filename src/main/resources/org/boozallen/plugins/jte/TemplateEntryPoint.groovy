@@ -19,8 +19,6 @@ import org.boozallen.plugins.jte.binding.*
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.hooks.*
 import org.boozallen.plugins.jte.Utils 
-import org.jenkinsci.plugins.workflow.cps.CpsScript
-import org.jenkinsci.plugins.workflow.cps.CpsThread 
 import com.cloudbees.groovy.cps.impl.CpsClosure 
 
 def call(CpsClosure body = null){

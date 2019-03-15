@@ -21,7 +21,6 @@ import org.jvnet.hudson.test.JenkinsRule
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import com.cloudbees.hudson.plugins.folder.Folder
 import jenkins.plugins.git.GitSampleRepoRule
-import jenkins.plugins.git.GitSCMSource
 import hudson.plugins.git.GitSCM
 import hudson.plugins.git.BranchSpec
 import hudson.plugins.git.extensions.GitSCMExtension
@@ -33,7 +32,6 @@ import hudson.plugins.git.SubmoduleConfig
 class GovernanceTierSpec extends Specification{
 
     @Rule JenkinsRule jenkinsRule = new JenkinsRule()
-
     @Rule GitSampleRepoRule sampleRepo = new GitSampleRepoRule()
     GovernanceTier tier1
     GovernanceTier tier2 
@@ -80,7 +78,7 @@ class GovernanceTierSpec extends Specification{
 
     // test baseDir is root of repository 
     def "Get Config: root base directory"(){
-        setup: 
+        given: 
             WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
@@ -93,7 +91,7 @@ class GovernanceTierSpec extends Specification{
     }
 
     def "Get Jenkinsfile: root base directory"(){
-        setup: 
+        given: 
             WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
@@ -106,7 +104,7 @@ class GovernanceTierSpec extends Specification{
     }
 
     def "Get Pipeline Template: root base directory"(){
-        setup: 
+        given: 
             WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
@@ -120,7 +118,7 @@ class GovernanceTierSpec extends Specification{
 
     // test basedir is nested 
     def "Get Config: nested base directory"(){
-        setup: 
+        given: 
             WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
@@ -134,7 +132,7 @@ class GovernanceTierSpec extends Specification{
     }
 
     def "Get Jenkinsfile: nested base directory"(){        
-        setup: 
+        given: 
             WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
@@ -147,7 +145,7 @@ class GovernanceTierSpec extends Specification{
     }
 
     def "Get Pipeline Template: nested base directory"(){
-        setup: 
+        given: 
             WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
@@ -161,7 +159,7 @@ class GovernanceTierSpec extends Specification{
 
     
     def "Get Governance Hierarchy: no hierarchy"(){
-        setup: 
+        given: 
             WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
@@ -174,7 +172,7 @@ class GovernanceTierSpec extends Specification{
     }
 
     def "Get Governance Hierarchy: 1 deep folder structure, no global config"(){
-        setup:             
+        given:             
             // setup job hierarchy 
             Folder folder = jenkinsRule.jenkins.createProject(Folder, "testFolder")
             TemplateConfigFolderProperty prop = new TemplateConfigFolderProperty(tier1) 
@@ -247,7 +245,7 @@ class GovernanceTierSpec extends Specification{
 
 
     def "Get Governance Hierarchy: global config"(){
-        setup: 
+        given: 
             TemplateGlobalConfig global = TemplateGlobalConfig.get() 
             global.setTier(tier1) 
 
@@ -266,7 +264,7 @@ class GovernanceTierSpec extends Specification{
     }
 
     def "Get Governance Hierarchy: 1 deep folder structure, global config"(){
-        setup: 
+        given: 
             TemplateGlobalConfig global = TemplateGlobalConfig.get() 
             global.setTier(tier1) 
 

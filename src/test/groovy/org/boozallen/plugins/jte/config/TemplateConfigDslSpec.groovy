@@ -18,9 +18,6 @@ package org.boozallen.plugins.jte.config
 
 import spock.lang.*
 
-import org.boozallen.plugins.jte.config.TemplateConfigObject
-import org.boozallen.plugins.jte.config.TemplateConfigDsl
-
 class TemplateConfigDslSpec extends Specification {
 
     def 'Empty Config File'(){
