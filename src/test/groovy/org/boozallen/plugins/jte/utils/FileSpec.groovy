@@ -14,15 +14,11 @@ class FileSpec extends Specification {
 
 
     def "Utils.FileSystemWrapper.getFileContents with null SCMFileSystem"(){
-        given:
-        SCMFileSystem fs = null
-        String filePath = "pipeline_config.groovy"
-        String retVal = ""
 
-        when:
-        retVal = Utils.FileSystemWrapper.getFileContents(filePath, fs)
+        when:"getFileContents is called with a null SCMFileSystem and non-empty string for path"
+        String retVal = Utils.FileSystemWrapper.getFileContents("pipeline_config.groovy", null)
 
-        then:
+        then:"a null is returned for SCMFile"
         null == retVal
 
     }
