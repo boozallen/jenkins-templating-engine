@@ -66,11 +66,11 @@ import javax.annotation.Nonnull
 
             // parse entrypoint and return 
             String entryPoint = Jenkins.instance
-                                       .pluginManager
-                                       .uberClassLoader
-                                       .loadClass(getClass().getName())
-                                       .getResource("TemplateEntryPoint.groovy")
-                                       .text
+                                .pluginManager
+                                .uberClassLoader
+                                .loadClass(getClass().getName())
+                                .getResource("TemplateEntryPoint.groovy")
+                                .text
 
             template = Utils.parseScript(entryPoint, script.getBinding())
             script.getBinding().setVariable(getName(), template)
