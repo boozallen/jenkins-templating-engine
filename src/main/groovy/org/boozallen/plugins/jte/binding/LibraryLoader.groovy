@@ -22,11 +22,9 @@ import org.boozallen.plugins.jte.config.GovernanceTier
 import org.boozallen.plugins.jte.Utils
 import hudson.Extension 
 import org.jenkinsci.plugins.workflow.cps.CpsScript
-import hudson.FilePath
 import jenkins.scm.api.SCMFileSystem
 import jenkins.scm.api.SCMFile 
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
-import java.io.PrintStream
 import hudson.model.ItemGroup
 import jenkins.model.Jenkins
 
