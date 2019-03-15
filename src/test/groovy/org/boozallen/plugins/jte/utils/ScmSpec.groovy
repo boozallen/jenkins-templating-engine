@@ -1,29 +1,34 @@
-package org.boozallen.plugins.jte
+package org.boozallen.plugins.jte.utils
 
+import hudson.model.TaskListener
 import hudson.plugins.git.BranchSpec
 import hudson.plugins.git.GitSCM
 import hudson.plugins.git.SubmoduleConfig
 import hudson.plugins.git.extensions.GitSCMExtension
 import hudson.scm.SCM
 import jenkins.plugins.git.GitSampleRepoRule
-
 import jenkins.scm.api.SCMFileSystem
+import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.testcategories.InProgress
 import org.boozallen.plugins.jte.testcategories.Unstable
-import org.jenkinsci.plugins.workflow.cps.*
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
+import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowExecution
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
+import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.experimental.categories.Category
-import spock.lang.*
+import org.jvnet.hudson.test.GroovyJenkinsRule
+import org.jvnet.hudson.test.SingleFileSCM
+import org.jvnet.hudson.test.WithoutJenkins
+import spock.lang.Ignore
+import spock.lang.Shared
+import spock.lang.Specification
 
-import hudson.model.*
-import org.junit.*;
-import org.jvnet.hudson.test.*;
-
-class CpsSpec extends Specification {
+class ScmSpec extends Specification {
     @Shared
     @ClassRule
     @SuppressWarnings('JUnitPublicField')
@@ -68,10 +73,13 @@ class CpsSpec extends Specification {
         )
     }
 
+    @WithoutJenkins
     def "Utils.createSCMFileSystemOrNull(scm,job); using Util.currentJob"(){
+        given: "a workflowjob project with a valid scm"
+
         project = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "Utils.createSCMFileSystemOrNull(scm,job); using Util.currentJob");
 
-        def cpsFlowDef = new CpsScmFlowDefinition(scm, cpsScriptPath)// false is needed to access CpsThread
+        def cpsFlowDef = new CpsScmFlowDefinition(scm, cpsScriptPath)
         project.setDefinition(cpsFlowDef);
 
         WorkflowJob job = null
@@ -83,7 +91,7 @@ class CpsSpec extends Specification {
         _ * Utils.getListener() >> {return listener}
         _ * Utils.getLogger() >> {return logger}
 
-        when:
+        when:"Utils.createSCMFileSystemOrNull is called with the project's job and scm"
         WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(project);
         FlowExecution execution = build.execution
         listener = execution.owner.listener
@@ -92,12 +100,13 @@ class CpsSpec extends Specification {
 
         SCMFileSystem scmfs = Utils.createSCMFileSystemOrNull(scm, Utils.getCurrentJob(), job.parent)
 
-        then:
+        then:"it should return a valid SCM filesystem"
         notThrown(Exception)
 
         null != scmfs
     }
 
+    @WithoutJenkins
     def "Utils.FileSystemWrapper.fsFrom(job, listener, logger) !WorkflowMultiBranchProject"(){
         project = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "Utils.FileSystemWrapper.fsFrom !WorkflowMultiBranchProject");
 
@@ -185,7 +194,7 @@ class CpsSpec extends Specification {
 
     @Category([Unstable])
     @Ignore // not getting scm file system
-    def "Utils.CpsContext#getFileContents; using jenkinsRule"(){
+    def "Utils.getFileContents; using jenkinsRule"(){
         project = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "Utils.CpsContext#getFileContents");
 
         def cpsFlowDef = new CpsFlowDefinition(cpsScript, false)// false is needed to access CpsThread
@@ -249,80 +258,4 @@ libraries{
         null != scmfs
     }
 
-    def "with CPS Thread; using jenkinsRule"(){// testing test harness setup
-        project = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "CpsSpec.project");
-        project.setDefinition(new CpsFlowDefinition("""
-               import org.jenkinsci.plugins.workflow.cps.*
-               import org.jenkinsci.plugins.workflow.job.*
-               
-def currentJob = CpsThread.current()?.execution?.owner?.executable.parent
-
-assert currentJob instanceof WorkflowJob
-""", false));// false is needed to access CpsThread
-
-        // Enqueue a build of the Pipeline, wait for it to complete, and assert success
-
-        when:
-        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(project);
-        WorkflowJob job = build.parent
-        FlowExecution execution = build.execution
-        FlowExecutionOwner owner = execution.owner
-
-        // Assert that the console log contains the output we expect
-        // groovyJenkinsRule.assertLogContains("hello", build);
-
-        then:
-        notThrown(Exception)
-        null != job
-    }
-
-    def "with CPS Thread yields, thread.execution"(){
-        WorkflowJob job = GroovyMock(WorkflowJob)
-        WorkflowRun workflowRun = GroovyMock(WorkflowRun){
-            getParent() >> job
-        }
-        TaskListener listener = GroovyMock(TaskListener){
-            getLogger() >> GroovyMock(PrintStream)
-        }
-        FlowExecutionOwner owner = GroovyMock(FlowExecutionOwner){
-            getListener() >> listener
-            getExecutable() >> workflowRun
-        }
-        CpsFlowExecution execution = GroovyMock(CpsFlowExecution){
-            getOwner() >> owner
-        }
-        CpsThread cpsThread = GroovyMock(CpsThread){
-            getExecution() >> execution
-        }
-
-        GroovyMock(CpsThread.class, global:true)
-        1 * CpsThread.current() >> cpsThread
-
-        when:
-        CpsThread current = CpsThread.current()
-
-        then:
-        execution == current?.execution
-        workflowRun == current?.execution?.owner.executable
-
-        // job == current?.execution?.owner.executable.parent
-    }
-
-    def "Utils.getCurrentJob(), thread.execution"(){
-        WorkflowJob job = GroovyMock(WorkflowJob)
-
-        GroovyMock(Utils.class, global:true)
-        1 * Utils.getCurrentJob() >> job
-
-
-        when:
-        WorkflowJob result = Utils.getCurrentJob()
-
-        then:
-        null != result
-
-    }
-
-
 }
-
