@@ -141,6 +141,8 @@ class TemplateBindingSpec extends Specification{
         given: 
             WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
             job.setDefinition(new CpsFlowDefinition("""
+            import org.boozallen.plugins.jte.binding.TemplateBinding
+            setBinding(new TemplateBinding())
             node{
                 sh "echo hello" 
             }

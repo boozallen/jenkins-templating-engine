@@ -84,10 +84,9 @@ assert currentJob instanceof WorkflowJob
 
     def "Utils.getCurrentJob(), thread.execution"(){
         WorkflowJob job = GroovyMock(WorkflowJob)
-
+            
         GroovyMock(Utils.class, global:true)
         1 * Utils.getCurrentJob() >> job
-
 
         when:
         WorkflowJob result = Utils.getCurrentJob()
@@ -96,7 +95,6 @@ assert currentJob instanceof WorkflowJob
         null != result
 
     }
-
 
 }
 

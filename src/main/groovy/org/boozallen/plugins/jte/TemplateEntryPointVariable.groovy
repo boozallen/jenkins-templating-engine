@@ -23,7 +23,6 @@ import org.boozallen.plugins.jte.hooks.*
 import jenkins.model.Jenkins
 import hudson.Extension
 import hudson.ExtensionList 
-import com.cloudbees.hudson.plugins.folder.AbstractFolder
 import org.jenkinsci.plugins.workflow.cps.GlobalVariable
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AbstractWhitelist

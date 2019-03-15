@@ -20,7 +20,6 @@ import hudson.Extension
 import jenkins.branch.MultiBranchProject
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
 import org.kohsuke.stapler.DataBoundConstructor
-import org.kohsuke.stapler.DataBoundSetter
 import javax.annotation.Nonnull
 import hudson.model.TaskListener
 import jenkins.scm.api.SCMSource
