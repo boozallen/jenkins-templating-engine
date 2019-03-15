@@ -16,16 +16,10 @@
 
 package org.boozallen.plugins.jte.config
 
-import java.io.IOException
-
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.DataBoundSetter
 import hudson.scm.SCM
 import hudson.Extension
-import hudson.model.Queue
-import hudson.model.Run
-import hudson.model.TaskListener
-import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
 
