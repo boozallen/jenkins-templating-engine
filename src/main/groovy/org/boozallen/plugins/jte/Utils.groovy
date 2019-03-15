@@ -199,8 +199,32 @@ class Utils implements Serializable{
         } 
     }
 
-    
+    /**
+     * @param scm
+     * @param job
+     * @param logger optional a printStream to send error/logging messages
+     * @return null or a valid SCMFileSystem
+    */
+    static SCMFileSystem getSCMFileSystemOrNull(SCM scm, WorkflowJob job, PrintStream logger = getLogger() ){
 
+        if (scm){
+            try{
+                return SCMFileSystem.of(job, scm)
+            }catch(any){
+                logger.println any
+                return null
+            }
+        }else{
+            return FileSystemWrapper.fsFrom(job, listener, logger)
+        }
+    }
+
+
+    /**
+     * Note: this method initializes the class/CpsThread level job,logger,listener properties
+     * @return the job for the current CPS thread
+     * @throws IllegalStateException if is called outside of a CpsThread or is not executed in a WorkflowRun
+     */
     static WorkflowJob getCurrentJob(){
 
         if (currentJob){
