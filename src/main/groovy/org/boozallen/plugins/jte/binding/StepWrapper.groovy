@@ -63,7 +63,7 @@ class StepWrapper extends TemplatePrimitive{
                                 .pluginManager
                                 .uberClassLoader
                                 .loadClass("org.boozallen.plugins.jte.binding.StepWrapper")
-                                .getResource("StepWrapper.groovy")
+                                .getResource("StepWrapperImpl.groovy")
                                 .text
         return Utils.parseScript(invoke, script.getBinding())(name, library, script, impl, args)
     }
