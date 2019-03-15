@@ -50,7 +50,7 @@ class Stage extends TemplatePrimitive {
                                 .pluginManager
                                 .uberClassLoader
                                 .loadClass("org.boozallen.plugins.jte.binding.Stage")
-                                .getResource("Stage.groovy")
+                                .getResource("StageImpl.groovy")
                                 .text
         Utils.getLogger().println "[JTE][Stage - ${name}]" 
         Utils.parseScript(invoke, script.getBinding())(script, steps)
