@@ -20,7 +20,6 @@ import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.config.*
 import org.jenkinsci.plugins.workflow.cps.CpsThread
 import org.jenkinsci.plugins.workflow.cps.CpsThreadGroup
-// for get branch file utils 
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
@@ -32,36 +31,18 @@ import jenkins.scm.api.SCMRevision
 import jenkins.scm.api.SCMFileSystem
 import jenkins.scm.api.SCMSource
 import jenkins.scm.api.SCMFile
-import jenkins.scm.api.SCMRevisionAction
 import hudson.scm.SCM
-import hudson.Functions
-import hudson.FilePath
-import hudson.model.Node
-import hudson.model.TopLevelItem
-import hudson.model.Computer
-import org.jenkinsci.plugins.workflow.steps.scm.GenericSCMStep
 import org.jenkinsci.plugins.workflow.steps.scm.SCMStep
-import org.jenkinsci.plugins.workflow.support.actions.WorkspaceActionImpl
-import hudson.slaves.WorkspaceList
-import org.jenkinsci.plugins.workflow.steps.scm.SCMStep
-import jenkins.model.Jenkins
-import hudson.AbortException
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import hudson.model.Queue
-import java.io.PrintStream
 import hudson.model.TaskListener
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
-import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
-import org.jenkinsci.plugins.workflow.cps.CpsThreadGroup
 import org.jenkinsci.plugins.workflow.cps.CpsGroovyShell
 import java.lang.reflect.Field
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
-import org.jenkinsci.plugins.github_branch_source.BranchSCMHead
-import org.jenkinsci.plugins.github_branch_source.PullRequestSCMHead
-
 
 class Utils implements Serializable{
 

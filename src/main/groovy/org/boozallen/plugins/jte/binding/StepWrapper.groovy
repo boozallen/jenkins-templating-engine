@@ -16,15 +16,12 @@
 
 package org.boozallen.plugins.jte.binding
 
-//import org.boozallen.plugins.jte.extensions.*
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.hooks.*
 import org.boozallen.plugins.jte.Utils
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
-import hudson.Extension 
 import jenkins.model.Jenkins
 
 /*

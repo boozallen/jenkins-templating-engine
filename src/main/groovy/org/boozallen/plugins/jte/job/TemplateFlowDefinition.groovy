@@ -30,7 +30,6 @@ import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 import org.jenkinsci.plugins.workflow.flow.FlowDurabilityHint
 import org.jenkinsci.plugins.workflow.flow.DurabilityHintProvider
 import org.jenkinsci.plugins.workflow.flow.GlobalDefaultFlowDurabilityLevel
-import java.util.List
 
 class TemplateFlowDefinition extends FlowDefinition {
 
