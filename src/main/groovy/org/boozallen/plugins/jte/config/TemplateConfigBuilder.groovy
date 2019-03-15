@@ -16,7 +16,6 @@
 
 package org.boozallen.plugins.jte.config
 
-import java.util.ArrayList
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted
 
 /*
@@ -42,33 +41,40 @@ abstract class TemplateConfigBuilder extends Script{
         def node_config = object_stack.pop()
         def node_name = node_stack.pop()
 
-        if (object_stack.size()) 
+        if (object_stack.size()){
             object_stack.last() << [ (node_name): node_config ]
-        else 
+        } else {
             templateConfig.config << [ (name): node_config]
+        }
     }
 
+    /*
     @Whitelisted
     Object getVariable(String name){
         return super.getVariable(name)
     }
+    */
 
     @Whitelisted
     void setProperty(String name, value){
-        if (name.equals("merge") && value.equals(true))
+        if (name.equals("merge") && value.equals(true)){
             templateConfig.merge << node_stack.join(".")
-        else if (name.equals("override") && value.equals(true)) 
+        } else if (name.equals("override") && value.equals(true)){
             templateConfig.override << node_stack.join(".")
-        else if (object_stack.size()) 
+        } else if (object_stack.size()){ 
             object_stack.last()[name] = value
-        else 
+        } else { 
             templateConfig.config[name] = value
+        }
     }
 
     @Whitelisted
     void propertyMissing(String name){
-        if (object_stack.size()) object_stack.last()[name] = [:]
-        else templateConfig.config[name] = [:]
+        if (object_stack.size()){
+            object_stack.last()[name] = [:]
+        } else {
+            templateConfig.config[name] = [:]
+        }
     }
 
 }

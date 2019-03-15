@@ -24,10 +24,10 @@ import org.boozallen.plugins.jte.config.TemplateConfigDsl
 class TemplateConfigDslSpec extends Specification {
 
     def 'Empty Config File'(){
-        when: 
+        setup: 
             String config = "" 
+        when: 
             TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-
         then: 
             configObject.config == [:]
             configObject.merge.isEmpty()
@@ -35,12 +35,13 @@ class TemplateConfigDslSpec extends Specification {
     }
 
     def 'Flat Keys Configuration'(){
-        when: 
+        setup: 
             String config = """
             a = 3
             b = "hi" 
             c = true 
             """
+        when: 
             TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
         then: 
             configObject.config == [
@@ -51,7 +52,7 @@ class TemplateConfigDslSpec extends Specification {
     }
 
     def 'Nested Keys Configuration'(){
-        when: 
+        setup: 
             String config = """
             random = "hi" 
             application_environments{
@@ -68,6 +69,7 @@ class TemplateConfigDslSpec extends Specification {
                 }
             }
             """
+        when: 
             TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
         then: 
             configObject.config == [
@@ -89,19 +91,20 @@ class TemplateConfigDslSpec extends Specification {
     }
 
     def 'One Merge First Key'(){
-        when: 
+        setup: 
             String config = """
             application_environments{
                 merge = true
             } 
             """
+        when: 
             TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
         then: 
             configObject.merge == [ "application_environments" ] as Set
     }
 
     def 'One Merge Nested Key'(){
-        when: 
+        setup: 
             String config = """
             application_environments{
                 dev{
@@ -109,13 +112,14 @@ class TemplateConfigDslSpec extends Specification {
                 }
             } 
             """
+        when: 
             TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
         then: 
             configObject.merge == [ "application_environments.dev" ] as Set
     }
 
     def 'Multi-Merge'(){
-        when: 
+        setup: 
             String config = """
             application_environments{
                 dev{
@@ -126,6 +130,7 @@ class TemplateConfigDslSpec extends Specification {
                 }
             } 
             """
+        when: 
             TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
         then: 
             configObject.merge == [ "application_environments.dev", "application_environments.test" ] as Set 
@@ -158,7 +163,7 @@ class TemplateConfigDslSpec extends Specification {
     }
 
     def 'Multi-Override'(){
-        when: 
+        setup: 
             String config = """
             application_environments{
                 dev{
@@ -169,19 +174,67 @@ class TemplateConfigDslSpec extends Specification {
                 }
             } 
             """
+        when: 
             TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
         then: 
             configObject.override == [ "application_environments.dev", "application_environments.test" ] as Set 
     }
 
     def 'File Access Throws Security Exception'(){
-        when: 
+        setup: 
             String config = """
             password = new File("/etc/passwd").text 
             """
+        when: 
             TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
         then: 
             thrown(SecurityException)
+    }
+
+    def "nested blank entry results in empty hashmap"(){
+        setup: 
+            String config = """
+            application_environments{
+                dev
+            }
+            """
+        when: 
+            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+        then: 
+            configObject.getConfig() == [ 
+                application_environments: [ 
+                    dev: [:]
+                ]
+            ]
+    }
+
+    def "root blank entry results in empty hashmap"(){
+        setup: 
+            String config = "field"
+        when: 
+            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+        then: 
+            configObject.getConfig() == [ field: [:] ]
+    }
+
+    def "merge key when not true is not added to list"(){
+        setup:
+            String config = "a{ merge = false }"
+        when: 
+            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+        then: 
+            configObject.getConfig() == [ a: [ merge: false ] ]
+            configObject.merge == [] as Set
+    }
+
+    def "override key when not true is not added to list"(){
+        setup:
+            String config = "a{ override = false }"
+        when: 
+            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+        then: 
+            configObject.getConfig() == [ a: [ override: false ] ]
+            configObject.override == [] as Set
     }
 
 }

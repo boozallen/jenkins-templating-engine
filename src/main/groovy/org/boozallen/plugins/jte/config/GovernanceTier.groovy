@@ -77,7 +77,7 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
         } 
         return pipelineTemplate 
     }
-   
+
 
     /*
         returns the job's GovernanceTier hierarchy in ascending order
