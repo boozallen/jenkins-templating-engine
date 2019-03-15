@@ -37,16 +37,30 @@ class ScmSpec extends Specification {
     @Shared
     private WorkflowJob project
 
-    @Rule GitSampleRepoRule sampleRepo = new GitSampleRepoRule()
+    @Shared
+    @ClassRule GitSampleRepoRule sampleRepo = new GitSampleRepoRule()
+
+    @Shared
     SCM scm = null
+
+    @Shared
     String cpsScriptPath = "cpsScript.groovy"
+
+    @Shared
     String cpsScript = """
                import org.jenkinsci.plugins.workflow.cps.*
                import org.jenkinsci.plugins.workflow.job.*
               
 """
+    @Shared
+    private WorkflowJob scmWorkflowJob = null
 
-    def setup(){
+    @Shared WorkflowJob stdWorkflowJob = null
+
+    @Shared
+    CpsScmFlowDefinition cpsScmFlowDefinition = null
+
+    def setupSpec(){
         // initialize repository
         sampleRepo.init()
 
@@ -71,16 +85,81 @@ class ScmSpec extends Specification {
                 null,
                 Collections.<GitSCMExtension>emptyList()
         )
+
+        scmWorkflowJob = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "scmWorkflowJob");
+        cpsScmFlowDefinition = new CpsScmFlowDefinition(scm, cpsScriptPath)
+        scmWorkflowJob.setDefinition(cpsScmFlowDefinition);
+
+        stdWorkflowJob = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "Utils.FileSystemWrapper.fsFrom !WorkflowMultiBranchProject,!CpsScmFlowDefinition");
+
+        def cpsFlowDef = new CpsFlowDefinition(cpsScript, false)// false is needed to access CpsThread
+        stdWorkflowJob.setDefinition(cpsFlowDef);
+
+    }
+
+    def setup(){}
+
+
+    @Ignore //can't mock SCMFileSystem.of probably because it is Abstract
+    @WithoutJenkins
+    def "Utils.getSCMFileSystemOrNull(scm,job); SCMFileSystem.of Exception"(){
+        given: "mocked job, listener, a valid printstream for 'logger'"
+
+        WorkflowJob job = GroovyMock(WorkflowJob)
+        TaskListener listener = GroovyMock(TaskListener)
+        ByteArrayOutputStream bs = new ByteArrayOutputStream()
+        PrintStream logger = new PrintStream(bs)
+        String message = "SCMFileSystem.of Exception"
+
+        GroovyMock(global: true, SCMFileSystem)
+        SCMFileSystem.of(job, scm) >> { throw new Exception("message") }
+
+        GroovySpy(Utils.class, global:true)
+        _ * Utils.getCurrentJob() >> { return job }
+        _ * Utils.getListener() >> {return listener}
+        _ * Utils.getLogger() >> {return logger}
+
+        when:"Utils.getSCMFileSystemOrNull is called with the project's job and scm"
+
+        SCMFileSystem scmfs = Utils.getSCMFileSystemOrNull(scm, job)
+
+        then:"it should throw internal exception and be logged"
+        notThrown(Exception)
+        null == scmfs
+        bs.toString("UTF-8") == message
+    }
+
+
+    @WithoutJenkins
+    def "Utils.getSCMFileSystemOrNull(scm,job); using Util.currentJob"(){
+        given: "a workflowjob project with a valid scm"
+
+        WorkflowJob job = null
+        TaskListener listener = null
+        PrintStream logger = null
+
+        GroovySpy(Utils.class, global:true)
+        _ * Utils.getCurrentJob() >> { return job }
+        _ * Utils.getListener() >> {return listener}
+        _ * Utils.getLogger() >> {return logger}
+
+        when:"Utils.getSCMFileSystemOrNull is called with the project's job and scm"
+        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(scmWorkflowJob);
+        FlowExecution execution = build.execution
+        listener = execution.owner.listener
+        logger = listener.logger
+        job = execution.owner.executable.parent
+
+        SCMFileSystem scmfs = Utils.getSCMFileSystemOrNull(scm, Utils.getCurrentJob())
+
+        then:"it should return a valid SCM filesystem"
+        notThrown(Exception)
+        null != scmfs
     }
 
     @WithoutJenkins
     def "Utils.createSCMFileSystemOrNull(scm,job); using Util.currentJob"(){
-        given: "a workflowjob project with a valid scm"
-
-        project = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "Utils.createSCMFileSystemOrNull(scm,job); using Util.currentJob");
-
-        def cpsFlowDef = new CpsScmFlowDefinition(scm, cpsScriptPath)
-        project.setDefinition(cpsFlowDef);
+        given: "a workflowjob project with a valid scm; valid Utils CPS properties"
 
         WorkflowJob job = null
         TaskListener listener = null
@@ -92,7 +171,7 @@ class ScmSpec extends Specification {
         _ * Utils.getLogger() >> {return logger}
 
         when:"Utils.createSCMFileSystemOrNull is called with the project's job and scm"
-        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(project);
+        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(scmWorkflowJob);
         FlowExecution execution = build.execution
         listener = execution.owner.listener
         logger = listener.logger
@@ -108,10 +187,6 @@ class ScmSpec extends Specification {
 
     @WithoutJenkins
     def "Utils.FileSystemWrapper.fsFrom(job, listener, logger) !WorkflowMultiBranchProject"(){
-        project = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "Utils.FileSystemWrapper.fsFrom !WorkflowMultiBranchProject");
-
-        def cpsFlowDef = new CpsScmFlowDefinition(scm, cpsScriptPath)// false is needed to access CpsThread
-        project.setDefinition(cpsFlowDef);
 
         WorkflowJob job = null
         TaskListener listener = null
@@ -123,7 +198,7 @@ class ScmSpec extends Specification {
         _ * Utils.getLogger() >> {return logger}
 
         when:
-        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(project);
+        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(scmWorkflowJob);
         FlowExecution execution = build.execution
         listener = execution.owner.listener
         logger = listener.logger
@@ -138,13 +213,9 @@ class ScmSpec extends Specification {
     }
 
     def "Utils.FileSystemWrapper.fsFrom(job, listener, logger) !WorkflowMultiBranchProject,!CpsScmFlowDefinition"(){
-        project = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "Utils.FileSystemWrapper.fsFrom !WorkflowMultiBranchProject,!CpsScmFlowDefinition");
-
-        def cpsFlowDef = new CpsFlowDefinition(cpsScript, false)// false is needed to access CpsThread
-        project.setDefinition(cpsFlowDef);
 
         when:
-        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(project);
+        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(stdWorkflowJob);
         FlowExecution execution = build.execution
         TaskListener listener = execution.owner.listener
         PrintStream logger = listener.logger
@@ -162,11 +233,10 @@ class ScmSpec extends Specification {
     @Ignore
     def "Utils.FileSystemWrapper.fsFrom(job, listener, logger) WorkflowMultiBranchProject"(){
         WorkflowMultiBranchProject wfmbp = groovyJenkinsRule.jenkins.createProject(WorkflowMultiBranchProject, "Utils.FileSystemWrapper.fsFrom !WorkflowMultiBranchProject");
-        project = wfmbp
 
         //wfmbp.
         def cpsFlowDef = new CpsScmFlowDefinition(scm, cpsScriptPath)// false is needed to access CpsThread
-        project.setDefinition(cpsFlowDef);
+        wfmbp.setDefinition(cpsFlowDef);
 
         WorkflowJob job = null
         TaskListener listener = null
@@ -178,7 +248,7 @@ class ScmSpec extends Specification {
         _ * Utils.getLogger() >> {return logger}
 
         when:
-        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(project);
+        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(wfmbp);
         FlowExecution execution = build.execution
         listener = execution.owner.listener
         logger = listener.logger
@@ -192,60 +262,38 @@ class ScmSpec extends Specification {
         null != scmfs
     }
 
-    @Category([Unstable])
-    @Ignore // not getting scm file system
-    def "Utils.getFileContents; using jenkinsRule"(){
-        project = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "Utils.CpsContext#getFileContents");
 
-        def cpsFlowDef = new CpsFlowDefinition(cpsScript, false)// false is needed to access CpsThread
+    def "Utils.getFileContents"(){
 
-        project.setDefinition(cpsFlowDef);
-        String filePath = "/pipeline_config.groovy"
-        String fileContents = """
-libraries{
-  sdp{
-    images{
-      registry = "http://0.0.0.0:5000" // registry url
-      cred = "sdp-docker-registry"// jenkins cred id to authenticate
-      docker_args = "--network=try-it-out_sdp"  // docker runtime args
-    }
-  }
-  github_enterprise
-  sonarqube{
-    enforce_quality_gate = true
-  }
-  docker{
-    registry = "0.0.0.0:5000"
-    cred = "sdp-docker-registry"
-  }
-}
-"""
+        given:
+        WorkflowJob job = null
+        TaskListener listener = null
+        PrintStream logger = null
 
-        SCM scm = new SingleFileSCM(filePath, fileContents) //new ExtractResourceSCM("/sample-app.zip")
-        // Enqueue a build of the Pipeline, wait for it to complete, and assert success
-        WorkflowRun build = null
+        GroovySpy(Utils.class, global:true)
+        _ * Utils.getCurrentJob() >> { return job }
+        _ * Utils.getListener() >> {return listener}
+        _ * Utils.getLogger() >> {return logger}
 
         when:
-        build = groovyJenkinsRule.buildAndAssertSuccess(project);
+        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(scmWorkflowJob);
         FlowExecution execution = build.execution
+        listener = execution.owner.listener
+        logger = listener.logger
+        job = execution.owner.executable.parent
 
-        String output = Utils.getFileContents(filePath, scm, "[JTE]")
+        String output = Utils.getFileContents(cpsScriptPath, scm, "[JTE]")
 
         then:
         notThrown(Exception)
 
-        output == fileContents
+        output == cpsScript
     }
 
     def "SCMFileSystem.of; using jenkinsRule"(){// testing that setup of scm is correct
-        project = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "SCMFileSystem.of; using jenkinsRule");
-
-        def cpsFlowDef = new CpsScmFlowDefinition(scm, cpsScriptPath)
-
-        project.setDefinition(cpsFlowDef);
 
         when:
-        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(project);
+        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(scmWorkflowJob);
         FlowExecution execution = build.execution
         WorkflowJob job = execution.owner.executable.parent
 
