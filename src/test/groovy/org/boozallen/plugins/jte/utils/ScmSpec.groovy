@@ -6,11 +6,13 @@ import hudson.plugins.git.GitSCM
 import hudson.plugins.git.SubmoduleConfig
 import hudson.plugins.git.extensions.GitSCMExtension
 import hudson.scm.SCM
+import jenkins.branch.BranchProperty
+import jenkins.branch.BranchSource
+import jenkins.branch.DefaultBranchPropertyStrategy
+import jenkins.plugins.git.GitSCMSource
 import jenkins.plugins.git.GitSampleRepoRule
 import jenkins.scm.api.SCMFileSystem
 import org.boozallen.plugins.jte.Utils
-import org.boozallen.plugins.jte.testcategories.InProgress
-import org.boozallen.plugins.jte.testcategories.Unstable
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowExecution
@@ -60,6 +62,8 @@ class ScmSpec extends Specification {
     @Shared
     CpsScmFlowDefinition cpsScmFlowDefinition = null
 
+    @Rule public GitSampleRepoRule localRepo = new GitSampleRepoRule();
+
     def setupSpec(){
         // initialize repository
         sampleRepo.init()
@@ -73,8 +77,11 @@ class ScmSpec extends Specification {
             }
         }
         """)
+        // added for WorkflowMultibranchProject
+        sampleRepo.write("Jenkinsfile", "echo \"branch=master\"; node {checkout scm; echo readFile('file')}");
+        sampleRepo.write("file", "initial content"); ;
         sampleRepo.git("add", "*")
-        sampleRepo.git("commit", "--message=init")
+        sampleRepo.git("commit", "--all", "--message=flow");
         // create Governance Tier
         scm = new GitSCM(
                 GitSCM.createRepoList(sampleRepo.toString(), null),
@@ -158,6 +165,33 @@ class ScmSpec extends Specification {
     }
 
     @WithoutJenkins
+    def "Utils.getSCMFileSystemOrNull(null,job); using Util.currentJob"(){
+        given: "a workflowjob project with a valid scm"
+
+        WorkflowJob job = null
+        TaskListener listener = null
+        PrintStream logger = null
+
+        GroovySpy(Utils.class, global:true)
+        _ * Utils.getCurrentJob() >> { return job }
+        _ * Utils.getListener() >> {return listener}
+        _ * Utils.getLogger() >> {return logger}
+
+        when:"Utils.getSCMFileSystemOrNull is called with the project's job and *no* scm"
+        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(scmWorkflowJob);
+        FlowExecution execution = build.execution
+        listener = execution.owner.listener
+        logger = listener.logger
+        job = execution.owner.executable.parent
+
+        SCMFileSystem scmfs = Utils.getSCMFileSystemOrNull(null, Utils.getCurrentJob())
+
+        then:"it should return a valid SCM filesystem"
+        notThrown(Exception)
+        null != scmfs
+    }
+
+    @WithoutJenkins
     def "Utils.createSCMFileSystemOrNull(scm,job); using Util.currentJob"(){
         given: "a workflowjob project with a valid scm; valid Utils CPS properties"
 
@@ -229,14 +263,17 @@ class ScmSpec extends Specification {
         null == scmfs
     }
 
-    @Category([InProgress])
-    @Ignore
-    def "Utils.FileSystemWrapper.fsFrom(job, listener, logger) WorkflowMultiBranchProject"(){
-        WorkflowMultiBranchProject wfmbp = groovyJenkinsRule.jenkins.createProject(WorkflowMultiBranchProject, "Utils.FileSystemWrapper.fsFrom !WorkflowMultiBranchProject");
 
-        //wfmbp.
-        def cpsFlowDef = new CpsScmFlowDefinition(scm, cpsScriptPath)// false is needed to access CpsThread
-        wfmbp.setDefinition(cpsFlowDef);
+    def "Utils.FileSystemWrapper.fsFrom(job, listener, logger) WorkflowMultiBranchProject"(){
+
+        WorkflowMultiBranchProject workflowMultiBranchProject = groovyJenkinsRule.jenkins.createProject(WorkflowMultiBranchProject,
+                "Utils.FileSystemWrapper.fsFrom !WorkflowMultiBranchProject");
+
+
+        workflowMultiBranchProject.getSourcesList().add(
+                new BranchSource(new GitSCMSource(null, sampleRepo.toString(), "", "*", "", false),
+                        new DefaultBranchPropertyStrategy(new BranchProperty[0])));
+
 
         WorkflowJob job = null
         TaskListener listener = null
@@ -248,17 +285,19 @@ class ScmSpec extends Specification {
         _ * Utils.getLogger() >> {return logger}
 
         when:
-        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(wfmbp);
+
+        workflowMultiBranchProject.scheduleBuild2(0).getFuture().get();
+        groovyJenkinsRule.waitUntilNoActivity();
+        job = workflowMultiBranchProject.getItem("master");
+        WorkflowRun build = job.getLastBuild()
         FlowExecution execution = build.execution
         listener = execution.owner.listener
         logger = listener.logger
-        job = execution.owner.executable.parent
 
         SCMFileSystem scmfs = Utils.FileSystemWrapper.fsFrom(job, listener, logger)
 
         then:
         notThrown(Exception)
-
         null != scmfs
     }
 
