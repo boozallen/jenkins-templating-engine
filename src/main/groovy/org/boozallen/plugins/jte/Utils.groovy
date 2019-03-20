@@ -32,13 +32,12 @@ import jenkins.scm.api.SCMFileSystem
 import jenkins.scm.api.SCMSource
 import jenkins.scm.api.SCMFile
 import hudson.scm.SCM
-import org.jenkinsci.plugins.workflow.steps.scm.SCMStep
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import hudson.model.Queue
 import hudson.model.TaskListener
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
-import org.jenkinsci.plugins.workflow.cps.CpsGroovyShell
+
 import java.lang.reflect.Field
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -133,30 +132,15 @@ class Utils implements Serializable{
         throw exception if checkout failed or filePath is directory 
     */
     static String getFileContents(String filePath, SCM scm, String loggingDescription){
-        
-        String file 
-        
+
         WorkflowJob job = getCurrentJob()
-        ItemGroup<?> parent = job.getParent()
         PrintStream logger = getLogger() 
 
         // create SCMFileSystem 
-        SCMFileSystem fs = null
-
-        // if provided a SCM, try to build directly:
-        if (scm){
-            if (SCMFileSystem.supports(scm)){
-                fs = SCMFileSystem.of(job, scm)
-            }else{
-                return null
-            }
-        }else{ // try to infer SCM info from job properties
-
-            fs = FileSystemWrapper.fsFrom(job, listener, logger)
-        }
+        SCMFileSystem fs = scmFileSystemOrNull(scm, job, logger )
 
         if (fs){
-            FileSystemWrapper fsw = new FileSystemWrapper(fs: fs, log: new Logger(desc: loggingDescription), scmKey: scm?.key)
+            FileSystemWrapper fsw = new FileSystemWrapper(fs: fs, log: new Logger(printStream: logger, desc: loggingDescription), scmKey: scm?.key)
             return fsw.getFileContents(filePath)
         }
 
@@ -168,16 +152,7 @@ class Utils implements Serializable{
     */
     static SCMFileSystem createSCMFileSystemOrNull(SCM scm, WorkflowJob job, ItemGroup<?> parent, PrintStream logger = getLogger() ){
 
-        if (scm){
-            try{
-                return SCMFileSystem.of(job, scm)
-            }catch(any){
-                logger.println any 
-                return null 
-            }
-        }else{              
-            return FileSystemWrapper.fsFrom(job, listener, logger)
-        } 
+        return scmFileSystemOrNull(scm, job, logger)
     }
 
     /**
@@ -186,7 +161,7 @@ class Utils implements Serializable{
      * @param logger optional a printStream to send error/logging messages
      * @return null or a valid SCMFileSystem
     */
-    static SCMFileSystem getSCMFileSystemOrNull(SCM scm, WorkflowJob job, PrintStream logger = getLogger() ){
+    static SCMFileSystem scmFileSystemOrNull(SCM scm, WorkflowJob job, PrintStream logger = getLogger() ){
 
         if (scm){
             try{
@@ -196,7 +171,7 @@ class Utils implements Serializable{
                 return null
             }
         }else{
-            return FileSystemWrapper.fsFrom(job, listener, logger)
+            return FileSystemWrapper.fsFrom(job, getListener(), logger)
         }
     }
 
