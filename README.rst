@@ -84,7 +84,7 @@ time it takes to develop a mature DevSecOps pipeline from months to days and we'
 the libraries we've built while incorporating new tool integrations as they are required across our client
 engagements. 
 
-Simplify Pipline Maintainability
+Simplify Pipeline Maintainability
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Let's face it: typically pipelines are developed by a core team of DevOps engineers that are working with
 multiple development teams simultaneously.  Much of the code is the same and can be pulled into a traditional
