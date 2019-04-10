@@ -309,6 +309,7 @@ class ScmSpec extends Specification {
         then:
         notThrown(Exception)
         null != scmfs
+        groovyJenkinsRule.assertLogContains("branch=master", build);
     }
 
     def "Utils.FileSystemWrapper.fsFrom(job, listener, logger) WorkflowMultiBranchProject:dev/main"(){
