@@ -44,12 +44,6 @@ class ScmSpec extends Specification {
     SCM scm = null
 
     @Shared
-    @ClassRule GitSampleRepoRule multiBranchRepo = new GitSampleRepoRule()
-
-    @Shared
-    SCM multiBranchScm = null
-
-    @Shared
     String cpsScriptPath = "cpsScript.groovy"
 
     @Shared
@@ -94,22 +88,7 @@ class ScmSpec extends Specification {
         sampleRepo.write("Jenkinsfile", "echo \"branch=master\"; node {checkout scm; echo readFile('file')}");
         sampleRepo.write("file", "initial content"); ;
         sampleRepo.git("add", "*")
-        sampleRepo.git("commit", "--all", "--message=flow");
-
-        multiBranchRepo.init()
-        multiBranchRepo.git("checkout", "-b", "dev/main");
-        multiBranchRepo.write(cpsScriptPath, cpsScript);
-        multiBranchRepo.write(pipelineConfigPath, pipelineConfigScript)
-
-        multiBranchRepo.write("Jenkinsfile", '''echo branch=${env.BRANCH_NAME}
-                        node {
-                          checkout scm
-                          echo \"workspace=${pwd().replaceFirst('.+dev', 'dev')}
-                          echo readFile('file')
-                        };''');
-        multiBranchRepo.write("file", "initial dev/main content"); ;
-        multiBranchRepo.git("add", "*")
-        multiBranchRepo.git("commit", "--all", "--message=flow");
+        sampleRepo.git("commit", "--all", "--message=master");
 
 
         // create Governance Tier
@@ -335,9 +314,23 @@ class ScmSpec extends Specification {
     def "Utils.FileSystemWrapper.fsFrom(job, listener, logger) WorkflowMultiBranchProject:dev/main"(){
 
         WorkflowMultiBranchProject mp = groovyJenkinsRule.jenkins.createProject(WorkflowMultiBranchProject.class, "wfmbp:dev/main");
-        GitSCMSource source = new GitSCMSource(multiBranchRepo.toString());
+        GitSCMSource source = new GitSCMSource(sampleRepo.toString());
         source.setTraits(Collections.singletonList(new BranchDiscoveryTrait()));
         mp.getSourcesList().add(new BranchSource(source));
+
+        sampleRepo.git("checkout", "-b", "dev/main");
+        sampleRepo.write(cpsScriptPath, cpsScript);
+        sampleRepo.write(pipelineConfigPath, pipelineConfigScript)
+
+        sampleRepo.write("Jenkinsfile", '''echo "branch=${env.BRANCH_NAME}"
+                        node {
+                          checkout scm
+                          echo "workspace=${pwd().replaceFirst('.+dev', 'dev')}"
+                          echo readFile('file')
+                        };''');
+        sampleRepo.write("file", "initial dev/main content"); ;
+        sampleRepo.git("add", "*")
+        sampleRepo.git("commit", "--all", "--message=dev/main");
 
         WorkflowJob job = null
         TaskListener listener = null
@@ -365,6 +358,7 @@ class ScmSpec extends Specification {
         then:
         notThrown(Exception)
         null != scmfs
+        groovyJenkinsRule.assertLogContains("branch=dev/main", build);
     }
 
     def "Utils.getFileContents"(){
