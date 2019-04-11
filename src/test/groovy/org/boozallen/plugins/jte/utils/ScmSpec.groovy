@@ -14,6 +14,7 @@ import jenkins.plugins.git.GitSampleRepoRule
 import jenkins.plugins.git.traits.BranchDiscoveryTrait
 import jenkins.scm.api.SCMFileSystem
 import org.boozallen.plugins.jte.Utils
+import org.boozallen.plugins.jte.testcategories.*
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowExecution
@@ -22,6 +23,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 import org.junit.ClassRule
 import org.junit.Rule
+import org.junit.experimental.categories.Category
 import org.jvnet.hudson.test.GroovyJenkinsRule
 import org.jvnet.hudson.test.WithoutJenkins
 import spock.lang.Ignore
