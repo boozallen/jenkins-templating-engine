@@ -32,7 +32,6 @@ import jenkins.scm.api.SCMFileSystem
 import jenkins.scm.api.SCMSource
 import jenkins.scm.api.SCMFile
 import hudson.scm.SCM
-import org.jenkinsci.plugins.workflow.steps.scm.SCMStep
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import hudson.model.Queue
 import hudson.model.TaskListener
