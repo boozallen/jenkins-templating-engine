@@ -227,9 +227,9 @@ class Utils implements Serializable{
         }
 
         this.build = (WorkflowRun) exec
-        WorkflowJob job = build.getParent()
+        this.currentJob = build.getParent()
 
-        return job 
+        return currentJob
     }
 
     @Whitelisted
