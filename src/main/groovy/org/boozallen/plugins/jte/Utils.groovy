@@ -108,17 +108,11 @@ class Utils implements Serializable{
     }
 
     static PrintStream getLogger(){
-        if (logger){
-            return logger 
-        }
         getCurrentJob()
         return logger 
     }
 
     static TaskListener getListener(){
-        if (listener){
-            return listener
-        }
         getCurrentJob()
         return listener 
     }
@@ -140,7 +134,7 @@ class Utils implements Serializable{
         SCMFileSystem fs = scmFileSystemOrNull(scm, job, logger )
 
         if (fs){
-            FileSystemWrapper fsw = new FileSystemWrapper(fs: fs, log: new Logger(printStream: logger, desc: loggingDescription), scmKey: scm?.key)
+            FileSystemWrapper fsw = new FileSystemWrapper(fs: fs, log: new Logger(printStream: logger, desc: loggingDescription, key: scm?.key), scmKey: scm?.key)
             return fsw.getFileContents(filePath)
         }
 
@@ -182,11 +176,6 @@ class Utils implements Serializable{
      * @throws IllegalStateException if is called outside of a CpsThread or is not executed in a WorkflowRun
      */
     static WorkflowJob getCurrentJob(){
-
-        if (currentJob){
-            return currentJob
-        }
-
         // assumed this is being run from a job
         CpsThread thread = CpsThread.current()
         if (!thread){
