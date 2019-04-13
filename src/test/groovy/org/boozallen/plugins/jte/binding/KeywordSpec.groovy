@@ -17,9 +17,8 @@ import spock.lang.*
 import org.junit.*
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.boozallen.plugins.jte.config.TemplateConfigObject
-import org.boozallen.plugins.jte.config.TemplateConfigException
 
-class ApplicationEnvironmentSpec extends Specification{
+class KeywordSpec extends Specification{
 
     TemplateBinding binding = new TemplateBinding() 
     CpsScript script = GroovyMock(CpsScript)
@@ -39,10 +38,45 @@ class ApplicationEnvironmentSpec extends Specification{
 
     def "injector inserts keyword into binding"(){
         when: 
-            injectKeywords(["a": 1])
+            injectKeywords([a: 1])
         then: 
             assert binding.hasVariable("a")
-            assert binding.getVariable("a") instanceof Keyword 
     }
 
+    def "retrieving keyword from binding results in value"(){
+        when: 
+            injectKeywords([a: 1])
+        then: 
+            assert binding.getVariable("a") == 1 
+    }
+
+    def "inject multiple keywords"(){
+        when: 
+            injectKeywords([
+                a: 1,
+                b: 2
+            ])
+        then: 
+            assert binding.hasVariable("a")
+            assert binding.hasVariable("b")
+    }
+
+    def "override during initialization throws error"(){
+        when:
+            injectKeywords([a: 1])
+            binding.setVariable("a", 2)
+        then: 
+            TemplateException ex = thrown()
+            assert ex.message == "Keyword a already defined."
+    }
+
+    def "override post initialization throws error"(){
+        when:
+            injectKeywords([a: 1])
+            binding.lock()
+            binding.setVariable("a", 2)
+        then: 
+            TemplateException ex = thrown()
+            assert ex.message == "Variable a is reserved as a template Keyword."
+    }
 }
