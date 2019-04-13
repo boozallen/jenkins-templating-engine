@@ -22,6 +22,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.experimental.categories.Category
 import org.jvnet.hudson.test.GroovyJenkinsRule
 import org.jvnet.hudson.test.WithoutJenkins
