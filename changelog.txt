@@ -1,4 +1,7 @@
 
+2019-04-12 Carlos OKieffe
+  * adding library sources base directory
+
 2019-04-11 Carlos OKieffe
   * adding changelog.txt
 
