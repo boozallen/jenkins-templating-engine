@@ -55,6 +55,7 @@ void createWorkspaceStash(){
   try{
       if (scm){
           node{
+          	  cleanWs()
               checkout scm 
               stash "workspace" 
           }
