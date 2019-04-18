@@ -25,7 +25,12 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted
 import jenkins.model.Jenkins
 
 /*
-    represents a library step
+    represents a library step. 
+
+    this class serves as a wrapper class for the library step Script. 
+    It's necessary for two reasons: 
+    1. To give steps binding protection via TemplatePrimitive
+    2. To provide a means to do LifeCycle Hooks before/after step execution
 */
 class StepWrapper extends TemplatePrimitive{
     public static final String libraryConfigVariable = "config" 
@@ -37,16 +42,25 @@ class StepWrapper extends TemplatePrimitive{
     /*
         need a call method defined on method missing so that 
         CpsScript recognizes the StepWrapper as something it 
-        should execute. 
+        should execute in the binding. 
     */
     def call(Object... args){
         return invoke("call", args) 
     }
 
+    /*
+        all other method calls go through CpsScript.getProperty to 
+        first retrieve the StepWrapper and then attempt to invoke a 
+        method on it. 
+    */
     def methodMissing(String methodName, args){
         return invoke(methodName, args)     
     }
 
+    /*
+        pass method invocations on the wrapper to the underlying
+        step implementation script. 
+    */
     def invoke(String methodName, Object... args){
         if(InvokerHelper.getMetaClass(impl).respondsTo(impl, methodName, args)){
             /*
