@@ -44,6 +44,7 @@ class StepWrapper extends TemplatePrimitive{
         CpsScript recognizes the StepWrapper as something it 
         should execute in the binding. 
     */
+    @Whitelisted
     def call(Object... args){
         return invoke("call", args) 
     }
@@ -53,6 +54,7 @@ class StepWrapper extends TemplatePrimitive{
         first retrieve the StepWrapper and then attempt to invoke a 
         method on it. 
     */
+    @Whitelisted
     def methodMissing(String methodName, args){
         return invoke(methodName, args)     
     }
@@ -61,6 +63,7 @@ class StepWrapper extends TemplatePrimitive{
         pass method invocations on the wrapper to the underlying
         step implementation script. 
     */
+    @Whitelisted
     def invoke(String methodName, Object... args){
         if(InvokerHelper.getMetaClass(impl).respondsTo(impl, methodName, args)){
             /*

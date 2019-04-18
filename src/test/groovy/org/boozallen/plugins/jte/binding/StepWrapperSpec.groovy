@@ -13,8 +13,6 @@
 
 package org.boozallen.plugins.jte.binding
 
-
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.config.TemplateConfigObject
 import org.boozallen.plugins.jte.config.TemplateGlobalConfig
 import org.boozallen.plugins.jte.config.TemplateLibrarySource
@@ -25,7 +23,6 @@ import org.junit.Rule
 import org.jvnet.hudson.test.JenkinsRule
 import org.jvnet.hudson.test.BuildWatcher
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
-import com.cloudbees.hudson.plugins.folder.Folder
 import jenkins.plugins.git.GitSampleRepoRule
 import hudson.plugins.git.GitSCM
 import hudson.plugins.git.BranchSpec
