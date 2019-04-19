@@ -25,7 +25,12 @@ import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted
 import jenkins.model.Jenkins
 
 /*
-    represents a library step
+    represents a library step. 
+
+    this class serves as a wrapper class for the library step Script. 
+    It's necessary for two reasons: 
+    1. To give steps binding protection via TemplatePrimitive
+    2. To provide a means to do LifeCycle Hooks before/after step execution
 */
 class StepWrapper extends TemplatePrimitive{
     public static final String libraryConfigVariable = "config" 
@@ -33,36 +38,50 @@ class StepWrapper extends TemplatePrimitive{
     private CpsScript script
     private String name
     private String library 
-    
-    StepWrapper(){}
 
-    
-    StepWrapper(CpsScript script, Object impl, String name, String library){ 
-        this.script = script
-        
-        if(!InvokerHelper.getMetaClass(impl).respondsTo(impl, "call")){
-            throw new TemplateException ("StepWrapper impl object must respond to 'call'. Was passed ${impl.getClass()}")
-        }
-
-        this.impl = impl
-        this.name = name
-        this.library = library 
-    }
-
+    /*
+        need a call method defined on method missing so that 
+        CpsScript recognizes the StepWrapper as something it 
+        should execute in the binding. 
+    */
     @Whitelisted
     def call(Object... args){
-        /*
-            any invocation of pipeline code from a plugin class of more than one
-            executable script or closure requires to be parsed through the execution
-            shell or the method returns prematurely after the first execution
-        */
-        String invoke =  Jenkins.instance
-                                .pluginManager
-                                .uberClassLoader
-                                .loadClass("org.boozallen.plugins.jte.binding.StepWrapper")
-                                .getResource("StepWrapperImpl.groovy")
-                                .text
-        return Utils.parseScript(invoke, script.getBinding())(name, library, script, impl, args)
+        return invoke("call", args) 
+    }
+
+    /*
+        all other method calls go through CpsScript.getProperty to 
+        first retrieve the StepWrapper and then attempt to invoke a 
+        method on it. 
+    */
+    @Whitelisted
+    def methodMissing(String methodName, args){
+        return invoke(methodName, args)     
+    }
+
+    /*
+        pass method invocations on the wrapper to the underlying
+        step implementation script. 
+    */
+    @Whitelisted
+    def invoke(String methodName, Object... args){
+        if(InvokerHelper.getMetaClass(impl).respondsTo(impl, methodName, args)){
+            /*
+                any invocation of pipeline code from a plugin class of more than one
+                executable script or closure requires to be parsed through the execution
+                shell or the method returns prematurely after the first execution
+            */
+            String invoke =  Jenkins.instance
+                                    .pluginManager
+                                    .uberClassLoader
+                                    .loadClass("org.boozallen.plugins.jte.binding.StepWrapper")
+                                    .getResource("StepWrapperImpl.groovy")
+                                    .text
+            Script step = Utils.parseScript(invoke, script.getBinding())
+            return step(name, library, script, impl, methodName, args)
+        }else{
+            throw new TemplateException("Step ${name} from the library ${library} does not have the method ${methodName}(${args.collect{ it.getClass().simpleName }.join(", ")})")
+        }
     }
 
     void throwPreLockException(){
