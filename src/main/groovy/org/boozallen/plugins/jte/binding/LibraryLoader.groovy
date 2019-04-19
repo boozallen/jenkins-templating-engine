@@ -62,7 +62,12 @@ import jenkins.model.Jenkins
                                 String stepName = step.getName() - ".groovy" 
                                 Script stepImpl = Utils.parseScript(step.contentAsString(), script.getBinding())
                                 stepImpl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return libConfig }
-                                StepWrapper sw = new StepWrapper(script, stepImpl, stepName, libName) 
+                                StepWrapper sw = new StepWrapper(
+                                    script: script, 
+                                    impl: stepImpl, 
+                                    name: stepName, 
+                                    library: libName
+                                ) 
                                 script.getBinding().setVariable(stepName, sw) 
                             }
                             foundLibrary = true 
@@ -108,7 +113,12 @@ import jenkins.model.Jenkins
                 Script defaultStepImpl = Utils.parseScript(defaultStepImplString, script.getBinding())
                 //stepConfig["step"] = stepName 
                 defaultStepImpl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return stepConfig }
-                StepWrapper sw = new StepWrapper(script, defaultStepImpl, stepName, "Default Step Implementation") 
+                StepWrapper sw = new StepWrapper(
+                    script: script, 
+                    impl: defaultStepImpl, 
+                    name: stepName, 
+                    library: "Default Step Implementation"
+                ) 
                 script.getBinding().setVariable(stepName, sw)
             } else {
                 /*
