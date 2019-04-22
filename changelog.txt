@@ -1,0 +1,10 @@
+
+2019-04-12 Carlos OKieffe
+  * adding library sources base directory
+
+2019-04-11 Carlos OKieffe
+  * adding changelog.txt
+
+
+2019-04-10 Carlos OKieffe
+  * Updated ScmSpec to add more testing and test branches with '/' e.g., 'dev/main'

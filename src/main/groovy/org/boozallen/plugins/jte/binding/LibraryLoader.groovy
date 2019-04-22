@@ -30,15 +30,9 @@ import java.io.PrintStream
 import hudson.model.ItemGroup
 import jenkins.model.Jenkins
 
-
 @Extension public class LibraryLoader extends TemplatePrimitiveInjector {
-    /*
-        TODO: 
-           need to test an SCM that isn't supported by 
-           SCMFileSystem. 
-    */
-    static void doInject(TemplateConfigObject config, CpsScript script){
 
+    static void doInject(TemplateConfigObject config, CpsScript script){
         WorkflowJob job = Utils.getCurrentJob()
         PrintStream logger = Utils.logger 
         ItemGroup<?> parent = job.getParent() 
