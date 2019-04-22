@@ -131,10 +131,10 @@ class Utils implements Serializable{
         PrintStream logger = getLogger() 
 
         // create SCMFileSystem 
-        SCMFileSystem fs = scmFileSystemOrNull(scm, job, logger )
+        def(SCMFileSystem fs, String scmKey) = scmFileSystemOrNull(scm, job, logger )
 
         if (fs){
-            FileSystemWrapper fsw = new FileSystemWrapper(fs: fs, log: new Logger(printStream: logger, desc: loggingDescription, key: scm?.key), scmKey: scm?.key)
+            FileSystemWrapper fsw = new FileSystemWrapper(fs: fs, log: new Logger(printStream: logger, desc: loggingDescription, key: scmKey), scmKey: scmKey)
             return fsw.getFileContents(filePath)
         }
 
@@ -146,23 +146,23 @@ class Utils implements Serializable{
     */
     static SCMFileSystem createSCMFileSystemOrNull(SCM scm, WorkflowJob job, ItemGroup<?> parent, PrintStream logger = getLogger() ){
 
-        return scmFileSystemOrNull(scm, job, logger)
+        return scmFileSystemOrNull(scm, job, logger)[0]
     }
 
     /**
      * @param scm
      * @param job
      * @param logger optional a printStream to send error/logging messages
-     * @return null or a valid SCMFileSystem
+     * @return [null or a valid SCMFileSystem, String: scm key]
     */
-    static SCMFileSystem scmFileSystemOrNull(SCM scm, WorkflowJob job, PrintStream logger = getLogger() ){
+    static def scmFileSystemOrNull(SCM scm, WorkflowJob job, PrintStream logger = getLogger() ){
 
         if (scm){
             try{
-                return SCMFileSystem.of(job, scm)
+                return [SCMFileSystem.of(job, scm), scm.getKey()]
             }catch(any){
                 logger.println any
-                return null
+                return [null, null]
             }
         }else{
             return FileSystemWrapper.fsFrom(job, getListener(), logger)
@@ -280,8 +280,15 @@ class Utils implements Serializable{
             log ?: new Logger(key: scmKey)
         }
 
-        static SCMFileSystem fsFrom(WorkflowJob job, TaskListener listener, PrintStream logger){
+        /*
+         return[0]: SCMFileSystem
+         return[1]: String: key from scm
+         */
+        static def fsFrom(WorkflowJob job, TaskListener listener, PrintStream logger){
             ItemGroup<?> parent = job.getParent()
+            String key = null
+            SCMFileSystem fs = null
+
             try {
                 if (parent instanceof WorkflowMultiBranchProject) {
                     // ensure branch is defined
@@ -301,20 +308,26 @@ class Utils implements Serializable{
                     SCMHead head = branch.getHead()
                     SCMRevision tip = scmSource.fetch(head, listener)
 
+                    key = branch.getScm().getKey()
+
                     if (tip) {
                         SCMRevision rev = scmSource.getTrustedRevision(tip, listener)
-                        return SCMFileSystem.of(scmSource, head, rev)
+                        fs = SCMFileSystem.of(scmSource, head, rev)
+                        return [fs, key]
                     } else {
                         SCM scm = branch.getScm()
-                        return SCMFileSystem.of(job, scm)
+                        fs = SCMFileSystem.of(job, scm)
+                        return [fs, key]
                     }
                 } else {
                     FlowDefinition definition = job.getDefinition()
                     if (definition instanceof CpsScmFlowDefinition) {
                         SCM scm = definition.getScm()
-                        return SCMFileSystem.of(job, scm)
+                        key = scm.getKey()
+                        fs = SCMFileSystem.of(job, scm)
+                        return [fs, key]
                     } else {
-                        return null
+                        return [fs, key]
                     }
                 }
             }catch(JTEException jteex){//throw our exception
@@ -323,7 +336,7 @@ class Utils implements Serializable{
                 logger.println any
             }
 
-            return null
+            return [fs, key]
         }
 
         String getFileContents(String filePath){
