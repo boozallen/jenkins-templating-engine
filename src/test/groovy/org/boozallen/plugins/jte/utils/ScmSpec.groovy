@@ -27,6 +27,7 @@ import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.experimental.categories.Category
+import org.jvnet.hudson.test.BuildWatcher
 import org.jvnet.hudson.test.GroovyJenkinsRule
 import org.jvnet.hudson.test.WithoutJenkins
 import spock.lang.Ignore
@@ -38,6 +39,9 @@ class ScmSpec extends Specification {
     @ClassRule
     @SuppressWarnings('JUnitPublicField')
     public GroovyJenkinsRule groovyJenkinsRule = new GroovyJenkinsRule()
+
+    @Shared
+    public BuildWatcher bw = new BuildWatcher()
 
     @Shared
     private WorkflowJob project
