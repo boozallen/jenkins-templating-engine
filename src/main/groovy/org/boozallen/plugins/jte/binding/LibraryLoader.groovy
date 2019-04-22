@@ -22,9 +22,11 @@ import org.boozallen.plugins.jte.config.GovernanceTier
 import org.boozallen.plugins.jte.Utils
 import hudson.Extension 
 import org.jenkinsci.plugins.workflow.cps.CpsScript
+import hudson.FilePath
 import jenkins.scm.api.SCMFileSystem
 import jenkins.scm.api.SCMFile 
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
+import java.io.PrintStream
 import hudson.model.ItemGroup
 import jenkins.model.Jenkins
 
@@ -42,46 +44,26 @@ import jenkins.model.Jenkins
         ItemGroup<?> parent = job.getParent() 
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy() 
 
-        for (configLibrary in config.getConfig().libraries){
-            String libName = configLibrary.getKey()
-            Map libConfig = configLibrary.getValue() 
-
+        for (library in config.getConfig().libraries){
+            String libName = library.getKey()
+            Map libConfig = library.getValue() 
             boolean foundLibrary = false 
+
             // check folders in ascending order for library in defined sources
-            tierLoop:
+            tierLoop: 
             for (tier in tiers){
                 for(librarySource in tier.librarySources){
-                    // try lighweight checkout 
-                    SCMFileSystem fs = Utils.createSCMFileSystemOrNull(librarySource.scm, job, parent)
-                    if (fs){ 
-                        SCMFile libDir = fs.child(libName)
-                        if (libDir.isDirectory()){
-                            logger.println "[JTE] Loading Library ${libName} from ${librarySource.scm.getKey()}"
-                            libDir.children().findAll{ it.getName().endsWith(".groovy") }.each{ step ->
-                                String stepName = step.getName() - ".groovy" 
-                                Script stepImpl = Utils.parseScript(step.contentAsString(), script.getBinding())
-                                stepImpl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return libConfig }
-                                StepWrapper sw = new StepWrapper(
-                                    script: script, 
-                                    impl: stepImpl, 
-                                    name: stepName, 
-                                    library: libName
-                                ) 
-                                script.getBinding().setVariable(stepName, sw) 
-                            }
-                            foundLibrary = true 
-                            break tierLoop
-                        }else{
-                            continue 
-                        }
-                    }
+                    if (librarySource.hasLibrary(libName)){
+                        librarySource.loadLibrary(script, libName, libConfig)
+                        foundLibrary = true 
+                        break tierLoop
+                    } 
                 }
             }
 
             if (!foundLibrary){
                 throw new TemplateConfigException("Library ${libName} Not Found.") 
             }
-
         }
     }
 
@@ -112,12 +94,7 @@ import jenkins.model.Jenkins
                 Script defaultStepImpl = Utils.parseScript(defaultStepImplString, script.getBinding())
                 //stepConfig["step"] = stepName 
                 defaultStepImpl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return stepConfig }
-                StepWrapper sw = new StepWrapper(
-                    script: script, 
-                    impl: defaultStepImpl, 
-                    name: stepName, 
-                    library: "Default Step Implementation"
-                ) 
+                StepWrapper sw = new StepWrapper(script, defaultStepImpl, stepName, "Default Step Implementation") 
                 script.getBinding().setVariable(stepName, sw)
             } else {
                 /*

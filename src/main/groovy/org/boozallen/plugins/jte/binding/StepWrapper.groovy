@@ -23,7 +23,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 import jenkins.model.Jenkins
-
+import jenkins.scm.api.SCMFile 
 /*
     represents a library step. 
 
@@ -59,6 +59,8 @@ class StepWrapper extends TemplatePrimitive{
         return invoke(methodName, args)     
     }
 
+    String getName(){ return name }
+
     /*
         pass method invocations on the wrapper to the underlying
         step implementation script. 
@@ -89,6 +91,18 @@ class StepWrapper extends TemplatePrimitive{
     }
     void throwPostLockException(){
         throw new TemplateException ("Library Step Collision. The variable ${name} is reserved as a library step via the ${library} library.")
+    }
+
+    static StepWrapper createFromFile(SCMFile file, String library, CpsScript script, Map libConfig){
+        String name = file.getName() - ".groovy" 
+        String stepText = file.contentAsString()
+        return createFromString(stepText, script, name, library, libConfig)
+    }
+
+    static StepWrapper createFromString(String stepText, CpsScript script, String name, String library, Map libConfig){
+        Script impl = Utils.parseScript(stepText, script.getBinding())
+        impl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return libConfig }
+        return new StepWrapper(script: script, impl: impl, name: name, library: library) 
     }
 
 }
