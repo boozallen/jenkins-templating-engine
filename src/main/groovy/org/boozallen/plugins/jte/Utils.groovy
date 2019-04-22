@@ -37,7 +37,7 @@ import hudson.model.Queue
 import hudson.model.TaskListener
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
-import org.jenkinsci.plugins.workflow.cps.CpsGroovyShell
+
 import java.lang.reflect.Field
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -108,17 +108,11 @@ class Utils implements Serializable{
     }
 
     static PrintStream getLogger(){
-        if (logger){
-            return logger 
-        }
         getCurrentJob()
         return logger 
     }
 
     static TaskListener getListener(){
-        if (listener){
-            return listener
-        }
         getCurrentJob()
         return listener 
     }
@@ -132,30 +126,15 @@ class Utils implements Serializable{
         throw exception if checkout failed or filePath is directory 
     */
     static String getFileContents(String filePath, SCM scm, String loggingDescription){
-        
-        String file 
-        
+
         WorkflowJob job = getCurrentJob()
-        ItemGroup<?> parent = job.getParent()
         PrintStream logger = getLogger() 
 
         // create SCMFileSystem 
-        SCMFileSystem fs = null
-
-        // if provided a SCM, try to build directly:
-        if (scm){
-            if (SCMFileSystem.supports(scm)){
-                fs = SCMFileSystem.of(job, scm)
-            }else{
-                return null
-            }
-        }else{ // try to infer SCM info from job properties
-
-            fs = FileSystemWrapper.fsFrom(job, listener, logger)
-        }
+        def(SCMFileSystem fs, String scmKey) = scmFileSystemOrNull(scm, job, logger )
 
         if (fs){
-            FileSystemWrapper fsw = new FileSystemWrapper(fs: fs, log: new Logger(desc: loggingDescription), scmKey: scm?.key)
+            FileSystemWrapper fsw = new FileSystemWrapper(fs: fs, log: new Logger(printStream: logger, desc: loggingDescription, key: scmKey), scmKey: scmKey)
             return fsw.getFileContents(filePath)
         }
 
@@ -167,35 +146,26 @@ class Utils implements Serializable{
     */
     static SCMFileSystem createSCMFileSystemOrNull(SCM scm, WorkflowJob job, ItemGroup<?> parent, PrintStream logger = getLogger() ){
 
-        if (scm){
-            try{
-                return SCMFileSystem.of(job, scm)
-            }catch(any){
-                logger.println any 
-                return null 
-            }
-        }else{              
-            return FileSystemWrapper.fsFrom(job, listener, logger)
-        } 
+        return scmFileSystemOrNull(scm, job, logger)[0]
     }
 
     /**
      * @param scm
      * @param job
      * @param logger optional a printStream to send error/logging messages
-     * @return null or a valid SCMFileSystem
+     * @return [null or a valid SCMFileSystem, String: scm key]
     */
-    static SCMFileSystem getSCMFileSystemOrNull(SCM scm, WorkflowJob job, PrintStream logger = getLogger() ){
+    static def scmFileSystemOrNull(SCM scm, WorkflowJob job, PrintStream logger = getLogger() ){
 
         if (scm){
             try{
-                return SCMFileSystem.of(job, scm)
+                return [SCMFileSystem.of(job, scm), scm.getKey()]
             }catch(any){
                 logger.println any
-                return null
+                return [null, null]
             }
         }else{
-            return FileSystemWrapper.fsFrom(job, listener, logger)
+            return FileSystemWrapper.fsFrom(job, getListener(), logger)
         }
     }
 
@@ -206,11 +176,6 @@ class Utils implements Serializable{
      * @throws IllegalStateException if is called outside of a CpsThread or is not executed in a WorkflowRun
      */
     static WorkflowJob getCurrentJob(){
-
-        if (currentJob){
-            return currentJob
-        }
-
         // assumed this is being run from a job
         CpsThread thread = CpsThread.current()
         if (!thread){
@@ -315,8 +280,15 @@ class Utils implements Serializable{
             log ?: new Logger(key: scmKey)
         }
 
-        static SCMFileSystem fsFrom(WorkflowJob job, TaskListener listener, PrintStream logger){
+        /*
+         return[0]: SCMFileSystem
+         return[1]: String: key from scm
+         */
+        static def fsFrom(WorkflowJob job, TaskListener listener, PrintStream logger){
             ItemGroup<?> parent = job.getParent()
+            String key = null
+            SCMFileSystem fs = null
+
             try {
                 if (parent instanceof WorkflowMultiBranchProject) {
                     // ensure branch is defined
@@ -336,20 +308,26 @@ class Utils implements Serializable{
                     SCMHead head = branch.getHead()
                     SCMRevision tip = scmSource.fetch(head, listener)
 
+                    key = branch.getScm().getKey()
+
                     if (tip) {
                         SCMRevision rev = scmSource.getTrustedRevision(tip, listener)
-                        return SCMFileSystem.of(scmSource, head, rev)
+                        fs = SCMFileSystem.of(scmSource, head, rev)
+                        return [fs, key]
                     } else {
                         SCM scm = branch.getScm()
-                        return SCMFileSystem.of(job, scm)
+                        fs = SCMFileSystem.of(job, scm)
+                        return [fs, key]
                     }
                 } else {
                     FlowDefinition definition = job.getDefinition()
                     if (definition instanceof CpsScmFlowDefinition) {
                         SCM scm = definition.getScm()
-                        return SCMFileSystem.of(job, scm)
+                        key = scm.getKey()
+                        fs = SCMFileSystem.of(job, scm)
+                        return [fs, key]
                     } else {
-                        return null
+                        return [fs, key]
                     }
                 }
             }catch(JTEException jteex){//throw our exception
@@ -358,7 +336,7 @@ class Utils implements Serializable{
                 logger.println any
             }
 
-            return null
+            return [fs, key]
         }
 
         String getFileContents(String filePath){

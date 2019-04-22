@@ -26,49 +26,56 @@ import jenkins.scm.api.SCMFile
 import hudson.Extension
 import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
+import hudson.Util
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.model.ItemGroup
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 
 public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibrarySource> implements Serializable{
 
-    public SCM scm 
-    private SCMFileSystem fs
+    public SCM scm
+    public String baseDir
+    public SCMFileSystem fs 
 
     @DataBoundConstructor public TemplateLibrarySource(){}
 
-    @DataBoundSetter public void setScm(SCM scm){ 
-        this.scm = scm 
+    @DataBoundSetter public void setBaseDir(String baseDir) {
+        this.baseDir = Util.fixEmptyAndTrim(baseDir)
     }
-    
+
+    public String getBaseDir() { return baseDir }
+
+    @DataBoundSetter public void setScm(SCM scm){ this.scm = scm }
     public SCM getScm(){ return scm }
 
     Boolean hasLibrary(String libName){
         createFs()
         if (!fs) return false 
-        SCMFile lib = fs.child(libName)
+        SCMFile lib = fs.child(prefixBaseDir(libName))
         return lib.isDirectory()
     }
 
-    void loadLibrary(CpsScript script, String libName, Map libConfig){
+    public void loadLibrary(CpsScript script, String libName, Map libConfig){
         createFs()
         if (!fs) return 
         Utils.getLogger().println "[JTE] Loading Library ${libName} from ${scm.getKey()}"
-        SCMFile lib = fs.child(libName)
+        SCMFile lib = fs.child(prefixBaseDir(libName))
         lib.children().findAll{ it.getName().endsWith(".groovy") }.each{ stepFile ->
             StepWrapper s = StepWrapper.createFromFile(stepFile, libName, script, libConfig)
             script.getBinding().setVariable(s.getName(), s)
         }
     }
 
-    void createFs(){
+    public String prefixBaseDir(String s){
+        return (baseDir ? "${baseDir}/" : "") + s;
+    }
+
+    public void createFs(){
         if (!fs){
             WorkflowJob job = Utils.getCurrentJob()
             fs = Utils.getSCMFileSystemOrNull(scm, job)
         }
     }
 
-
     @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {}
-
 }
