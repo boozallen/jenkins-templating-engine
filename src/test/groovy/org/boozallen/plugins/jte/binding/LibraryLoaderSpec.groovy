@@ -196,16 +196,20 @@ class LibraryLoaderSpec extends Specification {
         String libPath = librarySource.prefixBaseDir(echoLibName)
         SCMFile libDir = fs.child(libPath)
         boolean hasFile = false
+        String content = null
 
         libDir.children().findAll{ it.getName().endsWith(".groovy") }.each { step ->
             if( echoStepName == (step.getName() - ".groovy")){
                 hasFile = true
+                content = step.contentAsString()
             }
         }
 
 
         then:
         true == hasFile
+        null != content
+        content.contains(echoText)
 
     }
 
