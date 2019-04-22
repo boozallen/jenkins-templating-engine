@@ -1,5 +1,6 @@
 package org.boozallen.plugins.jte.utils
 
+import hudson.model.Action
 import hudson.model.TaskListener
 import hudson.plugins.git.BranchSpec
 import hudson.plugins.git.GitSCM
@@ -16,8 +17,10 @@ import jenkins.scm.api.SCMFileSystem
 import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.testcategories.*
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
+import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowExecution
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
@@ -67,6 +70,18 @@ class ScmSpec extends Specification {
         }
     """
 
+    @Shared
+    String cpsScriptPath2 = "cpsScript2.groovy"
+
+    @Shared
+    String cpsScript2 = """
+               import org.jenkinsci.plugins.workflow.cps.*
+               import org.jenkinsci.plugins.workflow.job.*
+               import static  org.boozallen.plugins.jte.Utils.*
+
+            println getFileContents('pipeline_config.groovy', null, "template configuration file")               
+
+"""
 
     @Shared
     private WorkflowJob scmWorkflowJob = null
@@ -85,6 +100,7 @@ class ScmSpec extends Specification {
 
         sampleRepo.write(cpsScriptPath, cpsScript);
         sampleRepo.write(pipelineConfigPath, pipelineConfigScript)
+        sampleRepo.write(cpsScriptPath2, cpsScript2)
 
         // added for WorkflowMultibranchProject
         sampleRepo.write("Jenkinsfile", "echo \"branch=master\"; node {checkout scm; echo readFile('file')}");
@@ -140,12 +156,13 @@ class ScmSpec extends Specification {
 
         when:"Utils.scmFileSystemOrNull is called with the project's job and scm"
 
-        SCMFileSystem scmfs = Utils.scmFileSystemOrNull(scm, job)
+        def(SCMFileSystem scmfs, String scmKey) = Utils.scmFileSystemOrNull(scm, job)
 
         then:"it should throw internal exception and be logged"
         notThrown(Exception)
         null == scmfs
         bs.toString("UTF-8") == message
+        null == scmKey
     }
 
 
@@ -169,11 +186,12 @@ class ScmSpec extends Specification {
         logger = listener.logger
         job = execution.owner.executable.parent
 
-        SCMFileSystem scmfs = Utils.scmFileSystemOrNull(scm, Utils.getCurrentJob())
+        def(SCMFileSystem scmfs, String scmKey) = Utils.scmFileSystemOrNull(scm, Utils.getCurrentJob())
 
         then:"it should return a valid SCM filesystem"
         notThrown(Exception)
         null != scmfs
+        null != scmKey
     }
 
     @WithoutJenkins
@@ -196,11 +214,16 @@ class ScmSpec extends Specification {
         logger = listener.logger
         job = execution.owner.executable.parent
 
-        SCMFileSystem scmfs = Utils.scmFileSystemOrNull(null, Utils.getCurrentJob())
+        def(SCMFileSystem scmfs, String scmKey) = Utils.scmFileSystemOrNull(null, Utils.getCurrentJob())
+
 
         then:"it should return a valid SCM filesystem"
         notThrown(Exception)
         null != scmfs
+        null != scmKey
+        groovyJenkinsRule.assertLogNotContains("[inferred]", build);
+        groovyJenkinsRule.assertLogContains(scmKey, build);
+
     }
 
     @WithoutJenkins
@@ -250,12 +273,13 @@ class ScmSpec extends Specification {
         logger = listener.logger
         job = execution.owner.executable.parent
 
-        SCMFileSystem scmfs = Utils.FileSystemWrapper.fsFrom(job, listener, logger)
+        def(SCMFileSystem scmfs, String scmKey) = Utils.FileSystemWrapper.fsFrom(job, listener, logger)
 
         then:
         notThrown(Exception)
 
         null != scmfs
+        null != scmKey
     }
 
     def "Utils.FileSystemWrapper.fsFrom(job, listener, logger) !WorkflowMultiBranchProject,!CpsScmFlowDefinition"(){
@@ -267,12 +291,13 @@ class ScmSpec extends Specification {
         PrintStream logger = listener.logger
         WorkflowJob job = execution.owner.executable.parent
 
-        SCMFileSystem scmfs = Utils.FileSystemWrapper.fsFrom(job, listener, logger)
+        def(SCMFileSystem scmfs, String scmKey) = Utils.FileSystemWrapper.fsFrom(job, listener, logger)
 
         then:
         notThrown(Exception)
 
         null == scmfs
+        null == scmKey
     }
 
 
@@ -306,7 +331,7 @@ class ScmSpec extends Specification {
         listener = execution.owner.listener
         logger = listener.logger
 
-        SCMFileSystem scmfs = Utils.FileSystemWrapper.fsFrom(job, listener, logger)
+        def(SCMFileSystem scmfs, String key) = Utils.FileSystemWrapper.fsFrom(job, listener, logger)
 
         then:
         notThrown(Exception)
@@ -356,7 +381,7 @@ class ScmSpec extends Specification {
         listener = execution.owner.listener
         logger = listener.logger
 
-        SCMFileSystem scmfs = Utils.FileSystemWrapper.fsFrom(job, listener, logger)
+        def(SCMFileSystem scmfs, String key) = Utils.FileSystemWrapper.fsFrom(job, listener, logger)
 
         then:
         notThrown(Exception)
@@ -421,13 +446,11 @@ class ScmSpec extends Specification {
         listener = execution.owner.listener
         logger = listener.logger
 
-        String output = Utils.getFileContents(pipelineConfigPath, null, "[JTE]")
+        String output = Utils.getFileContents(pipelineConfigPath, null, "pipeline config")
 
         then:
         notThrown(Exception)
         output == pipelineConfigScript
-
-
     }
 
 
@@ -445,6 +468,40 @@ class ScmSpec extends Specification {
 
         SCMFileSystem.supports(scm)
         null != scmfs
+    }
+
+    def "Utils.getFileContents; no scm argument; testing logging output"(){
+
+        def project = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "scmSandbox_project");
+        project.setDefinition(new SandboxCpsScmFlowDefinition(scm, cpsScriptPath2));
+
+        when:
+
+        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(project);
+
+
+
+        then:
+        notThrown(Exception)
+        groovyJenkinsRule.assertLogNotContains("[inferred]", build);
+        groovyJenkinsRule.assertLogContains(pipelineConfigPath, build);
+        groovyJenkinsRule.assertLogContains("template configuration file", build);
+        groovyJenkinsRule.assertLogContains(pipelineConfigScript, build);
+
+    }
+
+    static class SandboxCpsScmFlowDefinition extends CpsScmFlowDefinition {
+
+        public SandboxCpsScmFlowDefinition(SCM scm, String scriptPath) {
+            super(scm, scriptPath)
+        }
+
+        @Override
+        CpsFlowExecution create(FlowExecutionOwner owner, TaskListener listener, List<? extends Action> actions) throws Exception {
+            CpsFlowExecution ex = super.create(owner, listener, actions)
+
+            return new CpsFlowExecution(ex.script, false, ex.owner, ex.durabilityHint)
+        }
     }
 
 }
