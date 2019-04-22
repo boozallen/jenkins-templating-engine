@@ -13,10 +13,6 @@
 
 package org.boozallen.plugins.jte.binding
 
-import org.boozallen.plugins.jte.config.TemplateConfigObject
-import org.boozallen.plugins.jte.config.TemplateGlobalConfig
-import org.boozallen.plugins.jte.config.TemplateLibrarySource
-import org.boozallen.plugins.jte.config.GovernanceTier
 import spock.lang.* 
 import spock.util.mop.ConfineMetaClassChanges
 import org.junit.ClassRule
@@ -24,11 +20,6 @@ import org.junit.Rule
 import org.jvnet.hudson.test.JenkinsRule
 import org.jvnet.hudson.test.BuildWatcher
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
-import jenkins.plugins.git.GitSampleRepoRule
-import hudson.plugins.git.GitSCM
-import hudson.plugins.git.BranchSpec
-import hudson.plugins.git.extensions.GitSCMExtension
-import hudson.plugins.git.SubmoduleConfig
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 import hudson.model.Result
 import jenkins.scm.api.SCMFile 
@@ -38,8 +29,6 @@ class StepWrapperSpec extends Specification{
 
     @Rule JenkinsRule jenkins = new JenkinsRule()
     @Shared @ClassRule BuildWatcher bw = new BuildWatcher()
-    @Rule GitSampleRepoRule librarySource = new GitSampleRepoRule()
-    GovernanceTier tier
 
     /*
         boiler plate to prepare JTE environment for 
@@ -95,7 +84,7 @@ class StepWrapperSpec extends Specification{
                 This overrides static createFromString and asserts the expected
                 arguments were passed. 
 
-                createFromString itself gets tested by every other test 
+                createFromString itself gets tested by every other feature 
                 in this Specification
             */
             StepWrapper.metaClass.static.createFromString = { String t, CpsScript s, String n, String l, Map m ->
@@ -132,7 +121,7 @@ class StepWrapperSpec extends Specification{
                 println "msg -> \${msg}" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob job = jenkins.createProject(WorkflowJob, "job")
             job.setDefinition(createFlowDefinition("test_step('message')"))
         then: 
             jenkins.assertLogContains("msg -> message", jenkins.buildAndAssertSuccess(job)) 

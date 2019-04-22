@@ -44,16 +44,15 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
     public SCM getScm(){ return scm }
 
     Boolean hasLibrary(String libName){
-        if (!fs){
-            WorkflowJob job = Utils.getCurrentJob()
-            ItemGroup<?> parent = job.getParent() 
-            fs = Utils.createSCMFileSystemOrNull(scm, job, parent)
-        }
+        createFs()
+        if (!fs) return false 
         SCMFile lib = fs.child(libName)
         return lib.isDirectory()
     }
 
     void loadLibrary(CpsScript script, String libName, Map libConfig){
+        createFs()
+        if (!fs) return 
         Utils.getLogger().println "[JTE] Loading Library ${libName} from ${scm.getKey()}"
         SCMFile lib = fs.child(libName)
         lib.children().findAll{ it.getName().endsWith(".groovy") }.each{ stepFile ->
@@ -61,6 +60,14 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
             script.getBinding().setVariable(s.getName(), s)
         }
     }
+
+    void createFs(){
+        if (!fs){
+            WorkflowJob job = Utils.getCurrentJob()
+            fs = Utils.getSCMFileSystemOrNull(scm, job)
+        }
+    }
+
 
     @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {}
 
