@@ -22,6 +22,7 @@ import hudson.scm.SCM
 import hudson.Extension
 import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
+import hudson.Util
 
 public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibrarySource> implements Serializable{
 
@@ -37,16 +38,11 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
     public String getBaseDir() { return baseDir }
 
     @DataBoundSetter public void setBaseDir(String baseDir) {
-        this.baseDir = baseDir
+        this.baseDir = Util.fixEmptyAndTrim(baseDir)
     }
 
     @DataBoundSetter public void setScm(SCM scm){ this.scm = scm }
     public SCM getScm(){ return scm }
 
-
-
-    @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {
-
-    }
-
+    @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {}
 }
