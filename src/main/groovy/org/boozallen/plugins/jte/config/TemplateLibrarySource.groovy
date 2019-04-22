@@ -16,24 +16,52 @@
 
 package org.boozallen.plugins.jte.config
 
+import org.boozallen.plugins.jte.Utils
+import org.boozallen.plugins.jte.binding.StepWrapper
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.DataBoundSetter
 import hudson.scm.SCM
+import jenkins.scm.api.SCMFileSystem
+import jenkins.scm.api.SCMFile 
 import hudson.Extension
 import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
+import org.jenkinsci.plugins.workflow.cps.CpsScript
+import hudson.model.ItemGroup
+import org.jenkinsci.plugins.workflow.job.WorkflowJob
 
 public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibrarySource> implements Serializable{
 
     public SCM scm 
+    private SCMFileSystem fs
 
     @DataBoundConstructor public TemplateLibrarySource(){}
 
-    @DataBoundSetter public void setScm(SCM scm){ this.scm = scm }
+    @DataBoundSetter public void setScm(SCM scm){ 
+        this.scm = scm 
+    }
+    
     public SCM getScm(){ return scm }
 
-    @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {
-
+    Boolean hasLibrary(String libName){
+        if (!fs){
+            WorkflowJob job = Utils.getCurrentJob()
+            ItemGroup<?> parent = job.getParent() 
+            fs = Utils.createSCMFileSystemOrNull(scm, job, parent)
+        }
+        SCMFile lib = fs.child(libName)
+        return lib.isDirectory()
     }
+
+    void loadLibrary(CpsScript script, String libName, Map libConfig){
+        Utils.getLogger().println "[JTE] Loading Library ${libName} from ${scm.getKey()}"
+        SCMFile lib = fs.child(libName)
+        lib.children().findAll{ it.getName().endsWith(".groovy") }.each{ stepFile ->
+            StepWrapper s = StepWrapper.createFromFile(stepFile, libName, script, libConfig)
+            script.getBinding().setVariable(s.getName(), s)
+        }
+    }
+
+    @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {}
 
 }
