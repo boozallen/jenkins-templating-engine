@@ -53,10 +53,11 @@ import jenkins.model.Jenkins
                 for(librarySource in tier.librarySources){
                     // try lighweight checkout 
                     SCMFileSystem fs = Utils.createSCMFileSystemOrNull(librarySource.scm, job, parent)
-                    if (fs){ 
-                        SCMFile libDir = fs.child(libName)
+                    if (fs){
+                        String libPath = librarySource.prefixBaseDir(libName)
+                        SCMFile libDir = fs.child(libPath)
                         if (libDir.isDirectory()){
-                            logger.println "[JTE] Loading Library ${libName} from ${librarySource.scm.getKey()}"
+                            logger.println "[JTE] Loading Library ${libName} via ${libPath} from ${librarySource.scm.getKey()}"
                             libDir.children().findAll{ it.getName().endsWith(".groovy") }.each{ step ->
                                 String stepName = step.getName() - ".groovy" 
                                 Script stepImpl = Utils.parseScript(step.contentAsString(), script.getBinding())
