@@ -22,18 +22,27 @@ import hudson.scm.SCM
 import hudson.Extension
 import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
+import hudson.Util
 
 public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibrarySource> implements Serializable{
 
-    public SCM scm 
+    public SCM scm
+    public String baseDir
 
     @DataBoundConstructor public TemplateLibrarySource(){}
+
+    public String prefixBaseDir(String s){
+        return (baseDir ? "${baseDir}/" : "") + s;
+    }
+
+    public String getBaseDir() { return baseDir }
+
+    @DataBoundSetter public void setBaseDir(String baseDir) {
+        this.baseDir = Util.fixEmptyAndTrim(baseDir)
+    }
 
     @DataBoundSetter public void setScm(SCM scm){ this.scm = scm }
     public SCM getScm(){ return scm }
 
-    @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {
-
-    }
-
+    @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {}
 }

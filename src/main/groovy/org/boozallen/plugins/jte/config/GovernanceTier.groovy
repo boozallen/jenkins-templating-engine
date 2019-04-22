@@ -30,6 +30,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
 import hudson.scm.NullSCM
+import hudson.Util
 
 public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> implements Serializable{
     
@@ -42,7 +43,7 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
 
     @DataBoundConstructor public GovernanceTier(SCM scm, String baseDir, List<TemplateLibrarySource> librarySources){
         this.scm = scm
-        this.baseDir = baseDir
+        this.baseDir = Util.fixEmptyAndTrim(baseDir)
         this.librarySources = librarySources
     }
 
