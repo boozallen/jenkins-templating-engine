@@ -16,13 +16,7 @@
 
 void call(){
 
-  /*
-    var config comes from metaClass and is defined by the LibraryLoader.doPostInject() 
-  */
-  if (!config.isDefined) return
-
   String error_msg = """
-     step ${config.step} not defined in Pipeline Config
      step definition specification:
 
      steps{
@@ -42,7 +36,7 @@ void call(){
      }
      """
 
-    stage(config.stage ?: config.step){
+    stage(config.stage ?: config.name){
         // get docker image for step
         def img = config.image ?:
                   { error "Image not defined for ${config.step}. \n ${error_msg}" }()

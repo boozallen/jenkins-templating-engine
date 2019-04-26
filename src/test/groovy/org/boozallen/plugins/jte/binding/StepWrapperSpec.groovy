@@ -1,6 +1,6 @@
 /*
    Copyright 2018 Booz Allen Hamilton
-   Licensed under the Apache License, Version 2.0 (the "License");
+   Licensed under the Apache License, Version 2.0 (the "License")
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
        http://www.apache.org/licenses/LICENSE-2.0
@@ -13,10 +13,10 @@
 
 package org.boozallen.plugins.jte.binding
 
+import org.boozallen.plugins.jte.Utils 
 import spock.lang.* 
 import spock.util.mop.ConfineMetaClassChanges
 import org.junit.ClassRule
-import org.junit.Rule
 import org.jvnet.hudson.test.JenkinsRule
 import org.jvnet.hudson.test.BuildWatcher
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
@@ -27,8 +27,9 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
 
 class StepWrapperSpec extends Specification{
 
-    @Rule JenkinsRule jenkins = new JenkinsRule()
+    @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
     @Shared @ClassRule BuildWatcher bw = new BuildWatcher()
+    WorkflowJob job 
 
     /*
         boiler plate to prepare JTE environment for 
@@ -41,6 +42,12 @@ class StepWrapperSpec extends Specification{
 
     setBinding(new TemplateBinding())
     """
+
+    def setup(){
+        GroovySpy(Utils)
+        job = jenkins.createProject(WorkflowJob)
+        _ * Utils.getCurrentJob() >> job
+    }
 
     /*
         appends steps to be created directly into the binding onto 
@@ -61,7 +68,6 @@ class StepWrapperSpec extends Specification{
     CpsFlowDefinition createFlowDefinition(String s){
         jenkinsfile += s 
         CpsFlowDefinition f = new CpsFlowDefinition(jenkinsfile, false)
-        println f.getScript()
         return f 
     }
 
@@ -108,7 +114,6 @@ class StepWrapperSpec extends Specification{
                 println "test"
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
             job.setDefinition(createFlowDefinition("test_step()"))
         then: 
             jenkins.assertLogContains("test", jenkins.buildAndAssertSuccess(job)) 
@@ -120,8 +125,7 @@ class StepWrapperSpec extends Specification{
             void call(String msg){
                 println "msg -> \${msg}" 
             }
-            """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job")
+            """)            
             job.setDefinition(createFlowDefinition("test_step('message')"))
         then: 
             jenkins.assertLogContains("msg -> message", jenkins.buildAndAssertSuccess(job)) 
@@ -134,7 +138,6 @@ class StepWrapperSpec extends Specification{
                 println "msg -> \${msg} + \${i}" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
             job.setDefinition(createFlowDefinition("test_step('message', 3)"))
         then: 
             jenkins.assertLogContains("msg -> message + 3", jenkins.buildAndAssertSuccess(job)) 
@@ -146,8 +149,7 @@ class StepWrapperSpec extends Specification{
             void other(){
                 println "other" 
             }
-            """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
+            """) 
             job.setDefinition(createFlowDefinition("test_step.other()"))
         then: 
             jenkins.assertLogContains("other", jenkins.buildAndAssertSuccess(job)) 
@@ -160,7 +162,6 @@ class StepWrapperSpec extends Specification{
                 println "message is \${msg}" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
             job.setDefinition(createFlowDefinition("test_step.other('example')"))
         then: 
             jenkins.assertLogContains("message is example", jenkins.buildAndAssertSuccess(job)) 
@@ -173,7 +174,6 @@ class StepWrapperSpec extends Specification{
                 println "message is \${msg} + \${msg2}" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
             job.setDefinition(createFlowDefinition("test_step.other('example1', 'example2')"))
         then: 
             jenkins.assertLogContains("message is example1 + example2", jenkins.buildAndAssertSuccess(job)) 
@@ -190,7 +190,6 @@ class StepWrapperSpec extends Specification{
                 println "${StepWrapper.libraryConfigVariable}.random -> '\${${StepWrapper.libraryConfigVariable}.random}'"
             }
             """, [random: "random", eleven: 11] )
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
             job.setDefinition(createFlowDefinition("test_step()"))
         then: 
             jenkins.assertLogContains("config.random -> 'random'", jenkins.buildAndAssertSuccess(job))
@@ -205,7 +204,6 @@ class StepWrapperSpec extends Specification{
                 }
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
             job.setDefinition(createFlowDefinition("test_step()"))
         then: 
             jenkins.assertLogContains("hello", jenkins.buildAndAssertSuccess(job))
@@ -218,7 +216,6 @@ class StepWrapperSpec extends Specification{
                 return "example"
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
             job.setDefinition(createFlowDefinition("""
                 def r = test_step()
                 println "return is \${r}"
@@ -229,8 +226,7 @@ class StepWrapperSpec extends Specification{
 
     def "step method not found throws TemplateException"(){
         when: 
-            createStep("test_step", "def call(){ println 'blah' }")
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
+            createStep("test_step", "def call(){ println 'blah' }") 
             job.setDefinition(createFlowDefinition("test_step.nonexistent()"))
             def build = job.scheduleBuild2(0).get() 
         then: 
@@ -244,7 +240,6 @@ class StepWrapperSpec extends Specification{
             StepWrapper s = new StepWrapper(name: "test", library: "testlib")
             binding.setVariable("test", s) 
             binding.setVariable("test", "whatever")
-                
         then: 
             TemplateException ex = thrown() 
             ex.message == "Library Step Collision. The step test already defined via the testlib library."
@@ -257,7 +252,6 @@ class StepWrapperSpec extends Specification{
             binding.setVariable("test", s) 
             binding.lock()
             binding.setVariable("test", "whatever")
-                
         then: 
             TemplateException ex = thrown() 
             ex.message == "Library Step Collision. The variable test is reserved as a library step via the testlib library."
@@ -272,7 +266,6 @@ class StepWrapperSpec extends Specification{
                 println "before!" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
             job.setDefinition(createFlowDefinition("test_step()"))
             def build = job.scheduleBuild2(0).get() 
             def bN, sN 
@@ -296,7 +289,6 @@ class StepWrapperSpec extends Specification{
                 println "after!" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
             job.setDefinition(createFlowDefinition("test_step()"))
             def build = job.scheduleBuild2(0).get() 
             def aN, sN 
@@ -320,7 +312,6 @@ class StepWrapperSpec extends Specification{
                 println "notify!" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
             job.setDefinition(createFlowDefinition("test_step()"))
             def build = job.scheduleBuild2(0).get() 
             def nN, sN 
