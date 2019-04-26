@@ -28,7 +28,6 @@ import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
 import hudson.Util
 import org.jenkinsci.plugins.workflow.cps.CpsScript
-import hudson.model.ItemGroup
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 
 public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibrarySource> implements Serializable{
@@ -60,20 +59,22 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         if (!fs) return 
         Utils.getLogger().println "[JTE] Loading Library ${libName} from ${scm.getKey()}"
         SCMFile lib = fs.child(prefixBaseDir(libName))
-        lib.children().findAll{ it.getName().endsWith(".groovy") }.each{ stepFile ->
+        lib.children().findAll{ 
+            it.getName().endsWith(".groovy") 
+        }.each{ stepFile ->
             StepWrapper s = StepWrapper.createFromFile(stepFile, libName, script, libConfig)
             script.getBinding().setVariable(s.getName(), s)
         }
     }
 
     public String prefixBaseDir(String s){
-        return (baseDir ? "${baseDir}/" : "") + s;
+        return [baseDir, s?.trim()].findAll{ it }.join("/")
     }
 
     public void createFs(){
         if (!fs){
             WorkflowJob job = Utils.getCurrentJob()
-            fs = Utils.getSCMFileSystemOrNull(scm, job)
+            fs = Utils.createSCMFileSystemOrNull(scm, job, job.getParent())
         }
     }
 

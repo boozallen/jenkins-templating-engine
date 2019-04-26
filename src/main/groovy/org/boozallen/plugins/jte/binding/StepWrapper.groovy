@@ -99,6 +99,23 @@ class StepWrapper extends TemplatePrimitive{
         return createFromString(stepText, script, name, library, libConfig)
     }
 
+    static StepWrapper createDefaultStep(CpsScript script, String name, Map stepConfig){
+        // create default step implementation Script 
+        String defaultImpl = Jenkins.instance
+                                    .pluginManager
+                                    .uberClassLoader
+                                    .loadClass("org.boozallen.plugins.jte.binding.StepWrapper")
+                                    .getResource("defaultStepImplementation.groovy")
+                                    .text
+        if (!stepConfig.name) stepConfig.name = name 
+        return createFromString(defaultImpl, script, name, "Default Step Implementation", stepConfig) 
+    }
+
+    static StepWrapper createNullStep(String stepName, CpsScript script){
+        String nullImpl = "def call(){ println \"Step ${stepName} is not implemented.\" }"
+        return createFromString(nullImpl, script, stepName, "Null Step", [:])
+    }
+
     static StepWrapper createFromString(String stepText, CpsScript script, String name, String library, Map libConfig){
         Script impl = Utils.parseScript(stepText, script.getBinding())
         impl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return libConfig }
