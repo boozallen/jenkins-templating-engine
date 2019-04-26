@@ -173,5 +173,6 @@ class TemplateLibrarySourceSpec extends Specification{
         "someDir"  | ""     || "someDir"
         null       | "lib"  || "lib" 
         ""         | "lib"  || "lib" 
+        null       | null   || ""
     }
 }
