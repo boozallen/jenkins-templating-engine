@@ -29,17 +29,18 @@ public class TemplateConsoleNote extends ConsoleNote<WorkflowRun> {
     static void print(String message) {
         TaskListener listener = Utils.getListener()
         PrintStream logger = listener.getLogger()
-        synchronized (logger) {
-            try {
-                listener.annotate(new TemplateConsoleNote())
-            } catch (IOException x) {
-                LOGGER.log(Level.WARNING, null, x)
-            }
-            message.eachLine{ line ->
+        message.eachLine{ line -> 
+            synchronized (logger) {
+                try {
+                    listener.annotate(new TemplateConsoleNote())
+                } catch (IOException x) {
+                    LOGGER.log(Level.WARNING, null, x)
+                }
                 logger.println(CONSOLE_NOTE_PREFIX + line)
-            }            
+            }
         }
     }
+
     static void printCollapsable(){
 
     }
