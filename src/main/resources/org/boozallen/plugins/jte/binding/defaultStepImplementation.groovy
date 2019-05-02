@@ -16,18 +16,12 @@
 
 void call(){
 
-  /*
-    var config comes from metaClass and is defined by the LibraryLoader.doPostInject() 
-  */
-  if (!config.isDefined) return
-
   String error_msg = """
-     step ${config.step} not defined in Pipeline Config
      step definition specification:
 
      steps{
        unit_test{
-         stage = "Unit Test"            // optional. display name for step. defaults to ${config.step}
+         stage = "Unit Test"            // optional. display name for step. defaults to ${config.name}
          image = "maven"                // required. docker image to use for testing
          command = "mvn clean verify"   // either command or script
          script = ./tests/unit_test.sh  // not both. one required.
@@ -42,10 +36,10 @@ void call(){
      }
      """
 
-    stage(config.stage ?: config.step){
+    stage(config.stage ?: config.name){
         // get docker image for step
         def img = config.image ?:
-                  { error "Image not defined for ${config.step}. \n ${error_msg}" }()
+                  { error "Image not defined for default step implementation ${config.name}. \n ${error_msg}" }()
 
         // execute step
         docker.image(img).inside{
@@ -85,7 +79,7 @@ void call(){
             def s = config.stash
             if (s){
                 // validate stash configuration
-                def n = s.name ?: {error "Step ${config.step} stash name not configured: \n ${error_msg}"}()
+                def n = s.name ?: {error "Step ${config.name} stash name not configured: \n ${error_msg}"}()
                 def i = s.includes ?: "**"
                 def e = s.excludes ?: " "
                 def d = s.useDefaultExcludes ?: true

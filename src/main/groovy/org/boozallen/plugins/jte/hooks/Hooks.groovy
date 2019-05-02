@@ -18,11 +18,7 @@ package org.boozallen.plugins.jte.hooks
 
 import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.binding.* 
-import org.codehaus.groovy.runtime.InvokerHelper
-import org.codehaus.groovy.runtime.InvokerInvocationException
-import java.util.ArrayList
 import java.lang.annotation.Annotation
-import org.jenkinsci.plugins.workflow.cps.CpsThread 
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 import jenkins.model.Jenkins
 

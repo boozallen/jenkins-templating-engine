@@ -8,7 +8,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 
-def call(String name, String library, CpsScript script, Object impl, Object... args){
+def call(String name, String library, CpsScript script, Object impl, String methodName, Object... args){
     def result
     def context = [
         step: name, 
@@ -17,8 +17,8 @@ def call(String name, String library, CpsScript script, Object impl, Object... a
     ]
     try{
         Hooks.invoke(BeforeStep, script.getBinding(), context)
-        Utils.getLogger().println "[JTE][Step - ${library}/${name}]" 
-        result = InvokerHelper.getMetaClass(impl).invokeMethod(impl, "call", args)
+        Utils.getLogger().println "[JTE][Step - ${library}/${name}.${methodName}(${args.collect{ it.getClass().simpleName }.join(", ")})]" 
+        result = InvokerHelper.getMetaClass(impl).invokeMethod(impl, methodName, args)
     } catch (Exception x) {
         script.currentBuild.result = "Failure"
         throw new InvokerInvocationException(x)

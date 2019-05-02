@@ -18,8 +18,6 @@ package org.boozallen.plugins.jte.config
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.kohsuke.groovy.sandbox.SandboxTransformer
-import groovy.lang.Script
-import java.util.ArrayList
 
 /*
   Parses an Template Config File and returns a TemplateConfigObject
