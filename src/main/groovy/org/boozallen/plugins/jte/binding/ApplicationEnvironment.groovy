@@ -62,11 +62,11 @@ class ApplicationEnvironment extends TemplatePrimitive{
     }
 
     void throwPreLockException(){
-        throw new TemplateException ("Application Environment ${long_name} already defined.")
+        throw new TemplateException ("Application Environment ${var_name} already defined.")
     }
 
     void throwPostLockException(){
-        throw new TemplateException ("Variable ${var_name} is reserved as an Application Environment")
+        throw new TemplateException ("Variable ${var_name} is reserved as an Application Environment.")
     }
 
     /*

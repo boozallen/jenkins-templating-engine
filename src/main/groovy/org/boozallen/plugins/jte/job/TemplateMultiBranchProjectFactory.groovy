@@ -23,17 +23,14 @@ import hudson.model.Action
 import jenkins.branch.MultiBranchProjectFactory
 import jenkins.branch.MultiBranchProjectFactoryDescriptor
 import org.kohsuke.stapler.DataBoundConstructor
-import org.kohsuke.stapler.DataBoundSetter
 import org.jenkinsci.plugins.workflow.multibranch.AbstractWorkflowBranchProjectFactory
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 import jenkins.branch.MultiBranchProject
-import jenkins.branch.MultiBranchProjectFactory
 import jenkins.branch.OrganizationFolder
 import jenkins.model.TransientActionFactory
 import jenkins.scm.api.SCMSource
 import jenkins.scm.api.SCMSourceCriteria
 import org.jenkinsci.plugins.workflow.cps.Snippetizer
-import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 
 public class TemplateMultiBranchProjectFactory extends MultiBranchProjectFactory.BySCMSourceCriteria {
 
