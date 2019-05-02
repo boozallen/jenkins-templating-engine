@@ -16,7 +16,6 @@
 
 package org.boozallen.plugins.jte.binding
 
-import groovy.lang.Binding
 import org.jenkinsci.plugins.workflow.cps.CpsThread
 import org.jenkinsci.plugins.workflow.cps.DSL
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -45,8 +44,12 @@ class TemplateBinding extends Binding implements Serializable{
         }
 
         if (name in registry){
-            if (locked) variables.get(name).throwPostLockException()
-            else variables.get(name).throwPreLockException() 
+            if (locked){
+                variables.get(name).throwPostLockException()
+            }
+            else{
+                variables.get(name).throwPreLockException() 
+            } 
         }
         if (value in TemplatePrimitive) registry << name
         super.setVariable(name, value)
@@ -66,6 +69,22 @@ class TemplateBinding extends Binding implements Serializable{
             result = result.getValue()
 
         return result
+    }
+
+    public Boolean hasStep(String stepName){
+        if (hasVariable(stepName)){
+            return getVariable(stepName) instanceof StepWrapper
+        } else{
+            return false
+        } 
+    }
+
+    public StepWrapper getStep(String stepName){
+        if (hasStep(stepName)){
+            return getVariable(stepName)
+        } else {
+            throw new TemplateException("No step ${stepName} in the TemplateBinding.")
+        }
     }
 
 }

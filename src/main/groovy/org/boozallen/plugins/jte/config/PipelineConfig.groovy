@@ -18,9 +18,6 @@ package org.boozallen.plugins.jte.config
 
 import org.codehaus.groovy.runtime.InvokerHelper
 import jenkins.model.Jenkins
-import java.util.ArrayList
-import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
-
 
 /*
   stores the aggregated & immutable pipeline configuration. 
@@ -43,6 +40,9 @@ class PipelineConfig implements Serializable{
       return currentConfigObject
     }
 
+    /*
+      
+    */
     void join(TemplateConfigObject child){
       def pipeline_config
       if (firstJoin){

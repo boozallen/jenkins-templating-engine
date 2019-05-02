@@ -44,7 +44,7 @@ For example, to create a ``build`` step, add a ``build.groovy`` file:
     example_library/ 
         build.groovy 
 
-Writing a step is done by defining a ``call`` method within the groovy step file created. This 
+In most cases, writing a step is done by defining a ``call`` method within the groovy step file created. This 
 ``call`` method can take input arguments and return objects.  Within the step you can execute any 
 old regular Jenkins pipeline code, including invoking other steps defined by loaded libraries. 
 
@@ -59,6 +59,10 @@ could be:
         }
     }
 
+.. note:: 
+
+    Steps, like regular global variables in Jenkins Shared Libraries, can define methods other than call. 
+    See an example :ref:`here <noncall_methods>` 
 
 
 ================
