@@ -12,7 +12,7 @@ repositories {
 }
 
 group = 'org.jenkins-ci.plugins'
-version = '1.0' 
+version = '1.1' 
 description = 'Allows users to create tool-agnostic, templated pipelines to be shared by multiple teams' 
 
 jenkinsPlugin {
@@ -30,6 +30,11 @@ jenkinsPlugin {
             name 'Steven Terrana'
             email 'terrana_steven@bah.com'
         }
+        developer {
+            id 'carlosokieffebah'
+            name 'Carlos Okieffe' 
+            email 'okieffe_carlos@bah.com' 
+        }
     }
 }
 
@@ -41,7 +46,7 @@ dependencies {
     jenkinsPlugins "org.jenkins-ci.plugins:branch-api:2.0.20"
     jenkinsPlugins "org.jenkins-ci.plugins:scm-api:2.2.7"
     jenkinsPlugins "org.jenkins-ci.plugins:junit:1.24"
-    jenkinsPlugins "org.jenkins-ci.plugins:github-branch-source:2.4.1"
+    jenkinsPlugins "org.jenkins-ci.plugins:github-branch-source:2.5.1"
 
     // unit test deps 
     testCompile 'org.spockframework:spock-core:1.2-groovy-2.4'
