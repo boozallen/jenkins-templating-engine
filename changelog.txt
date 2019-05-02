@@ -5,6 +5,10 @@
 2019-04-11 Carlos OKieffe
   * adding changelog.txt
 
-
 2019-04-10 Carlos OKieffe
   * Updated ScmSpec to add more testing and test branches with '/' e.g., 'dev/main'
+
+2019-04-26 Steven Terrana
+  * Internal refactoring to simplify library loading
+  * Add unit testing for Steps, Library Sources, and the Library Loader 
+  * Adds helper methods hasStep() and getStep() to the TemplateBinding
