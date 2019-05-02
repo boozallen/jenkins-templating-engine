@@ -16,7 +16,6 @@
 
 package org.boozallen.plugins.jte.config
 
-import org.kohsuke.groovy.sandbox.GroovyValueFilter
 import org.kohsuke.groovy.sandbox.GroovyInterceptor
 import org.kohsuke.groovy.sandbox.GroovyInterceptor.Invoker
 

@@ -20,7 +20,6 @@ import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.config.*
 import org.jenkinsci.plugins.workflow.cps.CpsThread
 import org.jenkinsci.plugins.workflow.cps.CpsThreadGroup
-// for get branch file utils 
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
@@ -32,42 +31,25 @@ import jenkins.scm.api.SCMRevision
 import jenkins.scm.api.SCMFileSystem
 import jenkins.scm.api.SCMSource
 import jenkins.scm.api.SCMFile
-import jenkins.scm.api.SCMRevisionAction
 import hudson.scm.SCM
-import hudson.Functions
-import hudson.FilePath
-import hudson.model.Node
-import hudson.model.TopLevelItem
-import hudson.model.Computer
-import org.jenkinsci.plugins.workflow.steps.scm.GenericSCMStep
-import org.jenkinsci.plugins.workflow.steps.scm.SCMStep
-import org.jenkinsci.plugins.workflow.support.actions.WorkspaceActionImpl
-import hudson.slaves.WorkspaceList
-import org.jenkinsci.plugins.workflow.steps.scm.SCMStep
-import jenkins.model.Jenkins
-import hudson.AbortException
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import hudson.model.Queue
-import java.io.PrintStream
 import hudson.model.TaskListener
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
-import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
-import org.jenkinsci.plugins.workflow.cps.CpsThreadGroup
-import org.jenkinsci.plugins.workflow.cps.CpsGroovyShell
+
 import java.lang.reflect.Field
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
-import org.jenkinsci.plugins.github_branch_source.BranchSCMHead
-import org.jenkinsci.plugins.github_branch_source.PullRequestSCMHead
-
 
 class Utils implements Serializable{
 
     static TaskListener listener
     static FlowExecutionOwner owner 
     static WorkflowRun build 
+    static PrintStream logger 
+    static WorkflowJob currentJob 
 
     /*
         We do a lot of executing the code inside files and we're also
@@ -126,7 +108,13 @@ class Utils implements Serializable{
     }
 
     static PrintStream getLogger(){
-        return CpsThread.current().getExecution().getOwner().getListener().getLogger()
+        getCurrentJob()
+        return logger 
+    }
+
+    static TaskListener getListener(){
+        getCurrentJob()
+        return listener 
     }
 
     /*
@@ -138,228 +126,55 @@ class Utils implements Serializable{
         throw exception if checkout failed or filePath is directory 
     */
     static String getFileContents(String filePath, SCM scm, String loggingDescription){
-        
-        String file 
-        
+
         WorkflowJob job = getCurrentJob()
-        ItemGroup<?> parent = job.getParent()
         PrintStream logger = getLogger() 
 
-        if (!scm) scm = getSCMFromJob(job, parent)
+        // create SCMFileSystem 
+        def(SCMFileSystem fs, String scmKey) = scmFileSystemOrNull(scm, job, logger )
 
-        // try lightweight checkout 
-        SCMFileSystem fs = createSCMFileSystemOrNull(scm, job, parent)
         if (fs){
-            try {
-                SCMFile f = fs.child(filePath)
-                if (!f.exists()){
-                    logger.println "[JTE] ${filePath} does not exist"
-                    return null 
-                }
-                if(!f.isFile()){
-                    throw new Exception("${filePath} is not a file.")
-                } 
-                if (loggingDescription){
-                    logger.println "[JTE] Obtained ${loggingDescription} ${filePath} from ${scm.getKey()}"
-                }
-                return f.contentAsString()
-            } catch(any) {
-
-            } finally{
-                fs.close() 
-            }
-            
-        }
-
-        // lightweight apparently didn't work out.
-        if (scm){
-            FilePath dir = doHeavyWeightCheckout(scm, job, parent) 
-            FilePath configFile = dir.child(filePath)
-            if (!configFile.absolutize().getRemote().replace('\\', '/').startsWith(dir.absolutize().getRemote().replace('\\', '/') + '/')) { // TODO JENKINS-26838
-                throw new IOException("${configFile} is not inside ${dir}")
-            }
-            if (!configFile.exists()) {
-                return null 
-            }
-            if (loggingDescription){
-                logger.println "[JTE] Obtained ${loggingDescription} ${filePath} from ${scm.getKey()}"
-            }
-            return configFile.readToString()
+            FileSystemWrapper fsw = new FileSystemWrapper(fs: fs, log: new Logger(printStream: logger, desc: loggingDescription, key: scmKey), scmKey: scmKey)
+            return fsw.getFileContents(filePath)
         }
 
         return null 
     }
 
     /*
-        attempts to checkout the SCM to a node.
-        returns the directory w/ the SCM contents. 
-    */
-    static FilePath doHeavyWeightCheckout(SCM scm, WorkflowJob job, ItemGroup<?> parent, FilePath providedDir = null){
-        FilePath dir
-        Node node = Jenkins.getActiveInstance()
-        PrintStream logger = getLogger() 
-        if (providedDir){
-            dir = providedDir 
-        }else{
-            if (job instanceof TopLevelItem) {
-                FilePath baseWorkspace = node.getWorkspaceFor((TopLevelItem) job)
-                if (!baseWorkspace) {
-                    throw new IOException("${node.getDisplayName()} may be offline")
-                }
-                dir = baseWorkspace.withSuffix("${System.getProperty(WorkspaceList.class.getName(), "@")}script")
-            } else { // should not happen, but just in case:
-                dir = new FilePath(owner.getRootDir())
-            }
-        }
-        Computer computer = node.toComputer()
-        if (!computer) {
-            throw new IOException("${node.getDisplayName()} may be offline")
-        }
-        SCMStep delegate = new GenericSCMStep(scm)
-        WorkspaceList.Lease lease = computer.getWorkspaceList().acquire(dir)
-
-        // do the checkout.  try the number of times configured in Jenkins
-        for (int retryCount = Jenkins.getInstance().getScmCheckoutRetryCount(); retryCount >= 0; retryCount--) {
-            try {
-                delegate.checkout(build, dir, listener, node.createLauncher(listener))
-                break
-            } catch (AbortException e) {
-                // abort exception might have a null message.
-                // If so, just skip echoing it.
-                if (e.getMessage()) {
-                    logger.println e.getMessage()
-                }
-            } catch (InterruptedIOException e) {
-                throw e
-            } catch (IOException e) {
-                logger.println "Checkout failed: ${e}"
-            }
-
-            if (retryCount == 0){
-                // all attempts failed
-                throw new AbortException("Maximum checkout retry attempts reached, aborting")
-            }
-                
-            logger.println("Retrying after 10 seconds")
-            Thread.sleep(10000)
-        }
-
-        return dir 
-    }
-
-    /*
-        returns an SCM from the current running job 
-        null in case of regular pipeline job
-    */
-    static SCM getSCMFromJob(WorkflowJob job, ItemGroup<?> parent){
-        def logger = getLogger() 
-        if (parent instanceof WorkflowMultiBranchProject){
-            // ensure branch is defined 
-            BranchJobProperty property = job.getProperty(BranchJobProperty.class)
-            if (!property){
-                throw new IllegalStateException("inappropriate context")
-            }
-
-            Branch branch = property.getBranch()
-
-            // get scm source for specific branch and ensure present
-            // (might not be if branch deleted after job triggered)
-            String branchName = branch.getSourceId()
-            SCMSource scmSource = parent.getSCMSource(branchName)
-            if (!scmSource) {
-                throw new IllegalStateException("${branch.getSourceId()} not found")
-            }
-
-            // attempt lightweight checkout
-            /*
-                some hacky stuff here.. can't make GitSCMFileSystem from a PR.. so if PR -> use source branch
-            */ 
-            SCMHead head = branch.getHead()
-            if (head instanceof PullRequestSCMHead){
-                head = new BranchSCMHead(head.sourceBranch)
-            }
-            SCMRevision tip = scmSource.fetch(head, listener)
-
-            if (tip){
-                SCMRevision rev = scmSource.getTrustedRevision(tip, listener)
-                return scmSource.build(head,rev) 
-            }else{
-                return branch.getScm()
-            }
-        } else {
-            FlowDefinition definition = job.getDefinition() 
-            if (definition instanceof CpsScmFlowDefinition){
-                return definition.getScm()
-            }else{
-                return null 
-            }
-        }         
-    }
-
-    /*
         this code is not the greatest. TODO: refactor
     */
-    static SCMFileSystem createSCMFileSystemOrNull(SCM scm, WorkflowJob job, ItemGroup<?> parent){
-        PrintStream logger = getLogger() 
-        if (scm){
-            try{
-                return SCMFileSystem.of(job, scm)
-            }catch(any){
-                logger.println any 
-                return null 
-            }
-        }else{              
-            if (parent instanceof WorkflowMultiBranchProject){
-                // ensure branch is defined 
-                BranchJobProperty property = job.getProperty(BranchJobProperty.class)
-                if (!property){
-                    throw new IllegalStateException("inappropriate context")
-                }
-                Branch branch = property.getBranch()
+    static SCMFileSystem createSCMFileSystemOrNull(SCM scm, WorkflowJob job, ItemGroup<?> parent, PrintStream logger = getLogger() ){
 
-                // get scm source for specific branch and ensure present
-                // (might not be if branch deleted after job triggered)
-                SCMSource scmSource = parent.getSCMSource(branch.getSourceId())
-                if (!scmSource) {
-                    throw new IllegalStateException("${branch.getSourceId()} not found")
-                }
-
-                SCMHead head = branch.getHead()
-                SCMRevision tip = scmSource.fetch(head, listener)
-                if (tip){
-                    SCMRevision rev = scmSource.getTrustedRevision(tip, listener)
-                    try{
-                        return SCMFileSystem.of(scmSource, head, rev)
-                    }catch(any){
-                        logger.println any 
-                        return null 
-                    }
-                }else{
-                    scm = branch.getScm()
-                    try{
-                        return SCMFileSystem.of(job, scm)
-                    }catch(any){
-                        logger.println any 
-                        return null 
-                    }
-                }
-            } else {
-                FlowDefinition definition = job.getDefinition() 
-                if (definition instanceof CpsScmFlowDefinition){
-                    scm = definition.getScm()
-                    try{
-                        return SCMFileSystem.of(job, scm)
-                    }catch(any){
-                        logger.println any 
-                        return null 
-                    }
-                }else{
-                    return null 
-                }
-            }
-        } 
+        return scmFileSystemOrNull(scm, job, logger)[0]
     }
 
+    /**
+     * @param scm
+     * @param job
+     * @param logger optional a printStream to send error/logging messages
+     * @return [null or a valid SCMFileSystem, String: scm key]
+    */
+    static def scmFileSystemOrNull(SCM scm, WorkflowJob job, PrintStream logger = getLogger() ){
+
+        if (scm){
+            try{
+                return [SCMFileSystem.of(job, scm), scm.getKey()]
+            }catch(any){
+                logger.println any
+                return [null, null]
+            }
+        }else{
+            return FileSystemWrapper.fsFrom(job, getListener(), logger)
+        }
+    }
+
+
+    /**
+     * Note: this method initializes the class/CpsThread level job,logger,listener properties
+     * @return the job for the current CPS thread
+     * @throws IllegalStateException if is called outside of a CpsThread or is not executed in a WorkflowRun
+     */
     static WorkflowJob getCurrentJob(){
         // assumed this is being run from a job
         CpsThread thread = CpsThread.current()
@@ -368,7 +183,8 @@ class Utils implements Serializable{
         }
 
         this.owner = thread.getExecution().getOwner()
-        this.listener = owner.getListener()      
+        this.listener = owner.getListener()    
+        this.logger = listener.getLogger()   
 
         Queue.Executable exec = owner.getExecutable()
         if (!(exec instanceof WorkflowRun)) {
@@ -376,9 +192,9 @@ class Utils implements Serializable{
         }
 
         this.build = (WorkflowRun) exec
-        WorkflowJob job = build.getParent()
+        this.currentJob = build.getParent()
 
-        return job 
+        return currentJob
     }
 
     @Whitelisted
@@ -426,4 +242,139 @@ class Utils implements Serializable{
         parseScript(template, binding).run() 
     }
 
+    static class Logger {
+
+        String desc = ""
+        String key = ""
+        String prologue = "[JTE] "
+        PrintStream printStream
+
+        PrintStream getLogger() {
+            return printStream ?: Utils.getLogger()
+        }
+    }
+
+    static class JTEException extends Exception {
+        JTEException(String message){
+            super(message)
+        }
+
+        JTEException(String message, Throwable t){
+            super(message, t)
+        }
+
+        JTEException(Throwable t){
+            super(t)
+        }
+    }
+
+    static class FileSystemWrapper {// inner class
+        SCMFileSystem fs
+        String scmKey
+        Logger log
+
+        // move these into a logging related class
+        boolean logMissingFile = true
+
+        Logger getLogger(){
+            log ?: new Logger(key: scmKey)
+        }
+
+        /*
+         return[0]: SCMFileSystem
+         return[1]: String: key from scm
+         */
+        static def fsFrom(WorkflowJob job, TaskListener listener, PrintStream logger){
+            ItemGroup<?> parent = job.getParent()
+            String key = null
+            SCMFileSystem fs = null
+
+            try {
+                if (parent instanceof WorkflowMultiBranchProject) {
+                    // ensure branch is defined
+                    BranchJobProperty property = job.getProperty(BranchJobProperty.class)
+                    if (!property) {
+                        throw new JTEException("inappropriate context") // removed IllegalStateEx as an example
+                    }
+                    Branch branch = property.getBranch()
+
+                    // get scm source for specific branch and ensure present
+                    // (might not be if branch deleted after job triggered)
+                    SCMSource scmSource = parent.getSCMSource(branch.getSourceId())
+                    if (!scmSource) {
+                        throw new JTEException(new IllegalStateException("${branch.getSourceId()} not found"))
+                    }
+
+                    SCMHead head = branch.getHead()
+                    SCMRevision tip = scmSource.fetch(head, listener)
+
+                    key = branch.getScm().getKey()
+
+                    if (tip) {
+                        SCMRevision rev = scmSource.getTrustedRevision(tip, listener)
+                        fs = SCMFileSystem.of(scmSource, head, rev)
+                        return [fs, key]
+                    } else {
+                        SCM scm = branch.getScm()
+                        fs = SCMFileSystem.of(job, scm)
+                        return [fs, key]
+                    }
+                } else {
+                    FlowDefinition definition = job.getDefinition()
+                    if (definition instanceof CpsScmFlowDefinition) {
+                        SCM scm = definition.getScm()
+                        key = scm.getKey()
+                        fs = SCMFileSystem.of(job, scm)
+                        return [fs, key]
+                    } else {
+                        return [fs, key]
+                    }
+                }
+            }catch(JTEException jteex){//throw our exception
+                throw (jteex.cause ?: jteex)
+            }catch(any){// ignore but print every other exception
+                logger.println any
+            }
+
+            return [fs, key]
+        }
+
+        String getFileContents(String filePath){
+            return FileSystemWrapper.getFileContents( filePath, fs, logger, logMissingFile)
+        }
+
+        static String getFileContents(String filePath, SCMFileSystem fs,
+                                      Logger log = new Logger(), boolean logMissingFile = true ){
+
+            if (fs){
+                try {
+                    SCMFile f = fs.child(filePath)
+                    if (!f.exists()){
+                        if( logMissingFile ) {
+                            log?.logger?.println "${log?.prologue}${filePath} does not exist"
+                        }
+                        return null
+                    }
+                    if(!f.isFile()){
+                        log?.logger?.println "${log?.prologue}${filePath} is not a file."
+                        return null
+                        //throw new JTEException("${filePath} is not a file.")
+                    }
+                    if (log?.desc){
+                        log?.logger?.println "${log?.prologue}Obtained ${log?.desc} ${filePath} from ${log?.key ?:"[inferred]"}"
+                    }
+
+                    return f.contentAsString()
+
+                } catch(any) {
+                    log?.logger.println "${log?.prologue}exception ${any} for ${filePath} from ${log?.key ?:"[inferred]"}"
+                } finally{
+                    fs.close()
+                }
+            }
+
+            return null
+        }
+
+    }
 }

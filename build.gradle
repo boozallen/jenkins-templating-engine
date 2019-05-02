@@ -1,5 +1,7 @@
 plugins {
   id 'org.jenkins-ci.jpi' version '0.27.0'
+  id 'jacoco' 
+  id 'application'
 }
 
 repositories {
@@ -10,7 +12,7 @@ repositories {
 }
 
 group = 'org.jenkins-ci.plugins'
-version = '1.0' 
+version = '1.1' 
 description = 'Allows users to create tool-agnostic, templated pipelines to be shared by multiple teams' 
 
 jenkinsPlugin {
@@ -28,18 +30,57 @@ jenkinsPlugin {
             name 'Steven Terrana'
             email 'terrana_steven@bah.com'
         }
+        developer {
+            id 'carlosokieffebah'
+            name 'Carlos Okieffe' 
+            email 'okieffe_carlos@bah.com' 
+        }
     }
 }
 
-dependencies {
-	jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-multibranch:2.20"
-	jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-api:2.28"
-	jenkinsPlugins "org.jenkins-ci.plugins:branch-api:2.0.20"
-	jenkinsPlugins "org.jenkins-ci.plugins:scm-api:2.2.7"
-	jenkinsPlugins "org.jenkins-ci.plugins:junit:1.24"
-	jenkinsPlugins "org.jenkins-ci.plugins:github-branch-source:2.4.1"
-	testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
-	testCompile 'junit:junit:4.12'
-	testCompile 'cglib:cglib-nodep:3.2.5'       // used by Spock
-	testCompile 'org.objenesis:objenesis:2.5.1' // used by Spock
+dependencies {    
+    // plugin dependencies
+    jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-multibranch:2.20"
+    jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-api:2.28"
+    jenkinsPlugins "org.jenkins-ci.plugins:branch-api:2.0.20"
+    jenkinsPlugins "org.jenkins-ci.plugins:scm-api:2.2.7"
+    jenkinsPlugins "org.jenkins-ci.plugins:junit:1.24"
+    jenkinsPlugins "org.jenkins-ci.plugins:github-branch-source:2.5.1"
+
+    // unit test deps 
+    testCompile 'org.spockframework:spock-core:1.2-groovy-2.4'
+    testCompile 'junit:junit:4.12'
+    testCompile 'cglib:cglib-nodep:3.2.5'       // used by Spock
+    testCompile 'org.objenesis:objenesis:2.5.1' // used by Spock
+
+    // test plugins 
+    jenkinsTest(group: "org.jenkins-ci.plugins", name: "scm-api", version: "2.3.0", classifier: "tests")
+    jenkinsTest(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3') {
+        exclude(module: 'httpclient')
+        exclude(module: 'annotation-indexer')
+    }
+    testCompile(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3', classifier:'tests') {
+        exclude(module: 'httpclient')
+        exclude(module: 'annotation-indexer')
+    }
+    jenkinsTest "org.jenkins-ci.plugins.workflow:workflow-aggregator:2.6"
+}
+
+jacocoTestReport{
+    reports{
+        html.enabled true 
+    }
+}
+
+task testStable(type: Test) {
+    useJUnit {
+        excludeCategories 'org.boozallen.plugins.jte.testcategories.Unstable'
+        excludeCategories 'org.boozallen.plugins.jte.testcategories.InProgress'
+    }
+}
+
+task testIntegration(type: Test) {
+    useJUnit {
+        includeCategories 'org.boozallen.plugins.jte.testcategories.Integration'
+    }
 }
