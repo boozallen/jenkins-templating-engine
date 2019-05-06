@@ -1,6 +1,6 @@
 /*
    Copyright 2018 Booz Allen Hamilton
-   Licensed under the Apache License, Version 2.0 (the "License");
+   Licensed under the Apache License, Version 2.0 (the "License")
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
        http://www.apache.org/licenses/LICENSE-2.0
@@ -13,96 +13,108 @@
 
 package org.boozallen.plugins.jte.binding
 
-import org.boozallen.plugins.jte.config.TemplateConfigObject
-import org.boozallen.plugins.jte.config.TemplateGlobalConfig
-import org.boozallen.plugins.jte.config.TemplateLibrarySource
-import org.boozallen.plugins.jte.config.GovernanceTier
+import org.boozallen.plugins.jte.Utils 
 import spock.lang.* 
+import spock.util.mop.ConfineMetaClassChanges
 import org.junit.ClassRule
-import org.junit.Rule
 import org.jvnet.hudson.test.JenkinsRule
 import org.jvnet.hudson.test.BuildWatcher
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
-import jenkins.plugins.git.GitSampleRepoRule
-import hudson.plugins.git.GitSCM
-import hudson.plugins.git.BranchSpec
-import hudson.plugins.git.extensions.GitSCMExtension
-import hudson.plugins.git.SubmoduleConfig
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
-import hudson.model.Result;
+import hudson.model.Result
+import jenkins.scm.api.SCMFile 
+import org.jenkinsci.plugins.workflow.cps.CpsScript
 
 class StepWrapperSpec extends Specification{
 
-    @Rule JenkinsRule jenkins = new JenkinsRule()
+    @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
     @Shared @ClassRule BuildWatcher bw = new BuildWatcher()
-    @Rule GitSampleRepoRule librarySource = new GitSampleRepoRule()
-    GovernanceTier tier
+    WorkflowJob job 
 
     /*
-        initial pipeline script that'll load the 
-        test library and initialize the binding. 
+        boiler plate to prepare JTE environment for 
+        pipeline jobs 
     */
-    String pipelineInit = """
-        import org.boozallen.plugins.jte.binding.LibraryLoader
-        import org.boozallen.plugins.jte.binding.TemplateBinding
-        import org.boozallen.plugins.jte.config.TemplateConfigObject 
+    String jenkinsfile = """ 
+    import org.boozallen.plugins.jte.binding.StepWrapper
+    import org.boozallen.plugins.jte.binding.TemplateBinding
+    import org.boozallen.plugins.jte.config.TemplateConfigObject 
 
-        setBinding(new TemplateBinding())
-        pipelineConfig = new TemplateConfigObject(config: [
-            libraries: [
-                test: [
-                    random: "random",
-                    eleven: 11 
-                ]
-            ]
-        ])
-
-        LibraryLoader.doInject(pipelineConfig, this)
+    setBinding(new TemplateBinding())
     """
 
     def setup(){
-        /*
-            create library "test" with step "test_step" 
-        */
-        librarySource.init()
-      
-        GitSCM scm = new GitSCM(
-            GitSCM.createRepoList(librarySource.toString(), null), 
-            Collections.singletonList(new BranchSpec("*/master")), 
-            false, 
-            Collections.<SubmoduleConfig>emptyList(), 
-            null, 
-            null, 
-            Collections.<GitSCMExtension>emptyList()
-        )
-
-        /*
-            create global governance tier registering library source 
-        */
-        List<TemplateLibrarySource> librarySources = [ new TemplateLibrarySource(scm: scm) ]
-        tier = new GovernanceTier(null, "", librarySources)            
-        TemplateGlobalConfig global = TemplateGlobalConfig.get() 
-        global.setTier(tier) 
-
+        GroovySpy(Utils)
+        job = jenkins.createProject(WorkflowJob)
+        _ * Utils.getCurrentJob() >> job
     }
 
-    void createStep(String name, String impl){
-        librarySource.write("test/${name}.groovy", impl)
-        librarySource.git("add", "*")
-        librarySource.git("commit", "--message=init")
+    /*
+        appends steps to be created directly into the binding onto 
+        the Jenkinsfile to be ran as part of the test. 
+
+        implictely tests createFromString a
+    */
+    void createStep(String name, String impl, Map config = [:]){
+        jenkinsfile += """
+        ${name} = StepWrapper.createFromString('''${impl}''', this, "${name}", "test", ${config.inspect()})
+        """
+    }
+
+    /*
+        returns a CpsFlowDefinition based upon the aggregated Jenkinsfile 
+        created by the boiler plate, step creations, and passed pipeline (s). 
+    */
+    CpsFlowDefinition createFlowDefinition(String s){
+        jenkinsfile += s 
+        CpsFlowDefinition f = new CpsFlowDefinition(jenkinsfile, false)
+        return f 
+    }
+
+    @ConfineMetaClassChanges([StepWrapper])
+    def "Validate createFromFile properly calles createFromString"(){
+        setup: 
+            String stepName = "test_step" 
+            String stepText = "def call(){ println 'test' }"
+            CpsScript script = GroovyMock(CpsScript) 
+            
+            SCMFile file = GroovyMock(SCMFile)
+            _ * file.getName() >> "${stepName}.groovy"
+            _ * file.contentAsString() >> stepText
+
+            /*
+                admittedly a weird way to test this.
+                having problem mocking static call within createFromFile 
+                to createFromString. 
+
+                This overrides static createFromString and asserts the expected
+                arguments were passed. 
+
+                createFromString itself gets tested by every other feature 
+                in this Specification
+            */
+            StepWrapper.metaClass.static.createFromString = { String t, CpsScript s, String n, String l, Map m ->
+                assert t == stepText 
+                assert s == script 
+                assert n == stepName 
+                assert l == "test"
+                assert m == [:]
+            }
+
+        when:     
+            StepWrapper.createFromFile(file, "test", script, [:])
+        then: 
+            assert true  // need an assertion in then
     }
 
     def "steps invocable via call shorthand with no params"(){
         when: 
             createStep("test_step", """
-            void call(){
-                println "test" 
+            def call(){ 
+                println "test"
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-                test_step()
-            """, false))
+            job.setDefinition(createFlowDefinition("test_step()"))
         then: 
             jenkins.assertLogContains("test", jenkins.buildAndAssertSuccess(job)) 
     }
@@ -113,11 +125,8 @@ class StepWrapperSpec extends Specification{
             void call(String msg){
                 println "msg -> \${msg}" 
             }
-            """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-                test_step("message")
-            """, false))
+            """)            
+            job.setDefinition(createFlowDefinition("test_step('message')"))
         then: 
             jenkins.assertLogContains("msg -> message", jenkins.buildAndAssertSuccess(job)) 
     }
@@ -129,10 +138,7 @@ class StepWrapperSpec extends Specification{
                 println "msg -> \${msg} + \${i}" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-                test_step("message", 3)
-            """, false))
+            job.setDefinition(createFlowDefinition("test_step('message', 3)"))
         then: 
             jenkins.assertLogContains("msg -> message + 3", jenkins.buildAndAssertSuccess(job)) 
     }
@@ -143,11 +149,8 @@ class StepWrapperSpec extends Specification{
             void other(){
                 println "other" 
             }
-            """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-                test_step.other()
-            """, false))
+            """) 
+            job.setDefinition(createFlowDefinition("test_step.other()"))
         then: 
             jenkins.assertLogContains("other", jenkins.buildAndAssertSuccess(job)) 
     }
@@ -159,10 +162,7 @@ class StepWrapperSpec extends Specification{
                 println "message is \${msg}" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-                test_step.other("example")
-            """, false))
+            job.setDefinition(createFlowDefinition("test_step.other('example')"))
         then: 
             jenkins.assertLogContains("message is example", jenkins.buildAndAssertSuccess(job)) 
     }
@@ -174,10 +174,7 @@ class StepWrapperSpec extends Specification{
                 println "message is \${msg} + \${msg2}" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-                test_step.other("example1", "example2")
-            """, false))
+            job.setDefinition(createFlowDefinition("test_step.other('example1', 'example2')"))
         then: 
             jenkins.assertLogContains("message is example1 + example2", jenkins.buildAndAssertSuccess(job)) 
     }
@@ -192,28 +189,22 @@ class StepWrapperSpec extends Specification{
                 ] 
                 println "${StepWrapper.libraryConfigVariable}.random -> '\${${StepWrapper.libraryConfigVariable}.random}'"
             }
-            """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-                test_step()
-            """, false))
+            """, [random: "random", eleven: 11] )
+            job.setDefinition(createFlowDefinition("test_step()"))
         then: 
             jenkins.assertLogContains("config.random -> 'random'", jenkins.buildAndAssertSuccess(job))
     }
 
     def "steps can invoke pipeline steps directly"(){
         when: 
-        createStep("test_step", """
-        void call(){
-            node{
-                sh "echo hello"
+            createStep("test_step", """
+            void call(){
+                node{
+                    sh "echo hello"
+                }
             }
-        }
-        """)
-        WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-        job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-            test_step()
-        """, false))
+            """)
+            job.setDefinition(createFlowDefinition("test_step()"))
         then: 
             jenkins.assertLogContains("hello", jenkins.buildAndAssertSuccess(job))
     }
@@ -225,22 +216,18 @@ class StepWrapperSpec extends Specification{
                 return "example"
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
+            job.setDefinition(createFlowDefinition("""
                 def r = test_step()
                 println "return is \${r}"
-            """, false))
+            """))
         then: 
             jenkins.assertLogContains("return is example", jenkins.buildAndAssertSuccess(job))
     }
 
     def "step method not found throws TemplateException"(){
         when: 
-            createStep("test_step", "def call(){ println 'blah' }")
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-                test_step.nonexistent() 
-            """, false))
+            createStep("test_step", "def call(){ println 'blah' }") 
+            job.setDefinition(createFlowDefinition("test_step.nonexistent()"))
             def build = job.scheduleBuild2(0).get() 
         then: 
             jenkins.assertBuildStatus(Result.FAILURE, build)
@@ -253,7 +240,6 @@ class StepWrapperSpec extends Specification{
             StepWrapper s = new StepWrapper(name: "test", library: "testlib")
             binding.setVariable("test", s) 
             binding.setVariable("test", "whatever")
-                
         then: 
             TemplateException ex = thrown() 
             ex.message == "Library Step Collision. The step test already defined via the testlib library."
@@ -266,7 +252,6 @@ class StepWrapperSpec extends Specification{
             binding.setVariable("test", s) 
             binding.lock()
             binding.setVariable("test", "whatever")
-                
         then: 
             TemplateException ex = thrown() 
             ex.message == "Library Step Collision. The variable test is reserved as a library step via the testlib library."
@@ -281,10 +266,7 @@ class StepWrapperSpec extends Specification{
                 println "before!" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-                test_step()
-            """, false))
+            job.setDefinition(createFlowDefinition("test_step()"))
             def build = job.scheduleBuild2(0).get() 
             def bN, sN 
             jenkins.getLog(build).eachLine{ line, N -> 
@@ -307,10 +289,7 @@ class StepWrapperSpec extends Specification{
                 println "after!" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-                test_step()
-            """, false))
+            job.setDefinition(createFlowDefinition("test_step()"))
             def build = job.scheduleBuild2(0).get() 
             def aN, sN 
             jenkins.getLog(build).eachLine{ line, N -> 
@@ -333,10 +312,7 @@ class StepWrapperSpec extends Specification{
                 println "notify!" 
             }
             """)
-            WorkflowJob job = jenkins.createProject(WorkflowJob, "job"); 
-            job.setDefinition(new CpsFlowDefinition(""" ${pipelineInit}
-                test_step()
-            """, false))
+            job.setDefinition(createFlowDefinition("test_step()"))
             def build = job.scheduleBuild2(0).get() 
             def nN, sN 
             jenkins.getLog(build).eachLine{ line, N -> 

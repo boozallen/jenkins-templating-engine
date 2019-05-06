@@ -71,4 +71,20 @@ class TemplateBinding extends Binding implements Serializable{
         return result
     }
 
+    public Boolean hasStep(String stepName){
+        if (hasVariable(stepName)){
+            return getVariable(stepName) instanceof StepWrapper
+        } else{
+            return false
+        } 
+    }
+
+    public StepWrapper getStep(String stepName){
+        if (hasStep(stepName)){
+            return getVariable(stepName)
+        } else {
+            throw new TemplateException("No step ${stepName} in the TemplateBinding.")
+        }
+    }
+
 }
