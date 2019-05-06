@@ -23,7 +23,7 @@ import org.jvnet.hudson.test.WithoutJenkins
 
 class TemplateBindingSpec extends Specification{
 
-    @Rule JenkinsRule jenkinsRule = new JenkinsRule()
+    @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
     @Shared @ClassRule BuildWatcher bw = new BuildWatcher()
 
     TemplateBinding binding = new TemplateBinding() 
@@ -137,9 +137,60 @@ class TemplateBindingSpec extends Specification{
             thrown(TemplateException)
     }
 
+    @WithoutJenkins
+    def "hasStep returns true when variable exists and is a StepWrapper"(){
+        setup:
+            binding.setVariable("test_step", new StepWrapper())
+        expect: 
+            binding.hasStep("test_step")
+    }
+
+    @WithoutJenkins
+    def "hasStep returns false when variable exists but is not a StepWrapper"(){
+        setup:
+            binding.setVariable("test_step", 1)
+        expect: 
+            !binding.hasStep("test_step")
+    }
+
+    @WithoutJenkins
+    def "hasStep returns false when variable does not exist"(){
+        expect: 
+            !binding.hasStep("test_step")
+    }
+
+    @WithoutJenkins
+    def "getStep returns step when variable exists and is StepWrapper"(){
+        setup:
+            StepWrapper step = new StepWrapper()
+            binding.setVariable("test_step", step)
+        expect: 
+            binding.getStep("test_step") == step
+    }
+
+    @WithoutJenkins
+    def "getStep throws exception when variable exists but is not StepWrapper"(){
+        setup:
+            binding.setVariable("test_step", 1)
+        when: 
+            binding.getStep("test_step")
+        then: 
+            TemplateException ex = thrown()
+            ex.message == "No step test_step in the TemplateBinding."
+    }
+
+    @WithoutJenkins
+    def "getStep throws exception when variable does not exist"(){
+        when: 
+            binding.getStep("test_step")
+        then: 
+            TemplateException ex = thrown()
+            ex.message == "No step test_step in the TemplateBinding."
+    }
+
     def "validate TemplateBinding sets 'steps' var"(){
         given: 
-            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob job = jenkins.createProject(WorkflowJob); 
             job.setDefinition(new CpsFlowDefinition("""
             import org.boozallen.plugins.jte.binding.TemplateBinding
             setBinding(new TemplateBinding())
@@ -148,7 +199,7 @@ class TemplateBindingSpec extends Specification{
             }
             """))
         expect: 
-            jenkinsRule.assertLogContains("hello", jenkinsRule.buildAndAssertSuccess(job))
+            jenkins.assertLogContains("hello", jenkins.buildAndAssertSuccess(job))
     }
 
 }
