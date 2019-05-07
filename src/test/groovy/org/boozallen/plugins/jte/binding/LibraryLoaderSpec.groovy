@@ -1,275 +1,281 @@
 package org.boozallen.plugins.jte.binding
 
-import hudson.model.TaskListener
-import hudson.plugins.git.BranchSpec
-import hudson.plugins.git.GitSCM
-import hudson.plugins.git.SubmoduleConfig
-import hudson.plugins.git.extensions.GitSCMExtension
-import hudson.scm.SCM
-import jenkins.plugins.git.GitSampleRepoRule
-import jenkins.scm.api.SCMFile
-import jenkins.scm.api.SCMFileSystem
+import spock.lang.*
 import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.config.GovernanceTier
+import org.boozallen.plugins.jte.config.TemplateConfigException
 import org.boozallen.plugins.jte.config.TemplateConfigObject
 import org.boozallen.plugins.jte.config.TemplateLibrarySource
-import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
 import org.jenkinsci.plugins.workflow.cps.CpsScript
-import org.jenkinsci.plugins.workflow.flow.FlowExecution
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
-import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.junit.ClassRule
-import org.jvnet.hudson.test.GroovyJenkinsRule
-import spock.lang.Shared
-import spock.lang.Specification
+import org.jvnet.hudson.test.JenkinsRule
+import org.jvnet.hudson.test.WithoutJenkins
 
 class LibraryLoaderSpec extends Specification {
-    @Shared @ClassRule
-    @SuppressWarnings('JUnitPublicField')
-    public GroovyJenkinsRule groovyJenkinsRule = new GroovyJenkinsRule()
+    
+    @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
+    CpsScript script = Mock()
+    PrintStream logger = Mock() 
 
-    @Shared
-    @ClassRule GitSampleRepoRule sampleRepo = new GitSampleRepoRule()
-
-    @Shared
-    SCM scm = null
-
-    @Shared
-    String echoText = "printing echo"
-
-    @Shared
-    String cpsScriptPath = "cpsScript.groovy"
-
-    @Shared
-    String cpsScript = """
-               import org.jenkinsci.plugins.workflow.cps.*
-               import org.jenkinsci.plugins.workflow.job.*
-              
-"""
-    @Shared
-    String pipelineConfigPath = "pipeline_config.groovy"
-
-
-    @Shared
-    String pipelineConfigScript = """
-        libraries{
-            echox
-        }
-    """
-
-    @Shared
-    private WorkflowJob scmWorkflowJob = null
-
-    @Shared
-    CpsScmFlowDefinition cpsScmFlowDefinition = null
-
-    @Shared
-    String libsBaseDir = "sub-libs"
-
-    @Shared
-    String echoLibName = "echox"
-
-    @Shared
-    String echoStepName = "echo"
-
-    def setupSpec(){
-        // initialize repository
-        sampleRepo.init()
-
-        sampleRepo.write(cpsScriptPath, cpsScript);
-        sampleRepo.write(pipelineConfigPath, pipelineConfigScript)
-
-        // added for WorkflowMultibranchProject
-        sampleRepo.write("Jenkinsfile", "echo \"branch=master\"; node {checkout scm; echo readFile('file')}");
-        sampleRepo.write("file", "initial content");
-        sampleRepo.write("${libsBaseDir}/${echoLibName}/${echoStepName}.groovy", "echo '${echoText}'");
-
-        sampleRepo.git("add", "*")
-        sampleRepo.git("commit", "--all", "--message=master");
-
-
-        // create Governance Tier
-        scm = new GitSCM(
-                GitSCM.createRepoList(sampleRepo.toString(), null),
-                Collections.singletonList(new BranchSpec("*/master")),
-                false,
-                Collections.<SubmoduleConfig>emptyList(),
-                null,
-                null,
-                Collections.<GitSCMExtension>emptyList()
-        )
-
-        scmWorkflowJob = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "scmWorkflowJob");
-        cpsScmFlowDefinition = new CpsScmFlowDefinition(scm, cpsScriptPath)
-        scmWorkflowJob.setDefinition(cpsScmFlowDefinition);
-
-
+    def setup(){
+        GroovySpy(Utils, global:true)
+        _ * Utils.getCurrentJob() >> jenkins.createProject(WorkflowJob) 
+        _ * Utils.getLogger() >> logger
     }
-
-    def "librarysource.prefixBaseDir: with base directory"(){
-        given:
-
-        TemplateLibrarySource librarySource = new TemplateLibrarySource();// the thing being tested
-        librarySource.baseDir = libsBaseDir
-        librarySource.scm = scm
-
-        when:
-        String libPath = librarySource.prefixBaseDir(echoLibName)
-
-
-        then:
-        libPath != echoLibName
-        libPath == "${libsBaseDir}/${echoLibName}"
-    }
-
-    def "librarysource.prefixBaseDir: without base directory"(){
-        given:
-        TemplateLibrarySource librarySource = new TemplateLibrarySource();// the thing being tested
-
-        when:
-        String libPath = librarySource.prefixBaseDir(echoLibName)
-
-        then:
-        libPath == echoLibName
-    }
-
-    def "Get Library directory: with source base directory"(){
-        given:
-        WorkflowJob job = null
-        TaskListener listener = null
-        PrintStream logger = null
-
-        TemplateLibrarySource librarySource = new TemplateLibrarySource();// the thing being tested
-        librarySource.baseDir = libsBaseDir
-        librarySource.scm = scm
-
-        GroovySpy(Utils.class, global:true)
-        _ * Utils.getCurrentJob() >> { return job }
-        _ * Utils.getListener() >> {return listener}
-        _ * Utils.getLogger() >> {return logger}
-
-        when:
-        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(scmWorkflowJob);
-        FlowExecution execution = build.execution
-        listener = execution.owner.listener
-        logger = listener.logger
-        job = execution.owner.executable.parent
-
-        SCMFileSystem fs = Utils.scmFileSystemOrNull(scm, job)
-        String libPath = librarySource.prefixBaseDir(echoLibName)
-        SCMFile libDir = fs.child(libPath)
-
-
-        then:
-        job != null
-        fs != null
-
-        true == libDir.exists()
-        true == libDir.isDirectory()
-
-    }
-
-    def "Get Library step file: with base directory"(){
-        given:
-        WorkflowJob job = null
-        TaskListener listener = null
-        PrintStream logger = null
-
-        TemplateLibrarySource librarySource = new TemplateLibrarySource();// the thing being tested
-        librarySource.baseDir = libsBaseDir
-        librarySource.scm = scm
-
-        GroovySpy(Utils.class, global:true)
-        _ * Utils.getCurrentJob() >> { return job }
-        _ * Utils.getListener() >> {return listener}
-        _ * Utils.getLogger() >> {return logger}
-
-
-        when:
-        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(scmWorkflowJob);
-        FlowExecution execution = build.execution
-        listener = execution.owner.listener
-        logger = listener.logger
-        job = execution.owner.executable.parent
-
-        SCMFileSystem fs = Utils.scmFileSystemOrNull(scm, job)
-        String libPath = librarySource.prefixBaseDir(echoLibName)
-        SCMFile libDir = fs.child(libPath)
-        boolean hasFile = false
-        String content = null
-
-        libDir.children().findAll{ it.getName().endsWith(".groovy") }.each { step ->
-            if( echoStepName == (step.getName() - ".groovy")){
-                hasFile = true
-                content = step.contentAsString()
-            }
-        }
-
-
-        then:
-        true == hasFile
-        null != content
-        content.contains(echoText)
-
-    }
-
-    def "LibraryLoader.doInject; Library step file: with base directory"(){
-        given:
-        WorkflowJob job = null
-        TaskListener listener = null
-        PrintStream logger = null
-        Script utilsScript = null
-
-        TemplateLibrarySource librarySource = new TemplateLibrarySource();// the thing being tested
-        librarySource.baseDir = libsBaseDir
-        librarySource.scm = scm
-
-        GovernanceTier tier = GroovyMock(GovernanceTier.class, global:true)
-        _ * tier.getLibrarySources() >> { return Arrays.asList(librarySource) }
-        _ * tier.scm >> { return scm }
-        _ * tier.baseDir >> { return "" }
-        _ * GovernanceTier.getHierarchy() >> { return [tier] }
-
-        GroovySpy(Utils.class, global:true)
-        _ * Utils.getCurrentJob() >> { return job }
-        _ * Utils.getListener() >> {return listener}
-        _ * Utils.getLogger() >> {return logger}
-        _ * Utils.parseScript(_, _) >> { return utilsScript }
-
-        def returnMap = [:]
-        LinkedHashMap configMap = [libraries:[echox:returnMap]]
-        TemplateConfigObject configObject = GroovyMock(TemplateConfigObject)
-        configObject.config >> {return configMap}
-
-        CpsScript script = new CpsScript() {
-            @Override
-            Object run() {
-                return null
-            }
-        }
-
-        utilsScript = new CpsScript() {
-            @Override
-            Object run() {
-                return null
+    
+    @WithoutJenkins
+    def "missing library throws exception"(){
+        setup: 
+            TemplateLibrarySource libSource = Mock{
+                hasLibrary("test_library") >> false 
             }
 
-            def call(Object... args){}
-        }
+            GovernanceTier tier = GroovyMock(global:true){
+                getLibrarySources() >> [ libSource ]
+            }
+            GovernanceTier.getHierarchy() >> [ tier ]
+          
+            // mock libraries to load 
+            TemplateConfigObject config = new TemplateConfigObject(config: [
+                libraries: [
+                    test_library: [:]
+                ]
+            ])
+        when: 
+            LibraryLoader.doInject(config, script)
+        then: 
+            TemplateConfigException ex = thrown()
+            ex.message == "Library test_library Not Found."
+    }
 
-        when:
-        WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(scmWorkflowJob);
-        FlowExecution execution = build.execution
-        listener = execution.owner.listener
-        logger = listener.logger
-        job = execution.owner.executable.parent
+    @WithoutJenkins
+    def "when library source has library, loadLibrary is called"(){
+        setup: 
+            TemplateLibrarySource s = Mock{
+                hasLibrary("test_library") >> true 
+            }
+            GovernanceTier tier = GroovyMock(global: true){
+                getLibrarySources() >> [ s ] 
+            }
+            GovernanceTier.getHierarchy() >>  [ tier ]
 
-        LibraryLoader.doInject(configObject, script)
+            // mock libraries to load 
+            TemplateConfigObject config = new TemplateConfigObject(config: [
+                libraries: [
+                    test_library: [:]
+                ]
+            ])
 
+        when: 
+            LibraryLoader.doInject(config, script)
+        then: 
+            1 * s.loadLibrary(script, "test_library", [:])
+    }
 
-        then:
-        null != script.getBinding().getVariable(echoStepName)
+    @WithoutJenkins
+    def "Libraries can be loaded across library sources in a governance tier"(){
+        setup: 
+            TemplateLibrarySource s1 = Mock{
+                hasLibrary("libA") >> true 
+            }
+            TemplateLibrarySource s2 = Mock{
+                hasLibrary("libB") >> true
+            }
+            GovernanceTier tier = GroovyMock(global: true){
+                getLibrarySources() >> [ s1, s2 ]
+            }
+            GovernanceTier.getHierarchy() >> [ tier ]
 
+            // mock libraries to load 
+            TemplateConfigObject config = new TemplateConfigObject(config: [
+                libraries: [
+                    libA: [:],
+                    libB: [:]
+                ]
+            ])
+
+        when: 
+            LibraryLoader.doInject(config, script)
+        then: 
+            1 * s1.loadLibrary(script, "libA", [:])
+            0 * s1.loadLibrary(script, "libB", [:])
+            1 * s2.loadLibrary(script, "libB", [:])
+            0 * s2.loadLibrary(script, "libA", [:])
+    }
+
+    @WithoutJenkins
+    def "Libraries can be loaded across library sources in different governance tiers"(){
+        setup: 
+            TemplateLibrarySource s1 = Mock{
+                hasLibrary("libA") >> true 
+            }
+            TemplateLibrarySource s2 = Mock{
+                hasLibrary("libB") >> true 
+            }
+            GovernanceTier tier1 = Mock{
+                getLibrarySources() >> [ s1 ]
+            }
+            GovernanceTier tier2 = GroovyMock(global:true){
+                getLibrarySources() >> [ s2 ]
+            }
+            GovernanceTier.getHierarchy() >> [ tier1, tier2 ]
+
+            // mock libraries to load 
+            TemplateConfigObject config = new TemplateConfigObject(config: [
+                libraries: [
+                    libA: [:],
+                    libB: [:]
+                ]
+            ])
+        when: 
+            LibraryLoader.doInject(config, script)
+        then: 
+            1 * s1.loadLibrary(script, "libA", [:])
+            0 * s1.loadLibrary(script, "libB", [:])
+            1 * s2.loadLibrary(script, "libB", [:])
+            0 * s2.loadLibrary(script, "libA", [:])
+    }
+
+    @WithoutJenkins
+    def "library on more granular governance tier gets loaded"(){
+        setup: 
+             TemplateLibrarySource s1 = Mock{
+                hasLibrary("libA") >> true 
+            }
+            TemplateLibrarySource s2 = Mock{
+                hasLibrary("libA") >> true 
+            }
+            GovernanceTier tier1 = Mock{
+                getLibrarySources() >> [ s1 ]
+            }
+            GovernanceTier tier2 = GroovyMock(global:true){
+                getLibrarySources() >> [ s2 ]
+            }
+            GovernanceTier.getHierarchy() >> [ tier1, tier2 ]
+
+            // mock libraries to load 
+            TemplateConfigObject config = new TemplateConfigObject(config: [
+                libraries: [
+                    libA: [:]
+                ]
+            ])
+
+        when: 
+            LibraryLoader.doInject(config, script)
+        then: 
+            1 * s1.loadLibrary(script, "libA", [:])
+            0 * s2.loadLibrary(script, "libA", [:])        
+    }
+
+    @WithoutJenkins
+    def "library loader correctly passes step config"(){
+        setup: 
+            TemplateLibrarySource libSource = Mock{
+                hasLibrary("libA") >> true 
+                hasLibrary("libB") >> true 
+            }
+            GovernanceTier tier = GroovyMock(global:true){
+                getLibrarySources() >> [ libSource ]
+            }
+            GovernanceTier.getHierarchy() >> [ tier ]
+
+            // mock libraries to load 
+            TemplateConfigObject config = new TemplateConfigObject(config: [
+                libraries: [
+                    libA: [
+                        fieldA: "A" 
+                    ],
+                    libB: [
+                        fieldB: "B"
+                    ]
+                ]
+            ])
+
+        when: 
+            LibraryLoader.doInject(config, script)
+        then: 
+            1 * libSource.loadLibrary(script, "libA", [fieldA: "A"])
+            1 * libSource.loadLibrary(script, "libB", [fieldB: "B"])
+    }
+
+    @WithoutJenkins
+    def "steps configured via configuration file get loaded as default step implementation"(){
+        setup:
+            TemplateBinding binding = Mock()
+            script.getBinding() >> binding 
+            StepWrapper s = GroovyMock(StepWrapper, global: true)
+            StepWrapper.createDefaultStep(script, "test_step", [:]) >> s 
+            
+            TemplateConfigObject config = new TemplateConfigObject(config: [
+                steps: [
+                    test_step: [:]
+                ]
+            ])
+        when: 
+            LibraryLoader.doInject(config, script)
+            LibraryLoader.doPostInject(config, script) 
+        then: 
+            1 * binding.setVariable("test_step", s)
+            1 * logger.println("[JTE] Creating step test_step from the default step implementation.")
+    }
+
+    @WithoutJenkins
+    def "warning issued when configured steps conflict with loaded library"(){
+        setup:
+            TemplateBinding binding = Mock{
+                hasStep("test_step") >> true 
+                getStep("test_step") >> new StepWrapper(library: "libA")
+            }
+            script.getBinding() >> binding 
+            TemplateConfigObject config = new TemplateConfigObject(config: [
+                steps: [
+                    test_step: [:]
+                ]
+            ])
+        when: 
+            LibraryLoader.doInject(config, script)
+            LibraryLoader.doPostInject(config, script) 
+        then: 
+            1 * logger.println("[JTE] Warning: Configured step test_step ignored. Loaded by the libA Library.")
+            0 * binding.setVariable(_ , _)
+    }
+
+    @WithoutJenkins
+    def "template methods not implemented are Null Step"(){
+        setup:
+            Set<String> registry = new ArrayList() 
+            TemplateBinding binding = Mock(){
+                setVariable(_, _) >> { args ->
+                    registry << args[0]
+                }
+                hasStep(_) >> { String stepName -> 
+                    stepName in registry
+                }
+                getProperty("registry") >> registry 
+            }
+            script.getBinding() >> binding 
+            StepWrapper s = Mock()
+            StepWrapper s2 = GroovyMock(global: true)
+            StepWrapper.createDefaultStep(script, "test_step1", [:]) >> s 
+            StepWrapper.createNullStep("test_step2", script) >> s2 
+    
+            TemplateConfigObject config = new TemplateConfigObject(config: [
+                steps: [
+                    test_step1: [:]
+                ],
+                template_methods: [
+                    test_step1: [:],
+                    test_step2: [:]
+                ]
+            ])
+        when: 
+            LibraryLoader.doInject(config, script)
+            LibraryLoader.doPostInject(config, script) 
+        then: 
+            1 * StepWrapper.createDefaultStep(script, "test_step1", [:])
+            1 * StepWrapper.createNullStep("test_step2", script)
+            0 * StepWrapper.createNullStep("test_step1", script)
     }
 
 }
