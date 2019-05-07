@@ -57,7 +57,7 @@ class TemplateConfigDsl implements Serializable{
     return templateConfig
   }
 
-  String serialize(TemplateConfigObject configObj){
+  static String serialize(TemplateConfigObject configObj){
     Map config = configObj.getConfig()
 
     // inserts merge keys into config Map for printing 
