@@ -18,6 +18,8 @@ package org.boozallen.plugins.jte.config
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.kohsuke.groovy.sandbox.SandboxTransformer
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
 
 /*
   Parses an Template Config File and returns a TemplateConfigObject
@@ -58,7 +60,7 @@ class TemplateConfigDsl implements Serializable{
   }
 
   static String serialize(TemplateConfigObject configObj){
-    Map config = configObj.getConfig()
+    Map config = new JsonSlurper().parseText(JsonOutput.toJson(configObj.getConfig()))
 
     // inserts merge keys into config Map for printing 
     configObj.merge.each{ merge -> 
