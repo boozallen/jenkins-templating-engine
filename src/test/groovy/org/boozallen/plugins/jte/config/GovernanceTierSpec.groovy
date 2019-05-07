@@ -17,6 +17,7 @@ package org.boozallen.plugins.jte.config
 import org.boozallen.plugins.jte.Utils
 import spock.lang.* 
 import org.junit.Rule
+import org.junit.ClassRule
 import org.jvnet.hudson.test.JenkinsRule
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import com.cloudbees.hudson.plugins.folder.Folder
@@ -26,12 +27,9 @@ import hudson.plugins.git.BranchSpec
 import hudson.plugins.git.extensions.GitSCMExtension
 import hudson.plugins.git.SubmoduleConfig
 
-
-
-
 class GovernanceTierSpec extends Specification{
 
-    @Rule JenkinsRule jenkinsRule = new JenkinsRule()
+    @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
     @Rule GitSampleRepoRule sampleRepo = new GitSampleRepoRule()
     GovernanceTier tier1
     GovernanceTier tier2 
@@ -79,7 +77,7 @@ class GovernanceTierSpec extends Specification{
     // test baseDir is root of repository 
     def "Get Config: root base directory"(){
         given: 
-            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
             def config  
@@ -92,7 +90,7 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Jenkinsfile: root base directory"(){
         given: 
-            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
             def jenkinsfile 
@@ -105,7 +103,7 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Pipeline Template: root base directory"(){
         given: 
-            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
             def jenkinsfile  
@@ -119,7 +117,7 @@ class GovernanceTierSpec extends Specification{
     // test basedir is nested 
     def "Get Config: nested base directory"(){
         given: 
-            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
             def config 
@@ -133,7 +131,7 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Jenkinsfile: nested base directory"(){        
         given: 
-            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
             def jenkinsfile
@@ -146,7 +144,7 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Pipeline Template: nested base directory"(){
         given: 
-            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
             def jenkinsfile  
@@ -160,7 +158,7 @@ class GovernanceTierSpec extends Specification{
     
     def "Get Governance Hierarchy: no hierarchy"(){
         given: 
-            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
             def list 
@@ -174,11 +172,11 @@ class GovernanceTierSpec extends Specification{
     def "Get Governance Hierarchy: 1 deep folder structure, no global config"(){
         given:             
             // setup job hierarchy 
-            Folder folder = jenkinsRule.jenkins.createProject(Folder, "testFolder")
+            Folder folder = jenkins.createProject(Folder, jenkins.createUniqueProjectName())
             TemplateConfigFolderProperty prop = new TemplateConfigFolderProperty(tier1) 
             folder.getProperties().add(prop) 
 
-            WorkflowJob currentJob = folder.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = folder.createProject(WorkflowJob, jenkins.createUniqueProjectName()); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
 
@@ -195,15 +193,15 @@ class GovernanceTierSpec extends Specification{
     def "Get Governance Hierarchy: 2 deep folder structure, no global config"(){
         given: "a job within a nested folder structure" 
             // setup job hierarchy 
-            Folder folder1 = jenkinsRule.jenkins.createProject(Folder, "folder1")
+            Folder folder1 = jenkins.createProject(Folder, jenkins.createUniqueProjectName())
             TemplateConfigFolderProperty prop1 = new TemplateConfigFolderProperty(tier1) 
             folder1.getProperties().add(prop1)
 
-            Folder folder2 = folder1.createProject(Folder, "folder2")
+            Folder folder2 = folder1.createProject(Folder, jenkins.createUniqueProjectName())
             TemplateConfigFolderProperty prop2 = new TemplateConfigFolderProperty(tier2)
             folder2.getProperties().add(prop2)
 
-            WorkflowJob currentJob = folder2.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = folder2.createProject(WorkflowJob, jenkins.createUniqueProjectName()); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
 
@@ -222,12 +220,12 @@ class GovernanceTierSpec extends Specification{
     def "Get Governance Hierarchy: folder with no tier"(){
         given: "a job within a nested folder structure" 
             // setup job hierarchy 
-            Folder folder1 = jenkinsRule.jenkins.createProject(Folder, "folder1")
-            Folder folder2 = folder1.createProject(Folder, "folder2")
+            Folder folder1 = jenkins.createProject(Folder, jenkins.createUniqueProjectName())
+            Folder folder2 = folder1.createProject(Folder, jenkins.createUniqueProjectName())
             TemplateConfigFolderProperty prop2 = new TemplateConfigFolderProperty(tier1)
             folder2.getProperties().add(prop2)
 
-            WorkflowJob currentJob = folder2.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = folder2.createProject(WorkflowJob, jenkins.createUniqueProjectName()); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
 
@@ -249,7 +247,7 @@ class GovernanceTierSpec extends Specification{
             TemplateGlobalConfig global = TemplateGlobalConfig.get() 
             global.setTier(tier1) 
 
-            WorkflowJob currentJob = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
             
@@ -269,11 +267,11 @@ class GovernanceTierSpec extends Specification{
             global.setTier(tier1) 
 
             // setup job hierarchy 
-            Folder folder = jenkinsRule.jenkins.createProject(Folder, "testFolder")
+            Folder folder = jenkins.createProject(Folder, jenkins.createUniqueProjectName())
             TemplateConfigFolderProperty prop = new TemplateConfigFolderProperty(tier2) 
             folder.getProperties().add(prop) 
 
-            WorkflowJob currentJob = folder.createProject(WorkflowJob, "job"); 
+            WorkflowJob currentJob = folder.createProject(WorkflowJob, jenkins.createUniqueProjectName()); 
             GroovySpy(Utils, global: true)
             _ * Utils.getCurrentJob() >> currentJob 
             

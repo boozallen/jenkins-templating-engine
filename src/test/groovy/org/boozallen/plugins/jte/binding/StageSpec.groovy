@@ -23,12 +23,12 @@ import org.jvnet.hudson.test.WithoutJenkins
 
 class StageSpec extends Specification{
 
-    @Rule JenkinsRule jenkinsRule = new JenkinsRule()
+    @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
     @Shared @ClassRule BuildWatcher bw = new BuildWatcher()
 
     def "validate stage executes single step"(){
         given: 
-            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob job = jenkins.createProject(WorkflowJob); 
             job.setDefinition(new CpsFlowDefinition("""
             import org.boozallen.plugins.jte.binding.TemplateBinding
             import org.boozallen.plugins.jte.binding.Stage
@@ -52,14 +52,14 @@ class StageSpec extends Specification{
             test_stage()
 
             """, false))
-            def build =  jenkinsRule.buildAndAssertSuccess(job)
+            def build =  jenkins.buildAndAssertSuccess(job)
         expect: 
-            jenkinsRule.assertLogContains("running step A", build)
+            jenkins.assertLogContains("running step A", build)
     }
 
-    def "validate stage executes multple steps"(){
+    def "validate stage executes multiple steps"(){
         given: 
-            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob job = jenkins.createProject(WorkflowJob); 
             job.setDefinition(new CpsFlowDefinition("""
             import org.boozallen.plugins.jte.binding.TemplateBinding
             import org.boozallen.plugins.jte.binding.Stage
@@ -85,15 +85,15 @@ class StageSpec extends Specification{
             test_stage()
 
             """, false))
-            def build =  jenkinsRule.buildAndAssertSuccess(job)
+            def build =  jenkins.buildAndAssertSuccess(job)
         expect: 
-            jenkinsRule.assertLogContains("running step A", build)
-            jenkinsRule.assertLogContains("running step B", build)
+            jenkins.assertLogContains("running step A", build)
+            jenkins.assertLogContains("running step B", build)
     }
 
     def "validate stage executes steps in order"(){
         given: 
-            WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob, "job"); 
+            WorkflowJob job = jenkins.createProject(WorkflowJob); 
             job.setDefinition(new CpsFlowDefinition("""
             import org.boozallen.plugins.jte.binding.TemplateBinding
             import org.boozallen.plugins.jte.binding.Stage
@@ -119,8 +119,8 @@ class StageSpec extends Specification{
             test_stage()
 
             """, false))
-            def build =  jenkinsRule.buildAndAssertSuccess(job)
-            String log = jenkinsRule.getLog(build)
+            def build =  jenkins.buildAndAssertSuccess(job)
+            String log = jenkins.getLog(build)
             def aN, bN
             log.eachLine{ line, count -> 
                 if (line.contains("running step A")) aN = count
