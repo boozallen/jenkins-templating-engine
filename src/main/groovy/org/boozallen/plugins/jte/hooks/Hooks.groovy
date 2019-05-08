@@ -17,6 +17,7 @@
 package org.boozallen.plugins.jte.hooks
 
 import org.boozallen.plugins.jte.Utils
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.boozallen.plugins.jte.binding.* 
 import java.lang.annotation.Annotation
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
@@ -55,7 +56,7 @@ class Hooks implements Serializable{
                                 .loadClass("org.boozallen.plugins.jte.hooks.Hooks")
                                 .getResource("Invoke.groovy")
                                 .text
-        Utils.parseScript(invoke, b)(a, b, context)
+        TemplateScriptEngine.parse(invoke, b)(a, b, context)
     }
     
 }

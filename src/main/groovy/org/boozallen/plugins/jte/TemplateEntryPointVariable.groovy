@@ -20,6 +20,7 @@ import org.boozallen.plugins.jte.config.TemplateConfigBuilder
 import org.boozallen.plugins.jte.binding.* 
 import org.boozallen.plugins.jte.config.* 
 import org.boozallen.plugins.jte.hooks.* 
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import jenkins.model.Jenkins
 import hudson.Extension
 import hudson.ExtensionList 
@@ -71,7 +72,7 @@ import javax.annotation.Nonnull
                                 .getResource("TemplateEntryPoint.groovy")
                                 .text
 
-            template = Utils.parseScript(entryPoint, script.getBinding())
+            template = TemplateScriptEngine.parse(entryPoint, script.getBinding())
             script.getBinding().setVariable(getName(), template)
         }
         return template
