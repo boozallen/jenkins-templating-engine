@@ -19,6 +19,7 @@ package org.boozallen.plugins.jte.binding
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.hooks.*
 import org.boozallen.plugins.jte.Utils
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
@@ -79,7 +80,7 @@ class StepWrapper extends TemplatePrimitive{
                                     .loadClass("org.boozallen.plugins.jte.binding.StepWrapper")
                                     .getResource("StepWrapperImpl.groovy")
                                     .text
-            Script step = Utils.parseScript(invoke, script.getBinding())
+            Script step = TemplateScriptEngine.parse(invoke, script.getBinding())
             return step(name, library, script, impl, methodName, args)
         }else{
             throw new TemplateException("Step ${name} from the library ${library} does not have the method ${methodName}(${args.collect{ it.getClass().simpleName }.join(", ")})")
@@ -117,7 +118,7 @@ class StepWrapper extends TemplatePrimitive{
     }
 
     static StepWrapper createFromString(String stepText, CpsScript script, String name, String library, Map libConfig){
-        Script impl = Utils.parseScript(stepText, script.getBinding())
+        Script impl = TemplateScriptEngine.parse(stepText, script.getBinding())
         impl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return libConfig }
         return new StepWrapper(script: script, impl: impl, name: name, library: library) 
     }
