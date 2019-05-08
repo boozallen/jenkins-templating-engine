@@ -24,6 +24,7 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
     LogLevel logType 
     Boolean firstLine
     Boolean multiLine
+    Boolean initiallyHidden
 
     @Override
     ConsoleAnnotator<?> annotate(WorkflowRun context, MarkupText text, int charPos) {
@@ -35,11 +36,14 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
             tags.push("first-line='${firstLine}''")
             tags.push("multi-line='${multiLine}'")
         }
+        if(initiallyHidden){
+            tags.push("initially-hidden='${initiallyHidden}'")
+        }
         text.wrapBy("<span ${tags.join(" ")}>", '</span>')
         return null
     }
 
-    static void print(LogLevel logType = LogLevel.INFO, String message) {
+    static void print(String message, Boolean initiallyHidden = false, LogLevel logType = LogLevel.INFO) {
         def alphabet = (["a".."z"] + [0..9]).flatten()
         String messageID = (1..10).collect{ alphabet[ new Random().nextInt(alphabet.size()) ] }.join()
         TaskListener listener = Utils.getListener()
@@ -54,7 +58,8 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
                     logType: logType, 
                     messageID: messageID, 
                     firstLine: firstLine, 
-                    multiLine: multiLine
+                    multiLine: multiLine,
+                    initiallyHidden: initiallyHidden
                 ))
                 if (firstLine) firstLine = false
                 logger.println(CONSOLE_NOTE_PREFIX + line)
@@ -62,12 +67,12 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
         }
     }
 
-    static void printWarning(String message) {
-        print(LogLevel.WARN, message)
+    static void printWarning(String message, Boolean initiallyHidden = false) {
+        print(message, initiallyHidden, LogLevel.WARN)
     }
 
-    static void printError(String message) {
-        print(LogLevel.ERROR, message)
+    static void printError(String message, Boolean initiallyHidden = false ) {
+        print(message, initiallyHidden, LogLevel.ERROR)
     }
 
     @Extension public static final class DescriptorImpl extends ConsoleAnnotationDescriptor {}
