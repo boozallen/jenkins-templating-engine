@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte
+package org.boozallen.plugins.jte.utils
 
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.config.*
@@ -58,36 +58,30 @@ class FileSystemWrapper {
         if ignoreMissing = true, missing files arent logged. 
         returns null if file not present
     */
-    String getFileContents(String filePath, String loggingDescription, Boolean logMissingFile = true){
+    String getFileContents(String filePath, String loggingDescription = null, Boolean logMissingFile = true){
         if (!fs){
             return null 
         }
-        try {
-            SCMFile f = fs.child(filePath)
-            if (!f.exists()){
-                if( logMissingFile ){
-                    TemplateLogger.printWarning("""
-                    ${filePath} does not exist.
-                    within ${scmKey}.""", true)
-                }
-                return null
+        SCMFile f = fs.child(filePath)
+        if (!f.exists()){
+            if( logMissingFile ){
+                TemplateLogger.printWarning("""${filePath} does not exist.
+                                                -- scm: ${scmKey}""", true)
             }
-            if(!f.isFile()){
-                TemplateLogger.printWarning "${filePath} exists but is not a file."
-                return null
-                //throw new JTEException("${filePath} is not a file.")
-            }
-            if (log?.desc){
-                log?.logger?.println "${log?.prologue}Obtained ${log?.desc} ${filePath} from ${log?.key ?:"[inferred]"}"
-            }
-
-            return f.contentAsString()
-
-        } catch(any) {
-            log?.logger.println "${log?.prologue}exception ${any} for ${filePath} from ${log?.key ?:"[inferred]"}"
-        } finally{
-            fs.close()
+            return null
         }
+        if(!f.isFile()){
+            TemplateLogger.printWarning("""${filePath} exists but is not a file.
+                                            -- scm: ${scmKey}""", true) 
+            return null
+        }
+        if (loggingDescription){
+            TemplateLogger.print("""Obtained ${loggingDescription}
+                                    -- scm: ${scmKey}
+                                    -- file path: ${filePath}""", true) 
+        }
+        fs.close()
+        return f.contentAsString()
     }
 
 
@@ -102,7 +96,7 @@ class FileSystemWrapper {
                 return null 
             }
         }else{
-            return fsFrom(job, Utils.getListener())
+            return fsFrom(job)
         }
     }
 
@@ -110,8 +104,9 @@ class FileSystemWrapper {
         return[0]: SCMFileSystem
         return[1]: String: key from scm
     */
-    static def fsFrom(WorkflowJob job, TaskListener listener){
+    static def fsFrom(WorkflowJob job){
         ItemGroup<?> parent = job.getParent()
+        TaskListener listener = Utils.getListener()
         String key = null
         SCMFileSystem fs = null
 
@@ -159,7 +154,7 @@ class FileSystemWrapper {
         }catch(JTEException jteex){//throw our exception
             throw (jteex.cause ?: jteex)
         }catch(any){// ignore but print every other exception
-            logger.println any
+            TemplateLogger.printWarning(any.toString())
         }
 
         return [fs, key]

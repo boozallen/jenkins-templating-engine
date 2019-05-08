@@ -20,7 +20,7 @@ import org.boozallen.plugins.jte.config.TemplateConfigBuilder
 import org.boozallen.plugins.jte.binding.* 
 import org.boozallen.plugins.jte.config.* 
 import org.boozallen.plugins.jte.hooks.* 
-import org.boozallen.plugins.jte.utils.TemplateScriptEngine
+import org.boozallen.plugins.jte.utils.*
 import jenkins.model.Jenkins
 import hudson.Extension
 import hudson.ExtensionList 
@@ -93,7 +93,9 @@ import javax.annotation.Nonnull
         }
 
         // get job config if present 
-        String repoConfigFile = Utils.getFileContents(GovernanceTier.CONFIG_FILE, null, "Template Configuration File")
+        FileSystemWrapper fsw = new FileSystemWrapper()
+
+        String repoConfigFile = fsw.getFileContents(GovernanceTier.CONFIG_FILE, "Template Configuration File", false)
         if (repoConfigFile){
             TemplateConfigObject repoConfig = TemplateConfigDsl.parse(repoConfigFile)
             pipelineConfig.join(repoConfig)
