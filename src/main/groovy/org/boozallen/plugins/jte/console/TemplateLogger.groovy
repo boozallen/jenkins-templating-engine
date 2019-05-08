@@ -20,8 +20,7 @@ enum LogLevel{
 public class TemplateLogger extends ConsoleNote<WorkflowRun> {
 
     private static final String CONSOLE_NOTE_PREFIX = "[JTE] "
-    static final Integer ID = 0 
-    Integer messageID 
+    String messageID 
     LogLevel logType 
     Boolean firstLine
     Boolean multiLine
@@ -41,7 +40,8 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
     }
 
     static void print(LogLevel logType = LogLevel.INFO, String message) {
-        Integer messageID = ID++ 
+        def alphabet = (["a".."z"] + [0..9]).flatten()
+        String messageID = (1..10).collect{ alphabet[ new Random().nextInt(alphabet.size()) ] }.join()
         TaskListener listener = Utils.getListener()
         PrintStream logger = listener.getLogger()
         String trimmedMsg = message.trim() 
@@ -56,7 +56,7 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
                     firstLine: firstLine, 
                     multiLine: multiLine
                 ))
-                if (firstLine) firstLine=false
+                if (firstLine) firstLine = false
                 logger.println(CONSOLE_NOTE_PREFIX + line)
             }
         }
