@@ -85,7 +85,7 @@ class PipelineConfig implements Serializable{
         TemplateLogger.print(
                 TemplateConfigDsl.printBlock([], 0,
                         configResult([:], getNestedKeys(child.config), argCopy, currentConfigObject) ).join("\n"),
-                    true, LogLevel.INFO
+                    true, LogLevel.INFO, false
         )
 
 

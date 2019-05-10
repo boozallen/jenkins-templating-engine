@@ -353,7 +353,7 @@ class TemplateEntryPointVariableSpec extends Specification {
 
     void templateLoggerSetup(){
         GroovySpy(TemplateLogger, global: true)
-        TemplateLogger.print(_, _, _) >> { s, h, l -> return System.out.print(s) }
+        TemplateLogger.print(_, _, _, _) >> { s, h, l, t -> return System.out.print(s) }
     }
 
     // helper
@@ -361,7 +361,7 @@ class TemplateEntryPointVariableSpec extends Specification {
 
         PipelineConfig p = new PipelineConfig(TemplateConfigDsl.parse(basePipelineConfig))
 
-        println( "=== combine ===" )
+        println(""); println( "=== combine ===" )
         configs[0..-1].eachWithIndex{ c, i ->
             TemplateConfigObject config = c ? TemplateConfigDsl.parse(c) : null
             if (config){
@@ -371,13 +371,13 @@ class TemplateEntryPointVariableSpec extends Specification {
 
                 p.join(config)
 
-                println( "end p.config:${i}" )
+                println(""); println( "end p.config:${i}" )
             }
         }
 
         // p.printChanges(System.out)
 
-        println( "=== end combine ===" )
+        println( "=== end combine ===" ); println("")
 
         p.config
     }
