@@ -1,7 +1,8 @@
 2019-05-09 Carlos OKieffe
   * adding output of Pipeline.join changes
-  * integrated TemplateLogger
-  * integrated TemplateConfigDsl serialization
+  * archive aggregated pipeline_config.groovy for each build
+  * initial integration of TemplateLogger (logger branch)
+  * initial integration of TemplateConfigDsl serialization (print-config branch)
 
 2019-04-26 Steven Terrana
   * Internal refactoring to simplify library loading
