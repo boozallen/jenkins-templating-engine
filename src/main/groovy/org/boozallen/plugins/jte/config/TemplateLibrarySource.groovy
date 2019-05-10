@@ -17,6 +17,8 @@
 package org.boozallen.plugins.jte.config
 
 import org.boozallen.plugins.jte.Utils
+import org.boozallen.plugins.jte.utils.FileSystemWrapper
+import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.binding.StepWrapper
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.DataBoundSetter
@@ -57,7 +59,8 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
     public void loadLibrary(CpsScript script, String libName, Map libConfig){
         createFs()
         if (!fs) return 
-        Utils.getLogger().println "[JTE] Loading Library ${libName} from ${scm.getKey()}"
+        TemplateLogger.print("""Loading Library ${libName}
+                                -- scm: ${scm.getKey()}""", true)
         SCMFile lib = fs.child(prefixBaseDir(libName))
         lib.children().findAll{ 
             it.getName().endsWith(".groovy") 
@@ -73,7 +76,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
 
     public void createFs(){
         if (!fs){
-            fs = FileSystemWrapper.createSCMFileSystem(scm)
+            fs = new FileSystemWrapper().createSCMFileSystem(scm)
         }
     }
 

@@ -18,6 +18,8 @@ package org.boozallen.plugins.jte.utils
 
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.config.*
+import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.Utils
 import org.jenkinsci.plugins.workflow.cps.CpsThread
 import org.jenkinsci.plugins.workflow.cps.CpsThreadGroup
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
@@ -37,7 +39,6 @@ import hudson.model.Queue
 import hudson.model.TaskListener
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
-
 import java.lang.reflect.Field
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -50,7 +51,10 @@ class FileSystemWrapper {
 
     FileSystemWrapper(SCM scm = null){
         this.scm = scm 
-        (fs, scmKey) = createSCMFileSystem(scm)
+        /*
+            this initializes fs and scmKey 
+        */
+        createSCMFileSystem(scm)
     }
 
     /*
@@ -84,19 +88,20 @@ class FileSystemWrapper {
         return f.contentAsString()
     }
 
-
-
-    static SCMFileSystem createSCMFileSystem(SCM scm = null){
+    SCMFileSystem createSCMFileSystem(SCM scm = null){
         WorkflowJob job = Utils.getCurrentJob()
         if(scm){
             try{
-                return SCMFileSystem.of(job, scm)
+                scmKey = scm.getKey()
+                fs = SCMFileSystem.of(job,scm)
+                return fs
             }catch(any){
-                Utils.getLogger().println any
+                TemplateLogger.printWarning(any.toString())
                 return null 
             }
         }else{
-            return fsFrom(job)
+            (fs, scmKey) = fsFrom(job)
+            return fs
         }
     }
 
@@ -104,7 +109,7 @@ class FileSystemWrapper {
         return[0]: SCMFileSystem
         return[1]: String: key from scm
     */
-    static def fsFrom(WorkflowJob job){
+    def fsFrom(WorkflowJob job){
         ItemGroup<?> parent = job.getParent()
         TaskListener listener = Utils.getListener()
         String key = null
@@ -158,6 +163,20 @@ class FileSystemWrapper {
         }
 
         return [fs, key]
+    }
+
+    static class JTEException extends Exception {
+        JTEException(String message){
+            super(message)
+        }
+
+        JTEException(String message, Throwable t){
+            super(message, t)
+        }
+
+        JTEException(Throwable t){
+            super(t)
+        }
     }
 
 }

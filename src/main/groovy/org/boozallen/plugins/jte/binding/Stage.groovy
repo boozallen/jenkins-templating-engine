@@ -19,6 +19,7 @@ package org.boozallen.plugins.jte.binding
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
+import org.boozallen.plugins.jte.console.TemplateLogger
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.Extension 
 import jenkins.model.Jenkins
@@ -51,7 +52,7 @@ class Stage extends TemplatePrimitive {
                                 .loadClass("org.boozallen.plugins.jte.binding.Stage")
                                 .getResource("StageImpl.groovy")
                                 .text
-        Utils.getLogger().println "[JTE][Stage - ${name}]" 
+        TemplateLogger.print "[Stage - ${name}]" 
         TemplateScriptEngine.parse(invoke, script.getBinding())(script, steps)
     }
 
