@@ -27,6 +27,7 @@ def call(CpsClosure body = null){
 
     // TODO: find a cleaner way.. 
     createWorkspaceStash()
+    archiveConfig()
 
     Map context = [
         step: null, 
@@ -63,6 +64,12 @@ void createWorkspaceStash(){
   }catch(any){}
 }
 
+void archiveConfig(){
+    node{
+        writeYaml data: pipelineConfig, file: "aggregated_config.yaml"
+        archiveArtifacts "aggregated_config.yaml"
+    }
+}
 
 
 
