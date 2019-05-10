@@ -18,6 +18,9 @@ package org.boozallen.plugins.jte
 
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.config.*
+import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.utils.FileSystemWrapper
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.jenkinsci.plugins.workflow.cps.CpsThread
 import org.jenkinsci.plugins.workflow.cps.CpsThreadGroup
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
@@ -92,12 +95,13 @@ class Utils implements Serializable{
     static String getTemplate(Map config){
 
         // tenant Jenkinsfile if allowed 
-        String repoJenkinsfile = getFileContents("Jenkinsfile", null, "Repository Jenkinsfile")
+        FileSystemWrapper fs = new FileSystemWrapper()
+        String repoJenkinsfile = fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false)
         if (repoJenkinsfile){
             if (config.allow_scm_jenkinsfile){
                 return repoJenkinsfile
             }else{
-                getLogger().println "[JTE] Warning: Repository provided Jenkinsfile that will not be used, per organizational policy."
+                TemplateLogger.print "Warning: Repository provided Jenkinsfile that will not be used, per organizational policy."
             }
         }
 
@@ -130,6 +134,6 @@ class Utils implements Serializable{
     @Whitelisted
     static void findAndRunTemplate(LinkedHashMap pipelineConfig, TemplateBinding binding){
         String template = getTemplate(pipelineConfig)
-        parseScript(template, binding).run() 
+        TemplateScriptEngine.parse(template, binding).run() 
     }
 }

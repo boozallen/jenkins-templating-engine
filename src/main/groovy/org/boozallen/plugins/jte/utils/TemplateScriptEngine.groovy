@@ -14,7 +14,8 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte
+package org.boozallen.plugins.jte.utils
+
 import java.lang.reflect.Field
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -39,12 +40,14 @@ class TemplateScriptEngine implements Serializable{
         // define auto importing of JTE hook annotations
         ImportCustomizer ic = new ImportCustomizer()
         ic.addStarImports("org.boozallen.plugins.jte.hooks")
-        CompilerConfiguration cc = configF.get(shell)
-        cc.addCompilationCustomizers(ic)
 
-        // modify the shell 
+        // get jenkins compiler configuration
         Field configF = GroovyShell.class.getDeclaredField("config")
         configF.setAccessible(true)
+        CompilerConfiguration cc = configF.get(shell)
+
+        // add import customizers
+        cc.addCompilationCustomizers(ic)
         configF.set(shell, cc)
 
         // parse the script 
