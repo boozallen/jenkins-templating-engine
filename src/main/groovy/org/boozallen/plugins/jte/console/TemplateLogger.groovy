@@ -43,7 +43,7 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
         return null
     }
 
-    static void print(String message, Boolean initiallyHidden = false, LogLevel logType = LogLevel.INFO) {
+    static void print(String message, Boolean initiallyHidden = false, LogLevel logType = LogLevel.INFO, Boolean trimLines = true) {
         def alphabet = (["a".."z"] + [0..9]).flatten()
         String messageID = (1..10).collect{ alphabet[ new Random().nextInt(alphabet.size()) ] }.join()
         TaskListener listener = Utils.getListener()
@@ -53,7 +53,9 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
         Boolean multiLine = (trimmedMsg.split("\n").size() > 1)
         trimmedMsg.trim().eachLine{ line -> 
             synchronized (logger) {
-                line = line.trim()
+                if( trimLines ) {
+                    line = line.trim()
+                }
                 listener.annotate(new TemplateLogger(
                     logType: logType, 
                     messageID: messageID, 
