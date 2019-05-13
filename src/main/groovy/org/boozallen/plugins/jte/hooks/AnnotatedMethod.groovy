@@ -17,7 +17,6 @@
 package org.boozallen.plugins.jte.hooks
 
 import org.boozallen.plugins.jte.binding.StepWrapper
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException

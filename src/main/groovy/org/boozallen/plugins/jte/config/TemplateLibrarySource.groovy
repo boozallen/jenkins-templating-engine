@@ -16,7 +16,6 @@
 
 package org.boozallen.plugins.jte.config
 
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.binding.StepWrapper

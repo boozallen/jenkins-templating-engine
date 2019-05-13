@@ -16,10 +16,10 @@
 
 package org.boozallen.plugins.jte.utils
 
+import org.boozallen.plugins.jte.utils.RunUtils
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.console.TemplateLogger
-import org.boozallen.plugins.jte.Utils
 import org.jenkinsci.plugins.workflow.cps.CpsThread
 import org.jenkinsci.plugins.workflow.cps.CpsThreadGroup
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
@@ -89,7 +89,7 @@ class FileSystemWrapper {
     }
 
     SCMFileSystem createSCMFileSystem(SCM scm = null){
-        WorkflowJob job = Utils.getCurrentJob()
+        WorkflowJob job = RunUtils.getJob()
         if(scm){
             try{
                 scmKey = scm.getKey()
@@ -111,7 +111,7 @@ class FileSystemWrapper {
     */
     def fsFrom(WorkflowJob job){
         ItemGroup<?> parent = job.getParent()
-        TaskListener listener = Utils.getListener()
+        TaskListener listener = RunUtils.getListener()
         String key = null
         SCMFileSystem fs = null
 

@@ -20,7 +20,6 @@ import org.boozallen.plugins.jte.config.TemplateConfigObject
 import org.boozallen.plugins.jte.config.TemplateConfigException
 import org.boozallen.plugins.jte.config.TemplateLibrarySource
 import org.boozallen.plugins.jte.config.GovernanceTier
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.console.TemplateLogger
 import hudson.Extension 
 import org.jenkinsci.plugins.workflow.cps.CpsScript
@@ -30,7 +29,6 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
 
     static void doInject(TemplateConfigObject config, CpsScript script){
         // 1. Inject steps from loaded libraries
-        PrintStream logger = Utils.getLogger()
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy() 
         List<TemplateLibrarySource> sources = tiers.collect{ it.librarySources }.flatten().minus(null)
         

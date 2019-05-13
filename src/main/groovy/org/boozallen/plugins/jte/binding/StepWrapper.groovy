@@ -18,7 +18,6 @@ package org.boozallen.plugins.jte.binding
 
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.hooks.*
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.codehaus.groovy.runtime.InvokerHelper
