@@ -353,7 +353,7 @@ class TemplateEntryPointVariableSpec extends Specification {
 
     void templateLoggerSetup(){
         GroovySpy(TemplateLogger, global: true)
-        TemplateLogger.print(_, _, _, _) >> { s, h, l, t -> return System.out.print(s) }
+        TemplateLogger.print(_, _) >> { s, c -> return System.out.print(s) }
     }
 
     // helper
