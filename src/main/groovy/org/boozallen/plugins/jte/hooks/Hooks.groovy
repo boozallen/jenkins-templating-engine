@@ -16,7 +16,6 @@
 
 package org.boozallen.plugins.jte.hooks
 
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.boozallen.plugins.jte.binding.* 
 import java.lang.annotation.Annotation

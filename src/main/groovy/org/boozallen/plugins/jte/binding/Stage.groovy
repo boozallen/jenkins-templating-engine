@@ -17,7 +17,6 @@
 package org.boozallen.plugins.jte.binding 
 
 import org.boozallen.plugins.jte.config.*
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.jenkinsci.plugins.workflow.cps.CpsScript

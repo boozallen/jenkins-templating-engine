@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte
+package org.boozallen.plugins.jte.utils
 
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.config.*
@@ -46,7 +46,7 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 
-class Utils implements Serializable{
+class RunUtils implements Serializable{
 
     static TaskListener listener
     static FlowExecutionOwner owner 
@@ -54,86 +54,40 @@ class Utils implements Serializable{
     static PrintStream logger 
     static WorkflowJob currentJob 
 
-    static PrintStream getLogger(){
-        getCurrentJob()
-        return logger 
+    static CpsThread getCurrentThread(){
+        return CpsThread.current() ?: {
+            throw new IllegalStateException("CpsThread not present")
+        }()
+    }
+
+    static FlowExecutionOwner getOwner(){
+        CpsThread thread = getCurrentThread()
+        FlowExecutionOwner owner = thread.getExecution().getOwner()
+        return owner 
     }
 
     static TaskListener getListener(){
-        getCurrentJob()
+        FlowExecutionOwner owner = getOwner() 
+        TaskListener listener = owner.getListener() 
         return listener 
     }
 
-    /**
-     * Note: this method initializes the class/CpsThread level job,logger,listener properties
-     * @return the job for the current CPS thread
-     * @throws IllegalStateException if is called outside of a CpsThread or is not executed in a WorkflowRun
-     */
-    static WorkflowJob getCurrentJob(){
-        // assumed this is being run from a job
-        CpsThread thread = CpsThread.current()
-        if (!thread){
-            throw new IllegalStateException("CpsThread not present")
-        }
-
-        this.owner = thread.getExecution().getOwner()
-        this.listener = owner.getListener()    
-        this.logger = listener.getLogger()   
+    static PrintStream getLogger(){
+        TaskListener listener = getListener() 
+        PrintStream logger = listener.getLogger()
+    }
+   
+    static WorkflowJob getJob(){
+        FlowExecutionOwner owner = getOwner()
 
         Queue.Executable exec = owner.getExecutable()
         if (!(exec instanceof WorkflowRun)) {
             throw new IllegalStateException("Must be run from a WorkflowRun, found: ${exec.getClass()}")
         }
 
-        this.build = (WorkflowRun) exec
-        this.currentJob = build.getParent()
+        WorkflowRun build = (WorkflowRun) exec
+        WorkflowJob job = build.getParent()
 
-        return currentJob
-    }
-
-    @Whitelisted
-    static String getTemplate(Map config){
-
-        // tenant Jenkinsfile if allowed 
-        FileSystemWrapper fs = new FileSystemWrapper()
-        String repoJenkinsfile = fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false)
-        if (repoJenkinsfile){
-            if (config.allow_scm_jenkinsfile){
-                return repoJenkinsfile
-            }else{
-                TemplateLogger.print "Warning: Repository provided Jenkinsfile that will not be used, per organizational policy."
-            }
-        }
-
-        // specified pipeline template from pipeline template directories in governance tiers
-        List<GovernanceTier> tiers = GovernanceTier.getHierarchy()
-        if (config.pipeline_template){ 
-            for (tier in tiers){
-                String pipelineTemplate = tier.getTemplate(config.pipeline_template)
-                if (pipelineTemplate){
-                    return pipelineTemplate 
-                }
-            }
-            throw new TemplateConfigException("Pipeline Template ${config.pipeline_template} could not be found in hierarchy.")
-        }
-
-        /*
-            look for default Jenkinsfile in ascending order of governance tiers
-        */
-        for (tier in tiers){
-            String pipelineTemplate = tier.getJenkinsfile()
-            if (pipelineTemplate){
-                return pipelineTemplate 
-            }
-        }
-
-        throw new TemplateConfigException("Could not determine pipeline template.")
-
-    }
-
-    @Whitelisted
-    static void findAndRunTemplate(LinkedHashMap pipelineConfig, TemplateBinding binding){
-        String template = getTemplate(pipelineConfig)
-        TemplateScriptEngine.parse(template, binding).run() 
+        return job
     }
 }

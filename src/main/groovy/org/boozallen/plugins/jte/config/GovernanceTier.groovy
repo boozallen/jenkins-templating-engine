@@ -16,7 +16,7 @@
 
 package org.boozallen.plugins.jte.config
 
-import org.boozallen.plugins.jte.Utils
+import org.boozallen.plugins.jte.utils.RunUtils
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.console.TemplateLogger
 import com.cloudbees.hudson.plugins.folder.AbstractFolder
@@ -97,7 +97,7 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
         List<GovernanceTier> h = new ArrayList()
         
         // recurse through job hierarchy and get template configs 
-        WorkflowJob job = Utils.getCurrentJob() 
+        WorkflowJob job = RunUtils.getJob()
         ItemGroup<?> parent = job.getParent()
         
         while(parent instanceof AbstractFolder){

@@ -1,6 +1,6 @@
 package org.boozallen.plugins.jte.console
 
-import org.boozallen.plugins.jte.Utils
+import org.boozallen.plugins.jte.utils.RunUtils
 import hudson.Extension
 import hudson.MarkupText
 import hudson.Util
@@ -46,8 +46,8 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
     static void print(String message, Boolean initiallyHidden = false, LogLevel logType = LogLevel.INFO) {
         def alphabet = (["a".."z"] + [0..9]).flatten()
         String messageID = (1..10).collect{ alphabet[ new Random().nextInt(alphabet.size()) ] }.join()
-        TaskListener listener = Utils.getListener()
-        PrintStream logger = listener.getLogger()
+        TaskListener listener = RunUtils.getListener()
+        PrintStream logger = RunUtils.getLogger() 
         String trimmedMsg = message.trim() 
         Boolean firstLine = true 
         Boolean multiLine = (trimmedMsg.split("\n").size() > 1)

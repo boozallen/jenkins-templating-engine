@@ -3,7 +3,6 @@ import org.boozallen.plugins.jte.hooks.Hooks
 import org.boozallen.plugins.jte.hooks.BeforeStep
 import org.boozallen.plugins.jte.hooks.AfterStep
 import org.boozallen.plugins.jte.hooks.Notify
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.codehaus.groovy.runtime.InvokerHelper
