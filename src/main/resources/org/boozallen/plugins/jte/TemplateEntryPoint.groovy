@@ -66,8 +66,8 @@ void createWorkspaceStash(){
 
 void archiveConfig(){
     node{
-        writeYaml data: pipelineConfig, file: "aggregated_config.yaml"
-        archiveArtifacts "aggregated_config.yaml"
+        writeFile text: TemplateConfigDsl.serialize(templateConfigObject), file: "pipeline_config.groovy"
+        archiveArtifacts "pipeline_config.groovy"
     }
 }
 
