@@ -12,3 +12,6 @@
   * Internal refactoring to simplify library loading
   * Add unit testing for Steps, Library Sources, and the Library Loader 
   * Adds helper methods hasStep() and getStep() to the TemplateBinding
+
+2019-05-15
+  * fix regression where libraries are not loaded with the most recent code. 
