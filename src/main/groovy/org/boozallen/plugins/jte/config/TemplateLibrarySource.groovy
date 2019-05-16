@@ -72,7 +72,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
 
     public SCMFileSystem createFs(){
         WorkflowJob job = Utils.getCurrentJob()
-        fs = Utils.createSCMFileSystemOrNull(scm, job, job.getParent())
+        return Utils.createSCMFileSystemOrNull(scm, job, job.getParent())
     }
 
     @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {}
