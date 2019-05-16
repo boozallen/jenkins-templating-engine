@@ -120,7 +120,7 @@ class TemplateConfigDsl implements Serializable{
         }
       }else{
         if (value instanceof String){
-          file += "${tab*depth}${key} = \"${value}\""        
+          file += "${tab*depth}${key} = \'${value}\'"        
         }else{
           file += "${tab*depth}${key} = ${value}" 
         }

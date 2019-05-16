@@ -34,7 +34,6 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
 
     public SCM scm
     public String baseDir
-    public SCMFileSystem fs 
 
     @DataBoundConstructor public TemplateLibrarySource(){}
 
@@ -48,14 +47,14 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
     public SCM getScm(){ return scm }
 
     Boolean hasLibrary(String libName){
-        createFs()
+        SCMFileSystem fs = createFs()
         if (!fs) return false 
         SCMFile lib = fs.child(prefixBaseDir(libName))
         return lib.isDirectory()
     }
 
     public void loadLibrary(CpsScript script, String libName, Map libConfig){
-        createFs()
+        SCMFileSystem fs = createFs()
         if (!fs) return 
         Utils.getLogger().println "[JTE] Loading Library ${libName} from ${scm.getKey()}"
         SCMFile lib = fs.child(prefixBaseDir(libName))
@@ -71,11 +70,9 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         return [baseDir, s?.trim()].findAll{ it }.join("/")
     }
 
-    public void createFs(){
-        if (!fs){
-            WorkflowJob job = Utils.getCurrentJob()
-            fs = Utils.createSCMFileSystemOrNull(scm, job, job.getParent())
-        }
+    public SCMFileSystem createFs(){
+        WorkflowJob job = Utils.getCurrentJob()
+        fs = Utils.createSCMFileSystemOrNull(scm, job, job.getParent())
     }
 
     @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {}
