@@ -16,6 +16,7 @@
 
 package org.boozallen.plugins.jte.config
 
+import org.apache.commons.lang.StringEscapeUtils
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.kohsuke.groovy.sandbox.SandboxTransformer
 import groovy.json.JsonSlurper
@@ -120,7 +121,7 @@ class TemplateConfigDsl implements Serializable{
         }
       }else{
         if (value instanceof String){
-          file += "${tab*depth}${key} = \'${value}\'"        
+          file += "${tab*depth}${key} = '${StringEscapeUtils.escapeJava(value)}'"
         }else{
           file += "${tab*depth}${key} = ${value}" 
         }
