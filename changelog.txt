@@ -1,3 +1,6 @@
+2019-05-15
+  * fix regression where libraries are not loaded with the most recent code.
+
 2019-05-09 Carlos OKieffe
   * adding output of Pipeline.join changes
   * archive aggregated pipeline_config.groovy for each build
@@ -23,5 +26,3 @@
   * Add unit testing for Steps, Library Sources, and the Library Loader 
   * Adds helper methods hasStep() and getStep() to the TemplateBinding
 
-2019-05-15
-  * fix regression where libraries are not loaded with the most recent code.
