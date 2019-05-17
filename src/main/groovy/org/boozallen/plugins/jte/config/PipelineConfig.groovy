@@ -87,14 +87,6 @@ class PipelineConfig implements Serializable{
 
         printJoin(child, argCopy, prevCopy)
 
-//        TemplateLogger.print(
-//                TemplateConfigDsl.printBlock([], 0,
-//                        configResult([:], getNestedKeys(child.config), argCopy, currentConfigObject) ).join("\n"),
-//                    [ initiallyHidden: true, trimLines: false ]
-//        )
-
-
-//        child.setConfig(pipeline_config)
       currentConfigObject = child
 
     }
@@ -198,60 +190,6 @@ class PipelineConfig implements Serializable{
         }
 
         TemplateLogger.print( output.join("\n"), [ initiallyHidden: true, trimLines: false ])
-    }
-
-    static Map configResult(Map output, List resultKeys, TemplateConfigObject... changes){
-        if( null == output )
-            output = [:]
-
-        def nestedKeys = [[],[]]
-        def nestedData = [[:], [:]]
-        def prevConfig = changes[1]
-
-        String incoming_and_prev = 'incoming \u2229 prev'
-
-        changes.eachWithIndex { c, j ->
-            String param = j == 0 ? 'incoming' : 'previous'
-
-            output[param] = [config:c.config, merge:c.merge, override:c.override]
-
-            output[param]['nested'] = nestedData[j] = getNested(c.config, nestedKeys[j])
-            output[param]['nestedKeys'] = ['these' : nestedKeys[j],
-                                           'result ∩ this':resultKeys.intersect(nestedKeys[j]),
-                                           'result - this':resultKeys - nestedKeys[j],
-                                           'this - result':nestedKeys[j] - resultKeys ]
-        }
-
-        output[incoming_and_prev] = [nestedKeys: nestedKeys[0].intersect(nestedKeys[1]),
-                                data:[:] ]
-        // show the difference between the join incomingument and the previous config
-        output[incoming_and_prev]['nestedKeys'].each { k ->
-            output[incoming_and_prev]['data'][k] = [override: prevConfig.override.contains(k),
-                                               changed: nestedData[0][k] != nestedData[1][k],
-                                               incoming:nestedData[0][k],  prev: nestedData[1][k]]
-        }
-
-
-        output['incoming - prev'] = [nestedKeys:nestedKeys[0] - nestedKeys[1], data:[:] ]
-        // show what was added from the join incomingument
-        output['incoming - prev']['nestedKeys'].each { k ->
-            // top level keys are merge by default
-            output['incoming - prev']['data'][k] = [
-                    merge: prevConfig.merge.contains(k) || !k.contains("."),
-                    data:nestedData[0][k]
-            ]
-        }
-
-
-        output['prev - incoming'] = [nestedKeys: nestedKeys[1] - nestedKeys[0], data:[:] ]
-
-        // show what was/is in the prev config
-        output['prev - incoming']['nestedKeys'].each { k ->
-            output['prev - incoming']['data'][k] = nestedData[1][k]
-        }
-
-
-        return output
     }
 
 }
