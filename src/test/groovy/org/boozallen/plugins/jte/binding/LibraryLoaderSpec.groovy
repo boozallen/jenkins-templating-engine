@@ -1,7 +1,6 @@
 package org.boozallen.plugins.jte.binding
 
 import spock.lang.*
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.config.GovernanceTier
 import org.boozallen.plugins.jte.config.TemplateConfigException
 import org.boozallen.plugins.jte.config.TemplateConfigObject

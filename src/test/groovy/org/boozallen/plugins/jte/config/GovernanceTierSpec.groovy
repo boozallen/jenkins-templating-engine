@@ -13,8 +13,6 @@
 
 package org.boozallen.plugins.jte.config
 
-
-import org.boozallen.plugins.jte.Utils
 import spock.lang.* 
 import org.junit.Rule
 import org.junit.ClassRule

@@ -13,7 +13,6 @@
 
 package org.boozallen.plugins.jte.binding
 
-import org.boozallen.plugins.jte.Utils 
 import spock.lang.* 
 import spock.util.mop.ConfineMetaClassChanges
 import org.junit.ClassRule
