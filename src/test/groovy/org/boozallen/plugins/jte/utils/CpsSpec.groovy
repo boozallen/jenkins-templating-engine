@@ -1,6 +1,5 @@
 package org.boozallen.plugins.jte.utils
 
-import org.boozallen.plugins.jte.Utils
 import org.jenkinsci.plugins.workflow.cps.*
 import org.jenkinsci.plugins.workflow.flow.FlowExecution
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner

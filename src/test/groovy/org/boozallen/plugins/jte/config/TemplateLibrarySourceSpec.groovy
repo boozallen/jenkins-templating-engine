@@ -13,8 +13,6 @@
 
 package org.boozallen.plugins.jte.config
 
-
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.binding.StepWrapper
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import spock.lang.* 

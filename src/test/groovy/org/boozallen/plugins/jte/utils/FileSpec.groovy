@@ -2,7 +2,6 @@ package org.boozallen.plugins.jte.utils
 
 import jenkins.scm.api.SCMFile
 import jenkins.scm.api.SCMFileSystem
-import org.boozallen.plugins.jte.Utils
 import spock.lang.Specification
 
 
