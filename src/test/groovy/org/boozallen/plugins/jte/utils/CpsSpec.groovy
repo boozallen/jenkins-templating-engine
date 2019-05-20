@@ -47,48 +47,14 @@ assert currentJob instanceof WorkflowJob
         null != job
     }
 
-    @Ignore // no longer needed just mock the static utils.get*
-    def "with CPS Thread yields, thread.execution"(){
-        WorkflowJob job = GroovyMock(WorkflowJob)
-        WorkflowRun workflowRun = GroovyMock(WorkflowRun){
-            getParent() >> job
-        }
-        TaskListener listener = GroovyMock(TaskListener){
-            getLogger() >> GroovyMock(PrintStream)
-        }
-        FlowExecutionOwner owner = GroovyMock(FlowExecutionOwner){
-            getListener() >> listener
-            getExecutable() >> workflowRun
-        }
-        CpsFlowExecution execution = GroovyMock(CpsFlowExecution){
-            getOwner() >> owner
-        }
-        CpsThread cpsThread = GroovyMock(CpsThread){
-            getExecution() >> execution
-        }
-
-        GroovyMock(CpsThread.class, global:true)
-        1 * CpsThread.current() >> cpsThread
-
-        when:
-        CpsThread current = CpsThread.current()
-
-        then:
-        execution == current?.execution
-        workflowRun == current?.execution?.owner.executable
-
-        // issue mocking workflowRun.getParent()
-        // job == current?.execution?.owner.executable.parent
-    }
-
-    def "Utils.getCurrentJob(), thread.execution"(){
+    def "RunUtils.getJob(), thread.execution"(){
         WorkflowJob job = GroovyMock(WorkflowJob)
             
-        GroovyMock(Utils.class, global:true)
-        1 * Utils.getCurrentJob() >> job
+        GroovyMock(RunUtils.class, global:true)
+        1 * RunUtils.getJob() >> job
 
         when:
-        WorkflowJob result = Utils.getCurrentJob()
+        WorkflowJob result = RunUtils.getJob()
 
         then:
         null != result
