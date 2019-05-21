@@ -1,7 +1,6 @@
 package org.boozallen.plugins.jte.utils
 
 import org.jenkinsci.plugins.workflow.cps.*
-import org.jenkinsci.plugins.workflow.flow.FlowExecution
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
@@ -36,8 +35,6 @@ assert currentJob instanceof WorkflowJob
         when:
         WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(project);
         WorkflowJob job = build.parent
-        FlowExecution execution = build.execution
-        FlowExecutionOwner owner = execution.owner
 
         // Assert that the console log contains the output we expect
         // groovyJenkinsRule.assertLogContains("hello", build);

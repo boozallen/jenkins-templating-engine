@@ -8,9 +8,6 @@ import spock.lang.Specification
 
 class FileSpec extends Specification {
 
-    def setup(){
-
-    }
 
     def "getFileContents where SCMFileSystem says f.exists() == false, logMissingFile:true -> log missing file"(){
         given:
