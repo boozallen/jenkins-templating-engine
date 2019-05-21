@@ -13,7 +13,9 @@
 
 package org.boozallen.plugins.jte.config
 
-import spock.lang.* 
+import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.utils.RunUtils
+import spock.lang.*
 import org.junit.Rule
 import org.junit.ClassRule
 import org.jvnet.hudson.test.JenkinsRule
@@ -75,9 +77,10 @@ class GovernanceTierSpec extends Specification{
     // test baseDir is root of repository 
     def "Get Config: root base directory"(){
         given: 
-            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
+            WorkflowJob currentJob = getWorkflowJob()
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
+
             def config  
         when:
             config = tier1.getConfig()
@@ -88,9 +91,10 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Jenkinsfile: root base directory"(){
         given: 
-            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
+            WorkflowJob currentJob = getWorkflowJob()
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
+
             def jenkinsfile 
         when:
             jenkinsfile = tier1.getJenkinsfile()
@@ -101,9 +105,10 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Pipeline Template: root base directory"(){
         given: 
-            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
+            WorkflowJob currentJob = getWorkflowJob()
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
+
             def jenkinsfile  
         when:
             jenkinsfile = tier1.getTemplate("test")
@@ -115,9 +120,10 @@ class GovernanceTierSpec extends Specification{
     // test basedir is nested 
     def "Get Config: nested base directory"(){
         given: 
-            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
+            WorkflowJob currentJob = getWorkflowJob()
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
+
             def config 
         when:
             config = tier2.getConfig()
@@ -129,9 +135,9 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Jenkinsfile: nested base directory"(){        
         given: 
-            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
+            WorkflowJob currentJob = getWorkflowJob()
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
             def jenkinsfile
         when:
             jenkinsfile = tier2.getJenkinsfile()
@@ -142,9 +148,9 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Pipeline Template: nested base directory"(){
         given: 
-            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
+            WorkflowJob currentJob = getWorkflowJob()
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
             def jenkinsfile  
         when:
             jenkinsfile = tier2.getTemplate("test")
@@ -156,9 +162,9 @@ class GovernanceTierSpec extends Specification{
     
     def "Get Governance Hierarchy: no hierarchy"(){
         given: 
-            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
+            WorkflowJob currentJob = getWorkflowJob()
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
             def list 
         when: 
             list = GovernanceTier.getHierarchy()
@@ -174,9 +180,12 @@ class GovernanceTierSpec extends Specification{
             TemplateConfigFolderProperty prop = new TemplateConfigFolderProperty(tier1) 
             folder.getProperties().add(prop) 
 
-            WorkflowJob currentJob = folder.createProject(WorkflowJob, jenkins.createUniqueProjectName()); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
+            WorkflowJob currentJob = folder.createProject(WorkflowJob, jenkins.createUniqueProjectName());
+            GroovySpy(RunUtils, global: true)
+            _ * RunUtils.getJob() >> currentJob
+
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
 
             // define expected result 
             def list 
@@ -199,9 +208,12 @@ class GovernanceTierSpec extends Specification{
             TemplateConfigFolderProperty prop2 = new TemplateConfigFolderProperty(tier2)
             folder2.getProperties().add(prop2)
 
-            WorkflowJob currentJob = folder2.createProject(WorkflowJob, jenkins.createUniqueProjectName()); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
+            WorkflowJob currentJob = folder2.createProject(WorkflowJob, jenkins.createUniqueProjectName());
+            GroovySpy(RunUtils, global: true)
+            _ * RunUtils.getJob() >> currentJob
+
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
 
             // define expected result
             def list  
@@ -224,8 +236,11 @@ class GovernanceTierSpec extends Specification{
             folder2.getProperties().add(prop2)
 
             WorkflowJob currentJob = folder2.createProject(WorkflowJob, jenkins.createUniqueProjectName()); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
+            GroovySpy(RunUtils, global: true)
+            _ * RunUtils.getJob() >> currentJob
+
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
 
             // define expected result
             def list  
@@ -245,9 +260,9 @@ class GovernanceTierSpec extends Specification{
             TemplateGlobalConfig global = TemplateGlobalConfig.get() 
             global.setTier(tier1) 
 
-            WorkflowJob currentJob = jenkins.createProject(WorkflowJob); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
+            WorkflowJob currentJob = getWorkflowJob()
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
             
             // define expected result 
             def list  
@@ -269,10 +284,12 @@ class GovernanceTierSpec extends Specification{
             TemplateConfigFolderProperty prop = new TemplateConfigFolderProperty(tier2) 
             folder.getProperties().add(prop) 
 
-            WorkflowJob currentJob = folder.createProject(WorkflowJob, jenkins.createUniqueProjectName()); 
-            GroovySpy(Utils, global: true)
-            _ * Utils.getCurrentJob() >> currentJob 
-            
+            WorkflowJob currentJob = folder.createProject(WorkflowJob, jenkins.createUniqueProjectName());
+            GroovySpy(RunUtils, global:true)
+            _ * RunUtils.getJob() >> currentJob
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
+
             // define expected result 
             def list  
             List<GovernanceTier> expectedResult = [ tier2, tier1 ]
@@ -283,6 +300,13 @@ class GovernanceTierSpec extends Specification{
             assert list == expectedResult 
     }
 
-    
+    WorkflowJob getWorkflowJob(){
+
+        GroovySpy(RunUtils, global:true)
+        WorkflowJob job = jenkins.createProject(WorkflowJob)
+        _ * RunUtils.getJob() >> job
+
+        return job
+    }
 
 }

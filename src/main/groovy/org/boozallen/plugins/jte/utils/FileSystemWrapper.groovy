@@ -49,7 +49,11 @@ class FileSystemWrapper {
     SCMFileSystem fs
     String scmKey
 
-    FileSystemWrapper(SCM scm = null){
+    // added for testing/mocking
+    FileSystemWrapper(){}
+
+    // (SCM scm = null) was being called by the mock framework before it could mock createSCMFileSystem
+    FileSystemWrapper(SCM scm){
         this.scm = scm 
         /*
             this initializes fs and scmKey 
@@ -62,30 +66,36 @@ class FileSystemWrapper {
         if ignoreMissing = true, missing files arent logged. 
         returns null if file not present
     */
-    String getFileContents(String filePath, String loggingDescription = null, Boolean logMissingFile = true){
-        if (!fs){
-            return null 
+    String getFileContents(String filePath, String loggingDescription = null, Boolean logMissingFile = true) {
+        if (!fs) {
+            return null
         }
-        SCMFile f = fs.child(filePath)
-        if (!f.exists()){
-            if( logMissingFile ){
-                TemplateLogger.printWarning("""${filePath} does not exist.
+
+        try {
+            SCMFile f = fs.child(filePath)
+            if (!f.exists()) {
+                if (logMissingFile) {
+                    TemplateLogger.printWarning("""${filePath} does not exist.
                                                 -- scm: ${scmKey}""", true)
+                }
+                return null
             }
-            return null
+            if (!f.isFile()) {
+                TemplateLogger.printWarning("""${filePath} exists but is not a file.
+                                            -- scm: ${scmKey}""", true)
+                return null
+            }
+            if (loggingDescription){
+                TemplateLogger.print("""Obtained ${loggingDescription}
+                                        -- scm: ${scmKey}
+                                        -- file path: ${filePath}""", true)
+            }
+
+            return f.contentAsString()
+        } finally {
+            fs.close()
         }
-        if(!f.isFile()){
-            TemplateLogger.printWarning("""${filePath} exists but is not a file.
-                                            -- scm: ${scmKey}""", true) 
-            return null
-        }
-        if (loggingDescription){
-            TemplateLogger.print("""Obtained ${loggingDescription}
-                                    -- scm: ${scmKey}
-                                    -- file path: ${filePath}""", true) 
-        }
-        fs.close()
-        return f.contentAsString()
+
     }
 
     SCMFileSystem createSCMFileSystem(SCM scm = null){
