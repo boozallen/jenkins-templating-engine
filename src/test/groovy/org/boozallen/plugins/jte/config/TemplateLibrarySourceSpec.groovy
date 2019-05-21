@@ -15,7 +15,9 @@ package org.boozallen.plugins.jte.config
 
 import org.boozallen.plugins.jte.binding.StepWrapper
 import org.boozallen.plugins.jte.binding.TemplateBinding
-import spock.lang.* 
+import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.utils.RunUtils
+import spock.lang.*
 import org.junit.Rule
 import org.junit.ClassRule
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
@@ -41,10 +43,13 @@ class TemplateLibrarySourceSpec extends Specification{
     def setup(){
 
         WorkflowJob job = jenkins.createProject(WorkflowJob)
-        PrintStream logger = new PrintStream(System.out)
-        GroovySpy(Utils, global:true)
-        _ * Utils.getCurrentJob() >> job 
-        _ * Utils.getLogger() >> logger
+
+
+        GroovySpy(RunUtils, global:true)
+        _ * RunUtils.getJob() >> job
+        GroovyMock(TemplateLogger, global:true)
+        _ * TemplateLogger.print(_,_)
+
 
         repo.init()
 

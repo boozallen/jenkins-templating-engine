@@ -75,6 +75,7 @@ class RunUtils implements Serializable{
     static PrintStream getLogger(){
         TaskListener listener = getListener() 
         PrintStream logger = listener.getLogger()
+        return logger
     }
    
     static WorkflowJob getJob(){
