@@ -309,7 +309,7 @@ class ScmSpec extends Specification {
         then:
         notThrown(Exception)
         null != scmfs
-        null != key
+        null != scmKey
         groovyJenkinsRule.assertLogContains("branch=master", build);
     }
 
@@ -358,12 +358,12 @@ class ScmSpec extends Specification {
         listener = execution.owner.listener
         logger = listener.logger
 
-        def(SCMFileSystem scmfs, String key) = (new FileSystemWrapper()).fsFrom(job)
+        def(SCMFileSystem scmfs, String scmKey) = (new FileSystemWrapper()).fsFrom(job)
 
         then:
         notThrown(Exception)
         null != scmfs
-        null != key
+        null != scmKey
         groovyJenkinsRule.assertLogContains("branch=dev/main", build);
     }
 
