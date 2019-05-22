@@ -1,9 +1,8 @@
 package org.boozallen.plugins.jte.console
 
-import org.boozallen.plugins.jte.Utils
+import org.boozallen.plugins.jte.utils.RunUtils
 import hudson.Extension
 import hudson.MarkupText
-import hudson.Util
 import hudson.console.ConsoleAnnotationDescriptor
 import hudson.console.ConsoleAnnotator
 import hudson.console.ConsoleNote
@@ -79,10 +78,10 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
 
         def alphabet = (["a".."z"] + [0..9]).flatten()
         String messageID = (1..10).collect{ alphabet[ new Random().nextInt(alphabet.size()) ] }.join()
-        TaskListener listener = Utils.getListener()
-        PrintStream logger = listener.getLogger()
-        String trimmedMsg = message.trim()
-        Boolean firstLine = true
+        TaskListener listener = RunUtils.getListener()
+        PrintStream logger = RunUtils.getLogger()
+        String trimmedMsg = message.trim() 
+        Boolean firstLine = true 
         Boolean multiLine = (trimmedMsg.split("\n").size() > 1)
         trimmedMsg.trim().eachLine{ line ->
             synchronized (logger) {
@@ -100,8 +99,6 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
                 logger.println(CONSOLE_NOTE_PREFIX + line)
             }
         }
-
-
     }
 
     static void printWarning(String message, Boolean initiallyHidden = false) {

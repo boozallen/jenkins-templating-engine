@@ -18,14 +18,15 @@
 import org.boozallen.plugins.jte.binding.*
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.hooks.*
-import org.boozallen.plugins.jte.Utils 
+import org.boozallen.plugins.jte.TemplateEntryPointVariable
 import com.cloudbees.groovy.cps.impl.CpsClosure 
 
 def call(CpsClosure body = null){
     // otherwise currentBuild.result defaults to null 
     currentBuild.result = "SUCCESS"
 
-    // TODO: find a cleaner way.. 
+    String template = TemplateEntryPointVariable.getTemplate(pipelineConfig)
+
     createWorkspaceStash()
     archiveConfig()
 
@@ -39,7 +40,7 @@ def call(CpsClosure body = null){
         if (body){
             body()
         } else{
-            Utils.findAndRunTemplate(pipelineConfig, getBinding()) 
+            TemplateEntryPointVariable.runTemplate(template, getBinding()) 
         }
     }catch(any){
         currentBuild.result = "FAILURE" 

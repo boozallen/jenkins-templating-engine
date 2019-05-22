@@ -16,7 +16,8 @@
 
 package org.boozallen.plugins.jte.config
 
-import org.boozallen.plugins.jte.Utils
+import org.boozallen.plugins.jte.utils.RunUtils
+import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import com.cloudbees.hudson.plugins.folder.AbstractFolder
 import hudson.model.ItemGroup
 import hudson.model.Descriptor.FormException
@@ -58,7 +59,9 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
     public TemplateConfigObject getConfig() throws Exception{
         TemplateConfigObject configObject 
         if (scm && !(scm instanceof NullSCM)){
-            String configFile = Utils.getFileContents("${baseDir ? "${baseDir}/" : ""}${GovernanceTier.CONFIG_FILE}", scm, "Template Configuration File")
+            FileSystemWrapper fsw = new FileSystemWrapper(scm)
+            String filePath = "${baseDir ? "${baseDir}/" : ""}${CONFIG_FILE}"
+            String configFile = fsw.getFileContents(filePath, "Template Configuration File")
             if (configFile) configObject = TemplateConfigDsl.parse(configFile)
         }
         return configObject
@@ -68,7 +71,9 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
     public String getJenkinsfile() throws Exception {
         String jenkinsfile 
         if(scm && !(scm instanceof NullSCM)){
-            jenkinsfile = Utils.getFileContents("${baseDir ? "${baseDir}/" : ""}Jenkinsfile", scm, "Template")
+            FileSystemWrapper fsw = new FileSystemWrapper(scm)
+            String filePath = "${baseDir ? "${baseDir}/" : ""}Jenkinsfile"
+            jenkinsfile = fsw.getFileContents(filePath, "Template")
         }
         return jenkinsfile 
     }
@@ -77,7 +82,9 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
     public String getTemplate(String template) throws Exception {
         String pipelineTemplate 
         if(scm && !(scm instanceof NullSCM)){
-            pipelineTemplate = Utils.getFileContents("${baseDir ? "${baseDir}/" : ""}${GovernanceTier.PIPELINE_TEMPLATE_DIRECTORY}/${template}", scm, "Pipeline Template")
+            FileSystemWrapper fsw = new FileSystemWrapper(scm)
+            String filePath = "${baseDir ? "${baseDir}/" : ""}${PIPELINE_TEMPLATE_DIRECTORY}/${template}"
+            pipelineTemplate = fsw.getFileContents(filePath, "Pipeline Template")
         } 
         return pipelineTemplate 
     }
@@ -92,7 +99,7 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
         List<GovernanceTier> h = new ArrayList()
         
         // recurse through job hierarchy and get template configs 
-        WorkflowJob job = Utils.getCurrentJob() 
+        WorkflowJob job = RunUtils.getJob()
         ItemGroup<?> parent = job.getParent()
         
         while(parent instanceof AbstractFolder){
