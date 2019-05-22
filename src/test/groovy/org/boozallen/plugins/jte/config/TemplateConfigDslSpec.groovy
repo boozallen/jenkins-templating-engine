@@ -234,4 +234,27 @@ class TemplateConfigDslSpec extends Specification {
             configObject.override == [] as Set
     }
 
+    def "syntax validation for unquoted values"(){
+        setup: 
+            String config = "a = b" 
+        when: 
+            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+        then: 
+            TemplateConfigException ex = thrown()
+            ex.message.contains('did you mean: a = "b"')
+    }
+
+    def "syntax validation for setting configs equal to blocks"(){
+        setup: 
+            String config = """
+            a = b{
+                field = true 
+            }
+            """
+        when: 
+            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+        then: 
+            thrown(TemplateConfigException)
+    }
+
 }
