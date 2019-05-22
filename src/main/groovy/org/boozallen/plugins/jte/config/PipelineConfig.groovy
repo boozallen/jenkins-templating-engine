@@ -150,7 +150,7 @@ class PipelineConfig implements Serializable{
                     incoming:[c:incoming, nestedKeys:[]],
                     prev:[c:prev, nestedKeys:[]]]
 
-        def output = ['JTE Pipeline Config']
+        def output = ['Show Pipeline Configuration Modifications']
 
         // get the nested keys and data
         data.each { k, v ->
@@ -160,33 +160,33 @@ class PipelineConfig implements Serializable{
 
         // get the added keys
         def keys = (data.incoming.nestedKeys - data.prev.nestedKeys).intersect(data.outcome.nestedKeys)
-        output << ["Configurations Added:${keys.empty? ' None': '' }"]
+        output << "Configurations Added:${keys.empty? ' None': '' }"
         keys.each{ k ->
-            output << "-${k} set to ${data.outcome.nested[k]}"
+            output << "- ${k} set to ${data.outcome.nested[k]}"
         }
 
 
         keys = data.incoming.nestedKeys.intersect(data.prev.nestedKeys)
-        output << ["Configurations Changed:${keys.empty? ' None': '' }"]
+        output << "Configurations Changed:${keys.empty? ' None': '' }"
 
         keys.each{ k ->
-            output << "-${k} changed from ${data.prev.nested[k]} to ${data.outcome.nested[k]}"
+            output << "- ${k} changed from ${data.prev.nested[k]} to ${data.outcome.nested[k]}"
         }
 
         keys = (data.incoming.nestedKeys - data.outcome.nestedKeys)
-        output << ["Configurations Ignored:${keys.empty? ' None': '' }"]
+        output << "Configurations Ignored:${keys.empty? ' None': '' }"
         keys.each{ k ->
-            output << "-${k}"
+            output << "- ${k}"
         }
 
-        output << ["Subsequent may merge:${data.outcome.c.merge.empty? ' None': '' }"]
+        output << "Subsequent may merge:${data.outcome.c.merge.empty? ' None': '' }"
         data.outcome.c.merge.each{ k ->
-            output << "-${k}"
+            output << "- ${k}"
         }
 
-        output << ["Subsequent may override:${data.outcome.c.override.empty? ' None': '' }"]
+        output << "Subsequent may override:${data.outcome.c.override.empty? ' None': '' }"
         data.outcome.c.override.each{ k ->
-            output << "-${k}"
+            output << "- ${k}"
         }
 
         TemplateLogger.print( output.join("\n"), [ initiallyHidden: true, trimLines: false ])
