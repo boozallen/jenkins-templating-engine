@@ -150,7 +150,7 @@ class PipelineConfig implements Serializable{
                     incoming:[c:incoming, nestedKeys:[]],
                     prev:[c:prev, nestedKeys:[]]]
 
-        def output = ['Show Pipeline Configuration Modifications']
+        def output = ['Pipeline Configuration Modifications']
 
         // get the nested keys and data
         data.each { k, v ->
