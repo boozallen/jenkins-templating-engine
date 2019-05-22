@@ -59,17 +59,17 @@ class PipelineConfig implements Serializable{
     */
     void join(TemplateConfigObject child){
       def pipeline_config
-        def argCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(child))
-        def prevCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(currentConfigObject))
+      def argCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(child))
+      def prevCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(currentConfigObject))
 
-        if (firstJoin){
+      if (firstJoin){
         pipeline_config = currentConfigObject.config + child.config 
         firstJoin = false 
       } else{
         pipeline_config = child.config + currentConfigObject.config
       }
 
-        currentConfigObject.override.each{ key ->
+      currentConfigObject.override.each{ key ->
         if (get_prop(child.config, key)){
           clear_prop(pipeline_config, key)
           get_prop(pipeline_config, key) << get_prop(child.config, key) 
@@ -82,11 +82,8 @@ class PipelineConfig implements Serializable{
         }
       }
 
-
-        child.setConfig(pipeline_config)
-
-        printJoin(child, argCopy, prevCopy)
-
+      child.setConfig(pipeline_config)
+      printJoin(child, argCopy, prevCopy)
       currentConfigObject = child
 
     }
@@ -99,8 +96,9 @@ class PipelineConfig implements Serializable{
 
     static void clear_prop(o, p){
       def last_token
-      if (p.tokenize('.')) last_token = p.tokenize('.').last()
-      else if (InvokerHelper.getMetaClass(o).respondsTo(o, "clear", (Object[]) null)){
+      if (p.tokenize('.')){
+        last_token = p.tokenize('.').last()
+      } else if (InvokerHelper.getMetaClass(o).respondsTo(o, "clear", (Object[]) null)){
         o.clear()
       }
       p.tokenize('.').inject(o){ obj, prop ->    
@@ -112,34 +110,33 @@ class PipelineConfig implements Serializable{
     }
 
     static def getNestedKeys(map, result = [], String keyPrefix = '') {
-        map.each { key, value ->
-            if (value instanceof Map) {
-                getNestedKeys(value, result, "${keyPrefix}${key}.")
-            } else {
-                result << "${keyPrefix}${key}"
-            }
+      map.each { key, value ->
+        if (value instanceof Map) {
+            getNestedKeys(value, result, "${keyPrefix}${key}.")
+        } else {
+            result << "${keyPrefix}${key}"
         }
-        return result
+      }
+      return result
     }
 
     static def getNested(map, resultKeys = [], String keyPrefix = '') {
         def ret = [:]
         map.each { key, value ->
-            def pathKey = "${keyPrefix}${key}"
+          def pathKey = "${keyPrefix}${key}"
 
-            if (value instanceof Map) {
-                def nestedMap = getNested(value, resultKeys, "${pathKey}.")
-                if( nestedMap.isEmpty()){// we are a leaf node and empty
-                    ret[pathKey] = value
-                    resultKeys << pathKey
-                } else {// we are another map so add to existing map
-                    ret = ret + nestedMap
-                }
-
-            } else {
-                ret[pathKey] = value
-                resultKeys << pathKey
+          if (value instanceof Map) {
+            def nestedMap = getNested(value, resultKeys, "${pathKey}.")
+            if( nestedMap.isEmpty()){// we are a leaf node and empty
+              ret[pathKey] = value
+              resultKeys << pathKey
+            } else {// we are another map so add to existing map
+                ret = ret + nestedMap
             }
+          } else {
+            ret[pathKey] = value
+            resultKeys << pathKey
+          }
         }
 
         return ret
@@ -157,14 +154,12 @@ class PipelineConfig implements Serializable{
             v['nested'] = getNested(v.c.config, v['nestedKeys'])
         }
 
-
         // get the added keys
         def keys = (data.incoming.nestedKeys - data.prev.nestedKeys).intersect(data.outcome.nestedKeys)
         output << "Configurations Added:${keys.empty? ' None': '' }"
         keys.each{ k ->
             output << "- ${k} set to ${data.outcome.nested[k]}"
         }
-
 
         keys = data.incoming.nestedKeys.intersect(data.prev.nestedKeys)
         output << "Configurations Changed:${keys.empty? ' None': '' }"
