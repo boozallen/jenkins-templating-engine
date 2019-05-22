@@ -26,6 +26,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 import org.junit.ClassRule
 import org.junit.Rule
+import org.junit.experimental.categories.Category
 import org.jvnet.hudson.test.BuildWatcher
 import org.jvnet.hudson.test.GroovyJenkinsRule
 import org.jvnet.hudson.test.WithoutJenkins
@@ -135,6 +136,7 @@ class ScmSpec extends Specification {
 
     }
 
+    def setup(){}
 
 
     @Ignore //can't mock SCMFileSystem.of probably because it is Abstract
@@ -338,7 +340,6 @@ class ScmSpec extends Specification {
         then:
         notThrown(Exception)
         null != scmfs
-        null != key
         groovyJenkinsRule.assertLogContains("branch=master", build);
     }
 
@@ -389,7 +390,6 @@ class ScmSpec extends Specification {
         then:
         notThrown(Exception)
         null != scmfs
-        null != key
         groovyJenkinsRule.assertLogContains("branch=dev/main", build);
     }
 
