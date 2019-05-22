@@ -1,7 +1,6 @@
 package org.boozallen.plugins.jte.utils
 
 import org.jenkinsci.plugins.workflow.cps.*
-import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import spock.lang.*

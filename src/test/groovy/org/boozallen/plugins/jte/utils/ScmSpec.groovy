@@ -29,7 +29,6 @@ import org.junit.Rule
 import org.jvnet.hudson.test.BuildWatcher
 import org.jvnet.hudson.test.GroovyJenkinsRule
 import org.jvnet.hudson.test.WithoutJenkins
-import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -209,7 +208,16 @@ class ScmSpec extends Specification {
 
     }
 
+    def "getFileContents when FileSystemWrapper#fs == null"(){
+        given:
+        FileSystemWrapper fsw = new FileSystemWrapper()
 
+        when:
+        String res = fsw.getFileContents(pipelineConfigPath)
+
+        then:
+        null == res
+    }
 
     @WithoutJenkins
     def "FileSystemWrapper#fsFrom(job); job: !WorkflowMultiBranchProject"(){
@@ -225,8 +233,6 @@ class ScmSpec extends Specification {
 
         GroovyMock(TemplateLogger, global:true)
         _ * TemplateLogger.print(_,_)
-
-        FileSystemWrapper fsw = null
 
         when:
         WorkflowRun build = groovyJenkinsRule.buildAndAssertSuccess(scmWorkflowJob);

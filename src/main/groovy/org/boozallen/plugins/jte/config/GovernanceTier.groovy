@@ -18,7 +18,6 @@ package org.boozallen.plugins.jte.config
 
 import org.boozallen.plugins.jte.utils.RunUtils
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
-import org.boozallen.plugins.jte.console.TemplateLogger
 import com.cloudbees.hudson.plugins.folder.AbstractFolder
 import hudson.model.ItemGroup
 import hudson.model.Descriptor.FormException
