@@ -8,6 +8,9 @@ import spock.lang.Specification
 
 class FileSpec extends Specification {
 
+    def setup(){
+
+    }
 
 
     def "Utils.FileSystemWrapper.getFileContents with null SCMFileSystem"(){
