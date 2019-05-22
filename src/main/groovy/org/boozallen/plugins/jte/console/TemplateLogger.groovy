@@ -3,7 +3,6 @@ package org.boozallen.plugins.jte.console
 import org.boozallen.plugins.jte.utils.RunUtils
 import hudson.Extension
 import hudson.MarkupText
-import hudson.Util
 import hudson.console.ConsoleAnnotationDescriptor
 import hudson.console.ConsoleAnnotator
 import hudson.console.ConsoleNote

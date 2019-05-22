@@ -77,7 +77,7 @@ class GovernanceTierSpec extends Specification{
     // test baseDir is root of repository 
     def "Get Config: root base directory"(){
         given: 
-            WorkflowJob currentJob = getWorkflowJob()
+            getWorkflowJob()
             GroovyMock(TemplateLogger, global:true)
             _ * TemplateLogger.print(_,_)
 
@@ -91,7 +91,7 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Jenkinsfile: root base directory"(){
         given: 
-            WorkflowJob currentJob = getWorkflowJob()
+            getWorkflowJob()
             GroovyMock(TemplateLogger, global:true)
             _ * TemplateLogger.print(_,_)
 
@@ -105,7 +105,7 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Pipeline Template: root base directory"(){
         given: 
-            WorkflowJob currentJob = getWorkflowJob()
+            getWorkflowJob()
             GroovyMock(TemplateLogger, global:true)
             _ * TemplateLogger.print(_,_)
 
@@ -120,7 +120,7 @@ class GovernanceTierSpec extends Specification{
     // test basedir is nested 
     def "Get Config: nested base directory"(){
         given: 
-            WorkflowJob currentJob = getWorkflowJob()
+            getWorkflowJob()
             GroovyMock(TemplateLogger, global:true)
             _ * TemplateLogger.print(_,_)
 
@@ -135,7 +135,7 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Jenkinsfile: nested base directory"(){        
         given: 
-            WorkflowJob currentJob = getWorkflowJob()
+            getWorkflowJob()
             GroovyMock(TemplateLogger, global:true)
             _ * TemplateLogger.print(_,_)
             def jenkinsfile
@@ -148,7 +148,7 @@ class GovernanceTierSpec extends Specification{
 
     def "Get Pipeline Template: nested base directory"(){
         given: 
-            WorkflowJob currentJob = getWorkflowJob()
+            getWorkflowJob()
             GroovyMock(TemplateLogger, global:true)
             _ * TemplateLogger.print(_,_)
             def jenkinsfile  
@@ -162,7 +162,7 @@ class GovernanceTierSpec extends Specification{
     
     def "Get Governance Hierarchy: no hierarchy"(){
         given: 
-            WorkflowJob currentJob = getWorkflowJob()
+            getWorkflowJob()
             GroovyMock(TemplateLogger, global:true)
             _ * TemplateLogger.print(_,_)
             def list 
@@ -260,7 +260,7 @@ class GovernanceTierSpec extends Specification{
             TemplateGlobalConfig global = TemplateGlobalConfig.get() 
             global.setTier(tier1) 
 
-            WorkflowJob currentJob = getWorkflowJob()
+            getWorkflowJob()
             GroovyMock(TemplateLogger, global:true)
             _ * TemplateLogger.print(_,_)
             

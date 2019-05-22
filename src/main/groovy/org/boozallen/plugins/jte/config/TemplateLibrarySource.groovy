@@ -29,7 +29,6 @@ import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
 import hudson.Util
 import org.jenkinsci.plugins.workflow.cps.CpsScript
-import org.jenkinsci.plugins.workflow.job.WorkflowJob
 
 public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibrarySource> implements Serializable{
 
