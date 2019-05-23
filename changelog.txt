@@ -1,4 +1,8 @@
-2019-05-23 Carlos OKieffe: aggregate-config
+2019-05-23 Carlos OKieffe:
+  * fws-factory-method:
+  * added job and scm factory methods to FileSystemWrapper
+  * moved JTEException to its own class
+  * aggregate-config branch:
   * adding output of Pipeline.join changes
   * archive aggregated pipeline_config.groovy for each build
   * initial integration of TemplateLogger (logger branch)
