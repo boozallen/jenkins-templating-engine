@@ -20,16 +20,14 @@ import org.boozallen.plugins.jte.config.TemplateConfigObject
 import org.boozallen.plugins.jte.config.TemplateConfigException
 import org.boozallen.plugins.jte.config.TemplateLibrarySource
 import org.boozallen.plugins.jte.config.GovernanceTier
-import org.boozallen.plugins.jte.Utils
+import org.boozallen.plugins.jte.console.TemplateLogger
 import hudson.Extension 
 import org.jenkinsci.plugins.workflow.cps.CpsScript
-import org.jenkinsci.plugins.workflow.job.WorkflowJob
 
 @Extension public class LibraryLoader extends TemplatePrimitiveInjector {
 
     static void doInject(TemplateConfigObject config, CpsScript script){
         // 1. Inject steps from loaded libraries
-        PrintStream logger = Utils.getLogger()
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy() 
         List<TemplateLibrarySource> sources = tiers.collect{ it.librarySources }.flatten().minus(null)
         
@@ -44,12 +42,13 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
         TemplateBinding binding = script.getBinding() 
         config.getConfig().steps.findAll{ stepName, stepConfig ->
             if (binding.hasStep(stepName)){
-                logger.println "[JTE] Warning: Configured step ${stepName} ignored. Loaded by the ${binding.getStep(stepName).library} Library."
+                TemplateLogger.printWarning """Configured step ${stepName} ignored.
+                                               -- Loaded by the ${binding.getStep(stepName).library} Library."""
                 return false 
             }
             return true 
         }.each{ stepName, stepConfig ->
-            logger.println "[JTE] Creating step ${stepName} from the default step implementation."
+            TemplateLogger.print "Creating step ${stepName} from the default step implementation."
             StepWrapper step = StepWrapper.createDefaultStep(script, stepName, stepConfig)
             binding.setVariable(stepName, step)
         }

@@ -17,7 +17,7 @@
 package org.boozallen.plugins.jte.hooks
 
 import org.boozallen.plugins.jte.binding.StepWrapper
-import org.boozallen.plugins.jte.Utils
+import org.boozallen.plugins.jte.console.TemplateLogger
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
@@ -35,9 +35,8 @@ class AnnotatedMethod implements Serializable{
 
     @Whitelisted
     void invoke(Map context){
-        def logger = Utils.getLogger()
         try{
-            logger.println "[JTE][@${annotationName} - ${stepWrapper.library}/${stepWrapper.name}.${methodName}]"
+            TemplateLogger.print "[@${annotationName} - ${stepWrapper.library}/${stepWrapper.name}.${methodName}]"
             InvokerHelper.getMetaClass(stepWrapper.impl).invokeMethod(stepWrapper.impl, methodName, context);
         } catch (Exception x) {
             throw new InvokerInvocationException(x);
