@@ -42,6 +42,10 @@ class FileSystemWrapper {
     SCMFileSystem fs
     String scmKey
 
+    static FileSystemWrapper create(SCM scm){
+        return new FileSystemWrapper(scm)
+    }
+
     // added for testing/mocking
     FileSystemWrapper(){}
 
@@ -81,7 +85,7 @@ class FileSystemWrapper {
             if (loggingDescription){
                 TemplateLogger.print("""Obtained ${loggingDescription}
                                         -- scm: ${scmKey}
-                                        -- file path: ${filePath}""", true)
+                                        -- file path: ${filePath}""", [initiallyHidden:true])
             }
 
             return f.contentAsString()
@@ -100,7 +104,7 @@ class FileSystemWrapper {
                 return fs
             }catch(any){
                 TemplateLogger.printWarning(any.toString())
-                return null 
+                return null
             }
         }else{
             (fs, scmKey) = fsFrom(job)

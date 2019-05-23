@@ -16,6 +16,8 @@
 
 package org.boozallen.plugins.jte.config
 
+
+import org.boozallen.plugins.jte.console.TemplateLogger
 import org.codehaus.groovy.runtime.InvokerHelper
 import jenkins.model.Jenkins
 
@@ -36,6 +38,18 @@ class PipelineConfig implements Serializable{
       currentConfigObject = TemplateConfigDsl.parse(defaultTemplateConfig)
     }
 
+    // for testing using any base config object
+    PipelineConfig(TemplateConfigObject tco){
+        this.currentConfigObject = tco
+    }
+
+
+    // for testing using the base pipeline config file contents
+    static String baseConfigContentsFromLoader(ClassLoader ldr){
+        ldr.loadClass("org.boozallen.plugins.jte.config.PipelineConfig")
+                .getResource(GovernanceTier.CONFIG_FILE).text
+    }
+
     TemplateConfigObject getConfig(){
       return currentConfigObject
     }
@@ -45,6 +59,9 @@ class PipelineConfig implements Serializable{
     */
     void join(TemplateConfigObject child){
       def pipeline_config
+      def argCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(child))
+      def prevCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(currentConfigObject))
+
       if (firstJoin){
         pipeline_config = currentConfigObject.config + child.config 
         firstJoin = false 
@@ -66,6 +83,7 @@ class PipelineConfig implements Serializable{
       }
 
       child.setConfig(pipeline_config)
+      printJoin(child, argCopy, prevCopy)
       currentConfigObject = child
 
     }
@@ -78,8 +96,9 @@ class PipelineConfig implements Serializable{
 
     static void clear_prop(o, p){
       def last_token
-      if (p.tokenize('.')) last_token = p.tokenize('.').last()
-      else if (InvokerHelper.getMetaClass(o).respondsTo(o, "clear", (Object[]) null)){
+      if (p.tokenize('.')){
+        last_token = p.tokenize('.').last()
+      } else if (InvokerHelper.getMetaClass(o).respondsTo(o, "clear", (Object[]) null)){
         o.clear()
       }
       p.tokenize('.').inject(o){ obj, prop ->    
@@ -88,6 +107,84 @@ class PipelineConfig implements Serializable{
         }
         obj?."$prop"
       }   
+    }
+
+    static def getNestedKeys(map, result = [], String keyPrefix = '') {
+      map.each { key, value ->
+        if (value instanceof Map) {
+            getNestedKeys(value, result, "${keyPrefix}${key}.")
+        } else {
+            result << "${keyPrefix}${key}"
+        }
+      }
+      return result
+    }
+
+    static def getNested(map, resultKeys = [], String keyPrefix = '') {
+        def ret = [:]
+        map.each { key, value ->
+          def pathKey = "${keyPrefix}${key}"
+
+          if (value instanceof Map) {
+            def nestedMap = getNested(value, resultKeys, "${pathKey}.")
+            if( nestedMap.isEmpty()){// we are a leaf node and empty
+              ret[pathKey] = value
+              resultKeys << pathKey
+            } else {// we are another map so add to existing map
+                ret = ret + nestedMap
+            }
+          } else {
+            ret[pathKey] = value
+            resultKeys << pathKey
+          }
+        }
+
+        return ret
+    }
+
+    static printJoin(TemplateConfigObject outcome, TemplateConfigObject incoming, TemplateConfigObject prev){
+        def data = [outcome:[c:outcome, nestedKeys:[]],
+                    incoming:[c:incoming, nestedKeys:[]],
+                    prev:[c:prev, nestedKeys:[]]]
+
+        def output = ['Pipeline Configuration Modifications']
+
+        // get the nested keys and data
+        data.each { k, v ->
+            v['nested'] = getNested(v.c.config, v['nestedKeys'])
+        }
+
+        // get the added keys
+        def keys = (data.incoming.nestedKeys - data.prev.nestedKeys).intersect(data.outcome.nestedKeys)
+        output << "Configurations Added:${keys.empty? ' None': '' }"
+        keys.each{ k ->
+            output << "- ${k} set to ${data.outcome.nested[k]}"
+        }
+
+        keys = data.incoming.nestedKeys.intersect(data.prev.nestedKeys)
+        output << "Configurations Changed:${keys.empty? ' None': '' }"
+
+        keys.each{ k ->
+            output << "- ${k} changed from ${data.prev.nested[k]} to ${data.outcome.nested[k]}"
+        }
+
+        keys = (data.incoming.nestedKeys - data.outcome.nestedKeys)
+        output << "Configurations Ignored:${keys.empty? ' None': '' }"
+        keys.each{ k ->
+            output << "- ${k}"
+        }
+
+        output << "Subsequent may merge:${data.outcome.c.merge.empty? ' None': '' }"
+        data.outcome.c.merge.each{ k ->
+            output << "- ${k}"
+        }
+
+        output << "Subsequent may override:${data.outcome.c.override.empty? ' None': '' }"
+        data.outcome.c.override.each{ k ->
+            output << "- ${k}"
+        }
+
+        TemplateLogger.print( output.join("\n"), [ initiallyHidden: true, trimLines: false ])
     }
 
 }

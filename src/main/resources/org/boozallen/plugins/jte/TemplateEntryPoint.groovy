@@ -28,6 +28,7 @@ def call(CpsClosure body = null){
     String template = TemplateEntryPointVariable.getTemplate(pipelineConfig)
 
     createWorkspaceStash()
+    archiveConfig()
 
     Map context = [
         step: null, 
@@ -64,6 +65,12 @@ void createWorkspaceStash(){
   }catch(any){}
 }
 
+void archiveConfig(){
+    node{
+        writeFile text: TemplateConfigDsl.serialize(templateConfigObject), file: "pipeline_config.groovy"
+        archiveArtifacts "pipeline_config.groovy"
+    }
+}
 
 
 
