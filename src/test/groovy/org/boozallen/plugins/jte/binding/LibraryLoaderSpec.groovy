@@ -1,7 +1,8 @@
 package org.boozallen.plugins.jte.binding
 
+import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.utils.RunUtils
 import spock.lang.*
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.config.GovernanceTier
 import org.boozallen.plugins.jte.config.TemplateConfigException
 import org.boozallen.plugins.jte.config.TemplateConfigObject
@@ -19,9 +20,9 @@ class LibraryLoaderSpec extends Specification {
     PrintStream logger = Mock() 
 
     def setup(){
-        GroovySpy(Utils, global:true)
-        _ * Utils.getCurrentJob() >> jenkins.createProject(WorkflowJob) 
-        _ * Utils.getLogger() >> logger
+        GroovySpy(RunUtils, global:true)
+        _ * RunUtils.getJob() >> jenkins.createProject(WorkflowJob)
+        _ * RunUtils.getLogger() >> logger
     }
     
     @WithoutJenkins
@@ -205,8 +206,11 @@ class LibraryLoaderSpec extends Specification {
             TemplateBinding binding = Mock()
             script.getBinding() >> binding 
             StepWrapper s = GroovyMock(StepWrapper, global: true)
-            StepWrapper.createDefaultStep(script, "test_step", [:]) >> s 
-            
+            StepWrapper.createDefaultStep(script, "test_step", [:]) >> s
+
+        GroovyMock(TemplateLogger, global:true)
+        1 * TemplateLogger.print("Creating step test_step from the default step implementation." )
+
             TemplateConfigObject config = new TemplateConfigObject(config: [
                 steps: [
                     test_step: [:]
@@ -217,7 +221,6 @@ class LibraryLoaderSpec extends Specification {
             LibraryLoader.doPostInject(config, script) 
         then: 
             1 * binding.setVariable("test_step", s)
-            1 * logger.println("[JTE] Creating step test_step from the default step implementation.")
     }
 
     @WithoutJenkins
@@ -227,7 +230,12 @@ class LibraryLoaderSpec extends Specification {
                 hasStep("test_step") >> true 
                 getStep("test_step") >> new StepWrapper(library: "libA")
             }
-            script.getBinding() >> binding 
+            script.getBinding() >> binding
+
+            GroovyMock(TemplateLogger, global:true)
+            1 * TemplateLogger.printWarning("""Configured step test_step ignored.
+                                               -- Loaded by the libA Library.""" )
+
             TemplateConfigObject config = new TemplateConfigObject(config: [
                 steps: [
                     test_step: [:]
@@ -237,7 +245,7 @@ class LibraryLoaderSpec extends Specification {
             LibraryLoader.doInject(config, script)
             LibraryLoader.doPostInject(config, script) 
         then: 
-            1 * logger.println("[JTE] Warning: Configured step test_step ignored. Loaded by the libA Library.")
+            //1 * logger.println("[JTE] Warning: Configured step test_step ignored. Loaded by the libA Library.")
             0 * binding.setVariable(_ , _)
     }
 
@@ -258,9 +266,13 @@ class LibraryLoaderSpec extends Specification {
             StepWrapper s = Mock()
             StepWrapper s2 = GroovyMock(global: true)
             StepWrapper.createDefaultStep(script, "test_step1", [:]) >> s 
-            StepWrapper.createNullStep("test_step2", script) >> s2 
-    
-            TemplateConfigObject config = new TemplateConfigObject(config: [
+            StepWrapper.createNullStep("test_step2", script) >> s2
+
+        GroovyMock(TemplateLogger, global:true)
+        1 * TemplateLogger.print(_)
+
+
+        TemplateConfigObject config = new TemplateConfigObject(config: [
                 steps: [
                     test_step1: [:]
                 ],

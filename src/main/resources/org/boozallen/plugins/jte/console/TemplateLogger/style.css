@@ -1,0 +1,22 @@
+span.jte-info {
+    color: #9A9999
+}
+
+span.jte-warn {
+    color: #ffae42
+}
+
+span.jte-error{
+    color: #cc0000
+}
+
+span.jte-collapsible{
+    color: #204A87;
+    visibility: hidden; 
+    text-decoration:underline;
+    cursor:pointer;
+}
+
+span:hover .jte-collapsible {
+    visibility: visible
+}
