@@ -268,11 +268,11 @@ class LibraryLoaderSpec extends Specification {
             StepWrapper.createDefaultStep(script, "test_step1", [:]) >> s 
             StepWrapper.createNullStep("test_step2", script) >> s2
 
-        GroovyMock(TemplateLogger, global:true)
-        1 * TemplateLogger.print(_)
+            GroovyMock(TemplateLogger, global:true)
+            1 * TemplateLogger.print(_)
 
 
-        TemplateConfigObject config = new TemplateConfigObject(config: [
+            TemplateConfigObject config = new TemplateConfigObject(config: [
                 steps: [
                     test_step1: [:]
                 ],
