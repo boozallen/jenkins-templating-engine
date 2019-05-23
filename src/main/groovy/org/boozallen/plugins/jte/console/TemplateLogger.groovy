@@ -1,6 +1,5 @@
 package org.boozallen.plugins.jte.console
 
-import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.utils.JTEException
 import org.boozallen.plugins.jte.utils.RunUtils
 import hudson.Extension
