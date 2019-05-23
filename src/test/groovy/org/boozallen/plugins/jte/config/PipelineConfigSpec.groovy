@@ -17,13 +17,9 @@
 package org.boozallen.plugins.jte.config
 
 
-import org.boozallen.plugins.jte.TemplateEntryPointVariable
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.console.TemplateLogger
-import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.junit.ClassRule
 import org.jvnet.hudson.test.GroovyJenkinsRule
-import org.jvnet.hudson.test.WithoutJenkins
 import spock.lang.Shared
 import spock.lang.Specification
 

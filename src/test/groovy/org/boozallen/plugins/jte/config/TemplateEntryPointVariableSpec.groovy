@@ -18,14 +18,16 @@ package org.boozallen.plugins.jte.config
 
 
 import org.boozallen.plugins.jte.TemplateEntryPointVariable
-import org.boozallen.plugins.jte.Utils
 import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.utils.FileSystemWrapper
+import org.boozallen.plugins.jte.utils.RunUtils
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.junit.ClassRule
 import org.jvnet.hudson.test.GroovyJenkinsRule
 import org.jvnet.hudson.test.WithoutJenkins
 import spock.lang.Shared
 import spock.lang.Specification
+
 
 class TemplateEntryPointVariableSpec extends Specification {
     @Shared
@@ -61,10 +63,12 @@ class TemplateEntryPointVariableSpec extends Specification {
 
         WorkflowJob job = groovyJenkinsRule.jenkins.createProject(WorkflowJob,"aggregateTemplateConfigurations.1")
 
-        GroovySpy(Utils, global: true)
-        Utils.getLogger() >> { return System.out }
-        Utils.getCurrentJob() >> { return job }
+        GroovySpy(RunUtils, global: true)
+        RunUtils.getJob() >> { return job }
 
+        FileSystemWrapper fsw = GroovySpy(FileSystemWrapper, global:true)
+        1 * FileSystemWrapper.create(_) >> {return fsw}
+        1 * fsw.getFileContents(_,_,_) >> {return null}
 
         when:
         t.aggregateTemplateConfigurations(p)

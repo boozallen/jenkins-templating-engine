@@ -39,6 +39,7 @@ class TemplateLibrarySourceSpec extends Specification{
     TemplateLibrarySource librarySource = new TemplateLibrarySource()
     WorkflowJob job = GroovyMock()
     PrintStream logger = Mock()
+    String scmKey = null
 
     def setup(){
 
@@ -62,6 +63,8 @@ class TemplateLibrarySourceSpec extends Specification{
             null, 
             Collections.<GitSCMExtension>emptyList()
         )
+
+        scmKey = scm.key
 
         librarySource.setScm(scm)
     }
@@ -125,7 +128,7 @@ class TemplateLibrarySourceSpec extends Specification{
             CpsScript script = GroovyMock(){
                 getBinding() >> binding 
             }
-        when: 
+        when:
             librarySource.loadLibrary(script, "test_library", [:])
         then: 
             0 * binding.setVariable(_, _)
