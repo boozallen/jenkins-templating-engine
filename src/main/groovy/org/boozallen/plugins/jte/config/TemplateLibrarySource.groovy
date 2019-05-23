@@ -55,9 +55,10 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
 
     public void loadLibrary(CpsScript script, String libName, Map libConfig){
         SCMFileSystem fs = createFs()
-        if (!fs) return 
+        if (!fs){ return }
+
         TemplateLogger.print("""Loading Library ${libName}
-                                -- scm: ${scm.getKey()}""", true)
+                                -- scm: ${scm.getKey()}""", [initiallyHidden:true])
         SCMFile lib = fs.child(prefixBaseDir(libName))
         lib.children().findAll{ 
             it.getName().endsWith(".groovy") 

@@ -97,7 +97,7 @@ import javax.annotation.Nonnull
         }
 
         // get job config if present 
-        FileSystemWrapper fsw = new FileSystemWrapper(null)
+        FileSystemWrapper fsw = FileSystemWrapper.create(null)
 
         String repoConfigFile = fsw.getFileContents(GovernanceTier.CONFIG_FILE, "Template Configuration File", false)
         if (repoConfigFile){

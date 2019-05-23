@@ -1,5 +1,6 @@
 package org.boozallen.plugins.jte.console
 
+import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.utils.RunUtils
 import hudson.Extension
 import hudson.MarkupText
@@ -67,7 +68,7 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
         }
 
         if (throwError){
-            throw new Utils.JTEException(errorMsg)
+            throw new FileSystemWrapper.JTEException(errorMsg)
         }
 
         // apply defaults if not set.
