@@ -146,7 +146,7 @@ class FileSpec extends Specification {
         GroovyMock(TemplateLogger, global:true)
         1 * TemplateLogger.print("""Obtained valid file
                                         -- scm: null
-                                        -- file path: pipeline_config.groovy""", true)
+                                        -- file path: pipeline_config.groovy""", [initiallyHidden:true])
 
         String retVal = ""
 

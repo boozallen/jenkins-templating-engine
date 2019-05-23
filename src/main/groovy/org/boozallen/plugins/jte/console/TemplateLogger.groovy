@@ -1,5 +1,6 @@
 package org.boozallen.plugins.jte.console
 
+import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.utils.RunUtils
 import hudson.Extension
 import hudson.MarkupText
@@ -42,23 +43,58 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
         return null
     }
 
-    static void print(String message, Boolean initiallyHidden = false, LogLevel logType = LogLevel.INFO) {
+    static void print(String message, Map config){
+        def argTypes = [
+                "initiallyHidden": Boolean,
+                "logType": LogLevel,
+                "trimLines": Boolean
+        ]
+
+        Boolean throwError = false
+        String errorMsg = "Improper TemplateLogger Configuration: \n"
+
+        def improperConfigNames = config.keySet() - argTypes.keySet()
+        if(improperConfigNames){
+            throwError = true
+            errorMsg +=  "The following keys are not identified: ${improperConfigNames} \n"
+            improperConfigNames.each{ config.remove(it) }
+        }
+        config.each{ key, value ->
+            Class expectedType = argTypes[key]
+            if(!(value.getClass() == expectedType)){
+                throwError = true
+                errorMsg += "key ${key} should be of type ${argTypes[key]} \n"
+            }
+        }
+
+        if (throwError){
+            throw new FileSystemWrapper.JTEException(errorMsg)
+        }
+
+        // apply defaults if not set.
+        config = [ initiallyHidden: false, trimLines: true, logType: LogLevel.INFO ] + config
+
+
+        // do rest of the things..
+
         def alphabet = (["a".."z"] + [0..9]).flatten()
         String messageID = (1..10).collect{ alphabet[ new Random().nextInt(alphabet.size()) ] }.join()
         TaskListener listener = RunUtils.getListener()
-        PrintStream logger = RunUtils.getLogger() 
+        PrintStream logger = RunUtils.getLogger()
         String trimmedMsg = message.trim() 
         Boolean firstLine = true 
         Boolean multiLine = (trimmedMsg.split("\n").size() > 1)
-        trimmedMsg.trim().eachLine{ line -> 
+        trimmedMsg.trim().eachLine{ line ->
             synchronized (logger) {
-                line = line.trim()
+                if( config.trimLines ) {
+                    line = line.trim()
+                }
                 listener.annotate(new TemplateLogger(
-                    logType: logType, 
-                    messageID: messageID, 
-                    firstLine: firstLine, 
-                    multiLine: multiLine,
-                    initiallyHidden: initiallyHidden
+                        logType: config.logType,
+                        messageID: messageID,
+                        firstLine: firstLine,
+                        multiLine: multiLine,
+                        initiallyHidden: config.initiallyHidden
                 ))
                 if (firstLine) firstLine = false
                 logger.println(CONSOLE_NOTE_PREFIX + line)
@@ -67,11 +103,11 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
     }
 
     static void printWarning(String message, Boolean initiallyHidden = false) {
-        print(message, initiallyHidden, LogLevel.WARN)
+        print(message, [initiallyHidden: initiallyHidden, logType:  LogLevel.WARN])
     }
 
     static void printError(String message, Boolean initiallyHidden = false ) {
-        print(message, initiallyHidden, LogLevel.ERROR)
+        print(message, [initiallyHidden: initiallyHidden, logType:  LogLevel.ERROR])
     }
 
     @Extension public static final class DescriptorImpl extends ConsoleAnnotationDescriptor {}

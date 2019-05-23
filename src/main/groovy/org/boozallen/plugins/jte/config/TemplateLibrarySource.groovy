@@ -34,7 +34,6 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
 
     public SCM scm
     public String baseDir
-    public SCMFileSystem fs 
 
     @DataBoundConstructor public TemplateLibrarySource(){}
 
@@ -48,17 +47,18 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
     public SCM getScm(){ return scm }
 
     Boolean hasLibrary(String libName){
-        createFs()
+        SCMFileSystem fs = createFs()
         if (!fs) return false 
         SCMFile lib = fs.child(prefixBaseDir(libName))
         return lib.isDirectory()
     }
 
     public void loadLibrary(CpsScript script, String libName, Map libConfig){
-        createFs()
-        if (!fs) return 
+        SCMFileSystem fs = createFs()
+        if (!fs){ return }
+
         TemplateLogger.print("""Loading Library ${libName}
-                                -- scm: ${scm.getKey()}""", true)
+                                -- scm: ${scm.getKey()}""", [initiallyHidden:true])
         SCMFile lib = fs.child(prefixBaseDir(libName))
         lib.children().findAll{ 
             it.getName().endsWith(".groovy") 
@@ -72,10 +72,8 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         return [baseDir, s?.trim()].findAll{ it }.join("/")
     }
 
-    public void createFs(){
-        if (!fs){
-            fs = new FileSystemWrapper().createSCMFileSystem(scm)
-        }
+    public SCMFileSystem createFs(){
+        return new FileSystemWrapper().createSCMFileSystem(scm)
     }
 
     @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {}

@@ -40,7 +40,10 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
 
     String baseDir
     SCM scm 
-    List<TemplateLibrarySource> librarySources = new ArrayList() 
+    List<TemplateLibrarySource> librarySources = new ArrayList()
+
+    // added for unit testing
+    public GovernanceTier(){}
 
     @DataBoundConstructor public GovernanceTier(SCM scm, String baseDir, List<TemplateLibrarySource> librarySources){
         this.scm = scm
