@@ -52,8 +52,8 @@ class ApplicationEnvironment extends TemplatePrimitive{
         if (meta) {
             meta.getProperty(this)
         } else {
-            if (config.containsKey(name)){ return config.get(name) }
-            else { return null }
+            if (config.containsKey(name)) return config.get(name)
+            else return null
         }
     }
 
