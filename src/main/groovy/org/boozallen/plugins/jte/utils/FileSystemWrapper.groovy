@@ -167,12 +167,8 @@ class FileSystemWrapper {
         return [fs, scmKey]
     }
 
-    SCMFileSystem asSCMFileSystem(){
-        return fs
-    }
-
     Object asType(Class clazz) {
-        if( null != fs && clazz.isAssignableFrom(SCMFileSystem)){
+        if( null != fs && clazz.isInstance(fs)){
             return fs
         }
 
