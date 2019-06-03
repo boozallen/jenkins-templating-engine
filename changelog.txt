@@ -1,5 +1,7 @@
+2019-05-30 Carlos OKieffe
+  * fsw-wrapper: implemented 'asType' on FileSystemWrapper to return SCMFileSystem
 2019-05-23 Carlos OKieffe:
-  * fws-factory-method:
+  * fsw-factory-method:
   * added job and scm factory methods to FileSystemWrapper
   * moved JTEException to its own class
   * aggregate-config branch:
