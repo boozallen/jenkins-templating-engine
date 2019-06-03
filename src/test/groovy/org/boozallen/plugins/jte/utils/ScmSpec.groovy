@@ -81,7 +81,7 @@ class ScmSpec extends Specification {
                import org.jenkinsci.plugins.workflow.job.*
                import org.boozallen.plugins.jte.utils.*
 
-            def fsw = new FileSystemWrapper(null)
+            def fsw = FileSystemWrapper.createFromJob()
             println fsw.getFileContents('pipeline_config.groovy', "template configuration file")               
 
 """
@@ -162,7 +162,7 @@ class ScmSpec extends Specification {
         logger = listener.logger
         job = execution.owner.executable.parent
 
-        fsw = new FileSystemWrapper(scm)
+        fsw = FileSystemWrapper.createFromSCM(scm)
 
         then:"it should return a valid SCM filesystem"
         notThrown(Exception)
@@ -196,7 +196,7 @@ class ScmSpec extends Specification {
         logger = listener.logger
         job = execution.owner.executable.parent
 
-        fsw = new FileSystemWrapper(null)
+        fsw = FileSystemWrapper.createFromJob()
 
 
         then:"it should return a valid SCM filesystem"
@@ -397,7 +397,7 @@ class ScmSpec extends Specification {
         logger = listener.logger
         job = execution.owner.executable.parent
 
-        fsw = new FileSystemWrapper(scm)
+        fsw = FileSystemWrapper.createFromSCM(scm)
         String output = fsw.getFileContents(cpsScriptPath, "[JTE]")
 
         then:
@@ -441,7 +441,7 @@ class ScmSpec extends Specification {
         listener = execution.owner.listener
         logger = listener.logger
 
-        fsw = new FileSystemWrapper(null)
+        fsw = FileSystemWrapper.createFromJob()
         String output = fsw.getFileContents(pipelineConfigPath, "pipeline config")
 
         then:

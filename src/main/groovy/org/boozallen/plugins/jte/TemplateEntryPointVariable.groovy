@@ -97,7 +97,7 @@ import javax.annotation.Nonnull
         }
 
         // get job config if present 
-        FileSystemWrapper fsw = FileSystemWrapper.create(null)
+        FileSystemWrapper fsw = FileSystemWrapper.createFromJob()
 
         String repoConfigFile = fsw.getFileContents(GovernanceTier.CONFIG_FILE, "Template Configuration File", false)
         if (repoConfigFile){
@@ -141,7 +141,7 @@ import javax.annotation.Nonnull
     static String getTemplate(Map config){
 
         // tenant Jenkinsfile if allowed 
-        FileSystemWrapper fs = new FileSystemWrapper(null)
+        FileSystemWrapper fs = FileSystemWrapper.createFromJob()
         String repoJenkinsfile = fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false)
         if (repoJenkinsfile){
             if (config.allow_scm_jenkinsfile){
