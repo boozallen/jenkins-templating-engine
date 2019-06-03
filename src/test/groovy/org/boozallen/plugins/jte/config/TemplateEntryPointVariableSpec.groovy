@@ -67,7 +67,7 @@ class TemplateEntryPointVariableSpec extends Specification {
         RunUtils.getJob() >> { return job }
 
         FileSystemWrapper fsw = GroovySpy(FileSystemWrapper, global:true)
-        1 * FileSystemWrapper.create(_) >> {return fsw}
+        1 * FileSystemWrapper.createFromJob() >> {return fsw}
         1 * fsw.getFileContents(_,_,_) >> {return null}
 
         when:
