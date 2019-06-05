@@ -167,4 +167,16 @@ class FileSystemWrapper {
         return [fs, scmKey]
     }
 
+    Object asType(Class clazz) {
+        if( null != fs && clazz.isInstance(fs)){
+            return fs
+        }
+
+        if( clazz.isInstance(this)){
+            return this
+        }
+
+        return null
+    }
+
 }
