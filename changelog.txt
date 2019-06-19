@@ -1,5 +1,5 @@
 2019-06-19 Steven Terrana
-  * updated TemplateEntryPoint to set useDefaultExcludes=false as .git was not being stashed
+  * updated TemplateEntryPoint to set stash.useDefaultExcludes=false as .git was not being stashed
 2019-05-30 Carlos OKieffe
   * fsw-wrapper: implemented 'asType' on FileSystemWrapper to return SCMFileSystem
 2019-05-23 Carlos OKieffe:
