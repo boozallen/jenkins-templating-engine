@@ -22,22 +22,37 @@ import org.boozallen.plugins.jte.TemplateEntryPointVariable
 import com.cloudbees.groovy.cps.impl.CpsClosure 
 
 def call(CpsClosure body = null){
-    // otherwise currentBuild.result defaults to null 
-    currentBuild.result = "SUCCESS"
 
-    String template = TemplateEntryPointVariable.getTemplate(pipelineConfig)
-
+    // get template to be executed if missing closure param
+    String template
+    if(!body){
+        template = TemplateEntryPointVariable.getTemplate(pipelineConfig)
+    }
+    // checkout SCM and stash "workspace"
     createWorkspaceStash()
+
+    // archive the current configuration
     archiveConfig()
 
+    // otherwise currentBuild.result defaults to null 
+    currentBuild.result = "SUCCESS"
     Map context = [
         step: null, 
         library: null, 
         status: currentBuild.result 
     ]
+
     try{
+        // execute methods in steps annotated @Init
         Hooks.invoke(Init, getBinding(), context)
-        if (body){
+        
+        /*
+          exists if JTE invoked via:
+          template{
+              // do things 
+          } <-- the closure parameter is variable "body"
+        */
+        if (body){ 
             body()
         } else{
             TemplateEntryPointVariable.runTemplate(template, getBinding()) 
@@ -47,62 +62,33 @@ def call(CpsClosure body = null){
         context.status = currentBuild.result 
         throw any 
     }finally{
+        /*
+          execute methods in steps annotated with @CleanUp
+          followed by @Notify
+        */
         Hooks.invoke(CleanUp, getBinding(), context)
         Hooks.invoke(Notify, getBinding(), context)
     }
-
 }
 
 void createWorkspaceStash(){
-  try{
-      if (scm){
-          node{
-          	  cleanWs()
-              checkout scm 
-              stash "workspace" 
-          }
-      }
-  }catch(any){}
+    try{
+        if (scm){
+            node{
+                cleanWs()
+                checkout scm 
+                stash name: 'workspace', allowEmpty: true, useDefaultExcludes: false
+            }
+        }
+    }catch(any){
+
+    }
 }
 
 void archiveConfig(){
     node{
+        // templateConfigObject variable injected from TemplateEntryPointVariable.groovy
         writeFile text: TemplateConfigDsl.serialize(templateConfigObject), file: "pipeline_config.groovy"
         archiveArtifacts "pipeline_config.groovy"
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
