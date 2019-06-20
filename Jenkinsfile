@@ -1,5 +1,4 @@
-parallel [
-"Unit Test": {
+parallel "Unit Test": {
     node{
         stage("Unit Test"){
             checkout scm 
@@ -18,4 +17,4 @@ parallel [
             archiveArtifacts 'docs/_build/html'
         }
     }
-}]
+}
