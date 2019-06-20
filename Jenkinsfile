@@ -14,7 +14,8 @@ parallel "Unit Test": {
         stage("Compile Docs"){
             checkout scm 
             sh "make docs" 
-            archiveArtifacts 'docs/_build/html'
+            sh "ls -R" 
+            archiveArtifacts 'docs/_build/html/**'
         }
     }
 }
