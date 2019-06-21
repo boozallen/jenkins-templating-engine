@@ -8,14 +8,23 @@ parallel "Unit Test": {
             archiveArtifacts 'build/reports/**'
         }
     }
-},    
-"Compile Docs": {
+}, "Compile Docs": {
     node{
         stage("Compile Docs"){
             checkout scm 
             sh "make docs" 
             sh "ls -R" 
             archiveArtifacts 'docs/_build/html/**'
+        }
+    }
+}, "Build HPI": {
+    node{
+        stage("Build HPI"){
+            checkout scm 
+            docker.image("gradle:4.10.2-jdk8").inside{
+                sh "gradle clean jpi" 
+            }
+            archiveArtifacts 'build/libs/*.hpi'
         }
     }
 }

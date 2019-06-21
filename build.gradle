@@ -1,5 +1,5 @@
 plugins {
-  id 'org.jenkins-ci.jpi' version '0.27.0'
+  id 'org.jenkins-ci.jpi' version '0.32.0'
   id 'jacoco' 
   id 'application'
 }
