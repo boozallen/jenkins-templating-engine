@@ -67,6 +67,10 @@ dependencies {
     jenkinsTest "org.jenkins-ci.plugins.workflow:workflow-aggregator:2.6"
 }
 
+test{
+    maxParallelForks = 3 
+}
+
 jacocoTestReport{
     reports{
         html.enabled true 
