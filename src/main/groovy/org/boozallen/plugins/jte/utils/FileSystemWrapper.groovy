@@ -42,20 +42,18 @@ class FileSystemWrapper {
     SCMFileSystem fs
     String scmKey
 
-    static FileSystemWrapper create(SCM scm){
-        return new FileSystemWrapper(scm)
-    }
-
-    // added for testing/mocking
     FileSystemWrapper(){}
 
-    // (SCM scm = null) was being called by the mock framework before it could mock createSCMFileSystem
-    FileSystemWrapper(SCM scm){
-        this.scm = scm 
-        /*
-            this initializes fs and scmKey 
-        */
-        createSCMFileSystem(scm)
+    static FileSystemWrapper createFromSCM(SCM scm){
+        FileSystemWrapper fsw = new FileSystemWrapper()
+        fsw.fsFromSCM(scm)
+        return fsw
+    }
+
+    static FileSystemWrapper createFromJob(WorkflowJob job = RunUtils.getJob()){
+        FileSystemWrapper fsw = new FileSystemWrapper()
+        fsw.fsFrom(job)
+        return fsw
     }
 
     /*
@@ -95,20 +93,18 @@ class FileSystemWrapper {
 
     }
 
-    SCMFileSystem createSCMFileSystem(SCM scm = null){
-        WorkflowJob job = RunUtils.getJob()
-        if(scm){
-            try{
-                scmKey = scm.getKey()
-                fs = SCMFileSystem.of(job,scm)
-                return fs
-            }catch(any){
-                TemplateLogger.printWarning(any.toString())
-                return null
-            }
-        }else{
-            (fs, scmKey) = fsFrom(job)
-            return fs
+    def fsFromSCM(SCM scm, WorkflowJob job = RunUtils.getJob()){
+        if(!scm || !job){
+            return [null, null]
+        }
+
+        try{
+            scmKey = scm.getKey()
+            fs = SCMFileSystem.of(job,scm)
+            return [fs, scmKey]
+        }catch(any){
+            TemplateLogger.printWarning(any.toString())
+            return [null, null]
         }
     }
 
@@ -119,8 +115,7 @@ class FileSystemWrapper {
     def fsFrom(WorkflowJob job){
         ItemGroup<?> parent = job.getParent()
         TaskListener listener = RunUtils.getListener()
-        String key = null
-        SCMFileSystem fs = null
+
 
         try {
             if (parent instanceof WorkflowMultiBranchProject) {
@@ -141,26 +136,26 @@ class FileSystemWrapper {
                 SCMHead head = branch.getHead()
                 SCMRevision tip = scmSource.fetch(head, listener)
 
-                key = branch.getScm().getKey()
+                scmKey = branch.getScm().getKey()
 
                 if (tip) {
                     SCMRevision rev = scmSource.getTrustedRevision(tip, listener)
                     fs = SCMFileSystem.of(scmSource, head, rev)
-                    return [fs, key]
+                    return [fs, scmKey]
                 } else {
                     SCM scm = branch.getScm()
                     fs = SCMFileSystem.of(job, scm)
-                    return [fs, key]
+                    return [fs, scmKey]
                 }
             } else {
                 FlowDefinition definition = job.getDefinition()
                 if (definition instanceof CpsScmFlowDefinition) {
                     SCM scm = definition.getScm()
-                    key = scm.getKey()
+                    scmKey = scm.getKey()
                     fs = SCMFileSystem.of(job, scm)
-                    return [fs, key]
+                    return [fs, scmKey]
                 } else {
-                    return [fs, key]
+                    return [fs, scmKey]
                 }
             }
         }catch(JTEException jteex){//throw our exception
@@ -169,21 +164,19 @@ class FileSystemWrapper {
             TemplateLogger.printWarning(any.toString())
         }
 
-        return [fs, key]
+        return [fs, scmKey]
     }
 
-    static class JTEException extends Exception {
-        JTEException(String message){
-            super(message)
+    Object asType(Class clazz) {
+        if( null != fs && clazz.isInstance(fs)){
+            return fs
         }
 
-        JTEException(String message, Throwable t){
-            super(message, t)
+        if( clazz.isInstance(this)){
+            return this
         }
 
-        JTEException(Throwable t){
-            super(t)
-        }
+        return null
     }
 
 }

@@ -59,7 +59,7 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
     public TemplateConfigObject getConfig() throws Exception{
         TemplateConfigObject configObject 
         if (scm && !(scm instanceof NullSCM)){
-            FileSystemWrapper fsw = new FileSystemWrapper(scm)
+            FileSystemWrapper fsw = FileSystemWrapper.createFromSCM(scm)
             String filePath = "${baseDir ? "${baseDir}/" : ""}${CONFIG_FILE}"
             String configFile = fsw.getFileContents(filePath, "Template Configuration File")
             if (configFile) configObject = TemplateConfigDsl.parse(configFile)
@@ -71,7 +71,7 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
     public String getJenkinsfile() throws Exception {
         String jenkinsfile 
         if(scm && !(scm instanceof NullSCM)){
-            FileSystemWrapper fsw = new FileSystemWrapper(scm)
+            FileSystemWrapper fsw = FileSystemWrapper.createFromSCM(scm)
             String filePath = "${baseDir ? "${baseDir}/" : ""}Jenkinsfile"
             jenkinsfile = fsw.getFileContents(filePath, "Template")
         }
@@ -82,7 +82,7 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
     public String getTemplate(String template) throws Exception {
         String pipelineTemplate 
         if(scm && !(scm instanceof NullSCM)){
-            FileSystemWrapper fsw = new FileSystemWrapper(scm)
+            FileSystemWrapper fsw = FileSystemWrapper.createFromSCM(scm)
             String filePath = "${baseDir ? "${baseDir}/" : ""}${PIPELINE_TEMPLATE_DIRECTORY}/${template}"
             pipelineTemplate = fsw.getFileContents(filePath, "Pipeline Template")
         } 

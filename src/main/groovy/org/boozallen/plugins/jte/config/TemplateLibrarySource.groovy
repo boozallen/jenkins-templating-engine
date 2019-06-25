@@ -73,7 +73,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
     }
 
     public SCMFileSystem createFs(){
-        return new FileSystemWrapper().createSCMFileSystem(scm)
+        return FileSystemWrapper.createFromSCM(scm) as SCMFileSystem
     }
 
     @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {}
