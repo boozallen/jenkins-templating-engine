@@ -45,6 +45,9 @@ def call(CpsClosure body = null){
     ]
 
     try{
+        // execute methods in steps annotated @Validate
+        Hooks.invoke(Validate, getBinding(), context)
+
         // execute methods in steps annotated @Init
         Hooks.invoke(Init, getBinding(), context)
         
