@@ -221,5 +221,63 @@ class FileSpec extends Specification {
         1 * fs.close()
 
     }
+
+    def "'as SCMFileSystem' returns valid fs property"() {
+        given:
+        SCMFileSystem fs = GroovyMock(SCMFileSystem)
+
+        FileSystemWrapper fsw = new FileSystemWrapper()
+        fsw.fs = fs
+
+        when:
+        def res = fsw as SCMFileSystem
+
+        then:
+        res != null
+        res == fs
+    }
+
+    def "'as SCMFileSystem' returns null fs property"() {
+        given:
+
+        FileSystemWrapper fsw = new FileSystemWrapper()
+
+        when:
+        def res = fsw as SCMFileSystem
+
+        then:
+        res == null
+    }
+
+    def "'as' !(SCMFileSystem|Object) returns null"() {
+        given:
+
+        SCMFileSystem fs = GroovyMock(SCMFileSystem)
+
+        FileSystemWrapper fsw = new FileSystemWrapper()
+        fsw.fs = fs
+
+        when:
+        def res = fsw as Map
+
+        then:
+        res == null
+        null != fsw.fs
+    }
+
+    def "'as' Object returns this"() {
+        given:
+
+        SCMFileSystem fs = GroovyMock(SCMFileSystem)
+
+        FileSystemWrapper fsw = new FileSystemWrapper()
+        fsw.fs = fs
+
+        when:
+        def res = fsw as Object
+
+        then:
+        res == fsw
+    }
 }
 
