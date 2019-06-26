@@ -105,7 +105,9 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
                 def actual = getProp(libConfig, requiredKey)
                 def expected = getProp(allowedConfig.fields.required, requiredKey)
                 if (!validateType(actual, expected)){
-                    if (expected instanceof ArrayList){
+                    if (expected instanceof java.util.regex.Pattern){
+                        libConfigErrors << "Field ${requiredKey} must be a String matching ${expected} but is [${actual}]"
+                    } else if (expected instanceof ArrayList){
                         libConfigErrors << "Field '${requiredKey}' must be one of ${expected} but is [${actual}]"
                     } else {
                         libConfigErrors << "Field '${requiredKey}' must be a ${expected.getSimpleName()} but is a ${actual.getClass().getSimpleName()}"
@@ -123,7 +125,9 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
                 def actual = getProp(libConfig, optionalKey)
                 def expected = getProp(allowedConfig.fields.optional, optionalKey)
                 if (!validateType(actual, expected)){
-                    if (expected instanceof ArrayList){
+                    if (expected instanceof java.util.regex.Pattern){
+                        libConfigErrors << "Field ${optionalKey} must be a String matching ${expected} but is [${actual}]"
+                    } else if (expected instanceof ArrayList){
                         libConfigErrors << "Field '${optionalKey}' must be one of ${expected} but is [${actual}]"
                     } else {
                         libConfigErrors << "Field '${optionalKey}' must be a ${expected.getSimpleName()} but is a ${actual.getClass().getSimpleName()}"
@@ -181,6 +185,12 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
                 break 
             case Number: 
                 return actual instanceof Number
+                break
+            case { expected instanceof java.util.regex.Pattern }: 
+                if(!(actual.getClass() in [ String,  org.codehaus.groovy.runtime.GStringImpl ])){
+                    return false 
+                }
+                return actual.matches(expected)
                 break
             case { expected instanceof ArrayList }:
                 return actual in expected
