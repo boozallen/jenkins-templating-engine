@@ -181,4 +181,48 @@ class TemplateLibrarySourceSpec extends Specification{
         ""         | "lib"  || "lib" 
         null       | null   || ""
     }
+
+    /*
+    begin testing library config validation 
+    */
+    @Unroll
+    @WithoutJenkins 
+    def "when config value is '#actual' and expected type/value is #expected then result is #result"(){
+        setup: 
+            TemplateLibrarySource libSource = new TemplateLibrarySource() 
+        expect: 
+            libSource.validateType(actual, expected) == result 
+        where: 
+        actual      |     expected      | result 
+        true        |      boolean      | true 
+        false       |      boolean      | true 
+        true        |      Boolean      | true 
+        false       |      Boolean      | true 
+        "nope"      |      boolean      | false 
+        "hey"       |      String       | true 
+        "${4}"      |      String       | true 
+        4           |      String       | false 
+        4           |      Integer      | true 
+        4           |      int          | true 
+        4.2         |      Integer      | false  
+        4.2         |      int          | false 
+        1           |      Double       | false 
+        1.0         |      Double       | true
+        1           |      Number       | true 
+        1.0         |      Number       | true 
+        "hey"       |     ~/.*he.*/     | true 
+        "heyyy"     |     ~/^hey.*/     | true 
+        "hi"        |     ~/^hey.*/     | false 
+        "hi"        |    ["hi","hey"]   | true 
+        "opt3"      |  ["opt1", "opt2"] | false 
+        
+    }
+
+
+    @WithoutJenkins 
+    def ""(){
+        setup: 
+            TemplateLibrarySource libSource = new TemplateLibrarySource() 
+
+    }
 }

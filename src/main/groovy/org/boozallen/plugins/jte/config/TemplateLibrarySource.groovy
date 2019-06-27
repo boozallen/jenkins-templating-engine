@@ -169,7 +169,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         JTE configuration file and we should strive to avoid 
         confusion when people specify a validation. 
     */
-    Boolean validateType(actual, expected){
+    public Boolean validateType(actual, expected){
         switch(expected){ 
             case [ boolean, Boolean ]: 
                 return actual.getClass() in [ boolean, Boolean ]
@@ -196,7 +196,8 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
                 return actual in expected
                 break
             default: 
-                println expected.getClass()
+                TemplateLogger.printWarning("Library Validator: Not sure how to handle value ${expected} with class ${expected.class}")
+                return true 
                 break
         } 
     }
