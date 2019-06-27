@@ -43,7 +43,7 @@ public class TemplateLogger extends ConsoleNote<WorkflowRun> {
         return null
     }
 
-    static void print(String message, Map config){
+    static void print(String message, Map config = [:]){
         def argTypes = [
                 "initiallyHidden": Boolean,
                 "logType": LogLevel,
