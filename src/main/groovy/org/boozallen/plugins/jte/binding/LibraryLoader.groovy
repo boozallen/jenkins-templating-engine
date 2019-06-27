@@ -36,8 +36,9 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
             TemplateLibrarySource s = sources.find{ it.hasLibrary(libName) }
             if (!s){ 
                 libConfigErrors << "Library ${libName} Not Found." 
+            } else {
+                libConfigErrors << s.loadLibrary(script, libName, libConfig)
             }
-            libConfigErrors << s.loadLibrary(script, libName, libConfig)
         }
         libConfigErrors = libConfigErrors.flatten() 
         
