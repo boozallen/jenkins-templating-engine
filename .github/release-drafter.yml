@@ -1,0 +1,13 @@
+---
+categories:
+  - title: 🚀 Features
+    label: enhancement
+  - title: 🐛 Bug Fixes
+    label: bug
+exclude-labels:
+  - 'skip-changelog'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+template: |
+  < insert a general overview of the release > 
+  ## What's Changed: 
+  $CHANGES 
