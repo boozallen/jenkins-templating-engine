@@ -32,6 +32,8 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
 
 public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibrarySource> implements Serializable{
 
+    public static String CONFIG_FILE = "library_config.groovy" 
+
     public SCM scm
     public String baseDir
 
@@ -67,7 +69,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         SCMFile lib = fs.child(prefixBaseDir(libName))
 
         // do validation if the library configuration file is present
-        SCMFile libConfigFile = lib.child("library_config.groovy")
+        SCMFile libConfigFile = lib.child(CONFIG_FILE)
         ArrayList libConfigErrors = []
         if(libConfigFile.exists() && libConfigFile.isFile()){
             libConfigErrors = doLibraryConfigValidation(libConfigFile, libConfig)
