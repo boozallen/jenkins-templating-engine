@@ -220,9 +220,62 @@ class TemplateLibrarySourceSpec extends Specification{
 
 
     @WithoutJenkins 
-    def ""(){
+    def "Missing library config file prints warning"(){
         setup: 
-            TemplateLibrarySource libSource = new TemplateLibrarySource() 
+            repo.write("test/a.txt", "_")
+            repo.git("add", "*")
+            repo.git("commit", "--message=init")
+
+            TemplateBinding binding = Mock()
+            CpsScript script = Mock{
+                getBinding() >> binding 
+            }
+
+            PrintStream logger = Mock() 
+
+            GroovySpy(TemplateLogger, global:true) 
+            TemplateLogger.printWarning(*_) >> { args -> 
+                logger.println(args[0])
+            }
+        when: 
+            librarySource.loadLibrary(script, "test", [:])
+
+        then: 
+            1 * logger.println("Library test does not have a configuration file.")
 
     }
+
+    @WithoutJenkins
+    def "Library config file is not loaded as a step"(){}
+
+    @WithoutJenkins
+    def "Empty array returned when no errors present"(){}
+
+    @WithoutJenkins
+    def "Library config error array contains library name as first element"(){}
+
+    @WithoutJenkins
+    def "Missing required library config key throws error"(){}
+
+    @WithoutJenkins
+    def "Missing optional library config key throws no error"(){}
+
+    @WithoutJenkins
+    def "Missing required block in library config file throws no error"(){}
+
+    @WithoutJenkins
+    def "Missing optional block in library config file throws no error"(){}
+
+    @WithoutJenkins
+    def "Extraneous library config key throws error"(){}
+
+    @WithoutJenkins
+    def "Library config key mismatch throws error"(){}
+
+    @WithoutJenkins
+    def "Library config enum returns appropriate error if not one of the options"(){}
+
+    @WithoutJenkins
+    def "Library config string pattern returns appropriate error if not matching"(){}
+
 }
