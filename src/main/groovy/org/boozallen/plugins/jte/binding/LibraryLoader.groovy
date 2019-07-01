@@ -23,7 +23,6 @@ import org.boozallen.plugins.jte.config.GovernanceTier
 import org.boozallen.plugins.jte.console.TemplateLogger
 import hudson.Extension 
 import org.jenkinsci.plugins.workflow.cps.CpsScript
-import org.jenkinsci.plugins.workflow.job.WorkflowJob
 
 @Extension public class LibraryLoader extends TemplatePrimitiveInjector {
 
