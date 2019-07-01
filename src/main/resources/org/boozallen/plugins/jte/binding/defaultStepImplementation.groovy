@@ -70,7 +70,7 @@ void call(){
             if (config.script){
                 if (fileExists(config.script)){
                     script_text = readFile config.script
-                } else error "Script ${config.script} not found"
+                } else{ error "Script ${config.script} not found" }
             }
 
             sh script_text

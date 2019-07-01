@@ -183,7 +183,7 @@ class TemplateConfigDslSpec extends Specification {
             password = new File("/etc/passwd").text 
             """
         when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+            TemplateConfigDsl.parse(config)
         then: 
             thrown(SecurityException)
     }
