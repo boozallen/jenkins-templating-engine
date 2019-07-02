@@ -246,13 +246,104 @@ class TemplateLibrarySourceSpec extends Specification{
     }
 
     @WithoutJenkins
-    def "Library config file is not loaded as a step"(){}
+    def "Library config file is not loaded as a step"(){
+        setup: 
+            repo.write("test/a.groovy", "_")
+            repo.write("test/library_config.groovy", """
+            fields{
+                required{}
+                optional{}
+            }
+            """)
+            repo.git("add", "*")
+            repo.git("commit", "--message=init")
+
+            TemplateBinding binding = Mock()
+            CpsScript script = Mock{
+                getBinding() >> binding 
+            }
+
+            GroovySpy(StepWrapper, global:true) 
+            StepWrapper.createFromFile(*_) >> { args -> 
+                String name = args[0].getName() - ".groovy"
+                return new StepWrapper(name: name)
+            }
+
+        when: 
+            librarySource.loadLibrary(script, "test", [:])
+            
+        then: 
+            1 * binding.setVariable("a", _)
+            0 * binding.getVariable("library_config", _)
+    }
 
     @WithoutJenkins
-    def "Empty array returned when no errors present"(){}
+    def "Empty array returned when no errors present"(){
+        setup: 
+            repo.write("test/a.groovy", "_")
+            repo.write("test/library_config.groovy", """
+            fields{
+                required{
+                    field1 = Boolean
+                }
+                optional{}
+            }
+            """)
+            repo.git("add", "*")
+            repo.git("commit", "--message=init")
+
+            TemplateBinding binding = Mock()
+            CpsScript script = Mock{
+                getBinding() >> binding 
+            }
+
+            GroovySpy(StepWrapper, global:true) 
+            StepWrapper.createFromFile(*_) >> { args -> 
+                String name = args[0].getName() - ".groovy"
+                return new StepWrapper(name: name)
+            }
+
+            ArrayList libConfigErrors = [] 
+        when: 
+            libConfigErrors = librarySource.loadLibrary(script, "test", [field1: true])
+            
+        then: 
+            libConfigErrors.isEmpty() 
+    }
 
     @WithoutJenkins
-    def "Library config error array contains library name as first element"(){}
+    def "Library config error array contains library name as first element"(){
+        setup: 
+            repo.write("test/a.groovy", "_")
+            repo.write("test/library_config.groovy", """
+            fields{
+                required{
+                    field1 = Boolean
+                }
+                optional{}
+            }
+            """)
+            repo.git("add", "*")
+            repo.git("commit", "--message=init")
+
+            TemplateBinding binding = Mock()
+            CpsScript script = Mock{
+                getBinding() >> binding 
+            }
+
+            GroovySpy(StepWrapper, global:true) 
+            StepWrapper.createFromFile(*_) >> { args -> 
+                String name = args[0].getName() - ".groovy"
+                return new StepWrapper(name: name)
+            }
+
+            ArrayList libConfigErrors = [] 
+        when: 
+            libConfigErrors = librarySource.loadLibrary(script, "test", [field2: true])
+            
+        then: 
+            libConfigErrors[0].trim().equals("test:")
+    }
 
     @WithoutJenkins
     def "Missing required library config key throws error"(){}
