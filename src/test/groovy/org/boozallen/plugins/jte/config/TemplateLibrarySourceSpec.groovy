@@ -346,7 +346,40 @@ class TemplateLibrarySourceSpec extends Specification{
     }
 
     @WithoutJenkins
-    def "Missing required library config key throws error"(){}
+    def "Missing required library config key throws error"(){
+        setup:
+        String requiredKey = "field1"
+        repo.write("test/a.groovy", "_")
+        repo.write("test/library_config.groovy", """
+            fields{
+                required{
+                    ${requiredKey} = Boolean
+                }
+                optional{}
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
+
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
+
+        ArrayList libConfigErrors = []
+
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", [field2: true])
+
+        then:
+
+        libConfigErrors[1].trim().contains("Missing required field '${requiredKey}'")
+    }
 
     @WithoutJenkins
     def "Missing optional library config key throws no error"(){}
