@@ -374,32 +374,385 @@ class TemplateLibrarySourceSpec extends Specification{
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", [field2: true])
+        libConfigErrors = librarySource.loadLibrary(script, "test", [:])
 
         then:
-
+        2 == libConfigErrors.size()
+        libConfigErrors[0].trim().equals("test:")
         libConfigErrors[1].trim().contains("Missing required field '${requiredKey}'")
     }
 
     @WithoutJenkins
-    def "Missing optional library config key throws no error"(){}
+    def "Missing optional library config key throws no error"(){
+        String requiredKey = "field1"
+        String unusedKey = "field3"
+        String optionalKey = "field2"
+        String libName = "test"
+        repo.write("test/library_config.groovy", """
+            fields{
+                optional{
+                    ${optionalKey} = Boolean
+                }
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
+
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
+
+        ArrayList libConfigErrors = []
+
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", [:])
+
+        then:
+        0 == libConfigErrors.size()
+    }
 
     @WithoutJenkins
-    def "Missing required block in library config file throws no error"(){}
+    def "Missing required block in library config file throws no error"(){
+        setup:
+        String requiredKey = "field1"
+        String unusedKey = "field3"
+        String optionalKey = "field2"
+        String libName = "test"
+        repo.write("test/library_config.groovy", """
+            fields{
+                optional{}
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
+
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
+
+        ArrayList libConfigErrors = []
+
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", [:])
+
+        then:
+        0 == libConfigErrors.size()
+    }
 
     @WithoutJenkins
-    def "Missing optional block in library config file throws no error"(){}
+    def "Missing optional block in library config file throws no error"(){
+        setup:
+        String requiredKey = "field1"
+        String unusedKey = "field3"
+        String optionalKey = "field2"
+        String libName = "test"
+        repo.write("test/library_config.groovy", """
+            fields{
+                
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
+
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
+
+        ArrayList libConfigErrors = []
+
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", [:])
+
+        then:
+        0 == libConfigErrors.size()
+    }
 
     @WithoutJenkins
-    def "Extraneous library config key throws error"(){}
+    def "Extraneous library config key throws error"(){
+        setup:
+        String requiredKey = "field1"
+        String unusedKey = "field3"
+        String optionalKey = "field2"
+        String libName = "test"
+        repo.write("test/a.groovy", "_")
+        repo.write("test/library_config.groovy", """
+            fields{
+                required{}
+                optional{}
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
+
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
+
+        ArrayList libConfigErrors = []
+
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", ["${unusedKey}": true])
+
+        then:
+        2 == libConfigErrors.size()
+        libConfigErrors[0].trim().equals("test:")
+        libConfigErrors[1].trim().contains("Field '${unusedKey}' is not used")
+    }
 
     @WithoutJenkins
-    def "Library config key mismatch throws error"(){}
+    def "Library config key type mismatch throws error"(){
+        setup:
+        String requiredKey = "field1"
+        String unusedKey = "field3"
+        String optionalKey = "field2"
+        String libName = "test"
+        repo.write("test/a.groovy", "_")
+        repo.write("test/library_config.groovy", """
+            fields{
+                required{
+                    ${requiredKey} = ${lib_value}
+                }
+                optional{}
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
+
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
+
+        ArrayList libConfigErrors = []
+
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+
+        then:
+        2 == libConfigErrors.size()
+
+        libConfigErrors[1].trim().contains(message)
+
+        where:
+        lib_value | config_value | message
+        "Boolean" | "string"     | "Field 'field1' must be a Boolean but is a String"
+        "Boolean" | null         | "Field 'field1' must be a Boolean but is a NullObject"
+        "String"  | true         | "Field 'field1' must be a String but is a Boolean"
+        "String"  | 4            | "Field 'field1' must be a String but is a Integer"
+        "String"  | 4.0          | "Field 'field1' must be a String but is a BigDecimal"
+        "String"  | null         | "Field 'field1' must be a String but is a NullObject"
+    }
 
     @WithoutJenkins
-    def "Library config enum returns appropriate error if not one of the options"(){}
+    def "Library config key type match throws no error"(){
+        setup:
+        String requiredKey = "field1"
+        String unusedKey = "field3"
+        String optionalKey = "field2"
+        String libName = "test"
+        repo.write("test/a.groovy", "_")
+        repo.write("test/library_config.groovy", """
+            fields{
+                required{
+                    ${requiredKey} = ${lib_value}
+                }
+                optional{}
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
+
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
+
+        ArrayList libConfigErrors = []
+
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+
+        then:
+        0 == libConfigErrors.size()
+
+        where:
+        lib_value | config_value
+        "Boolean" | true
+        "Boolean" | false
+        "String"  | "string"
+        "Number"  | 4
+        "Number"  | 4.0
+        "Integer" | 4
+
+    }
 
     @WithoutJenkins
-    def "Library config string pattern returns appropriate error if not matching"(){}
+    def "Library config enum returns appropriate error if not one of the options"(){
+        setup:
+        String requiredKey = "field1"
+        String unusedKey = "field3"
+        String optionalKey = "field2"
+        String libName = "test"
+        repo.write("test/a.groovy", "_")
+        repo.write("test/library_config.groovy", """
+            fields{
+                required{
+                    ${requiredKey} = ${lib_value}
+                }
+                optional{}
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
+
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
+
+        ArrayList libConfigErrors = []
+
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+
+        then:
+        2 == libConfigErrors.size()
+
+        libConfigErrors[1].trim().contains(message)
+
+        where:
+        lib_value   | config_value | message
+        "[1, 2, 3]" | 4            | "Field 'field1' must be one of ${lib_value} but is [${config_value}]"
+    }
+
+    @Unroll
+    @WithoutJenkins
+    def "Library config string pattern, #expected has no errors when matching '#actual'"(){
+        String requiredKey = "field1"
+        String unusedKey = "field3"
+        String optionalKey = "field2"
+        String libName = "test"
+        repo.write("test/a.groovy", "_")
+        repo.write("test/library_config.groovy", """
+            fields{
+                required{
+                    ${requiredKey} = ${expected}
+                }
+                optional{}
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
+
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
+
+        ArrayList libConfigErrors = []
+
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": actual])
+
+        then:
+        0 == libConfigErrors.size()
+
+
+        where:
+        expected   | actual
+        "~/\\d+/"     | "4"
+        "~/[dD]ev(elop|eloper|elopment)?/" | "Dev"
+        "~/[dD]ev(elop|eloper|elopment)/"  | "Developer"
+    }
+
+    @Unroll
+    @WithoutJenkins
+    def "Library config string pattern, #expected returns appropriate error when not matching '#actual'"(){
+        String requiredKey = "field1"
+        String unusedKey = "field3"
+        String optionalKey = "field2"
+        String libName = "test"
+        repo.write("test/a.groovy", "_")
+        repo.write("test/library_config.groovy", """
+            fields{
+                required{
+                    ${requiredKey} = ${expected}
+                }
+                optional{}
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
+
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
+
+        ArrayList libConfigErrors = []
+
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": actual])
+
+        then:
+        2 == libConfigErrors.size()
+
+        libConfigErrors[1].trim().contains("Field ${requiredKey} must be a String matching ${expected} but is [${actual}]")
+        where:
+        expected      | actual
+        "~/\\d+/"     | "b"
+        "~/\\d?/"     | "44"
+        "~/[dD]ev(elop|eloper|elopment)+/" | "Dev"
+        "~/[dD]ev(elop|eloper|elopment)?/"  | "Developer"
+    }
 
 }
