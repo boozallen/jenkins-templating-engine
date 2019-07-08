@@ -720,7 +720,7 @@ class TemplateLibrarySourceSpec extends Specification{
         repo.write("test/library_config.groovy", """
             fields{
                 required{
-                    ${requiredKey} = ${expected}
+                    ${requiredKey} = ~/${expected}/
                 }
                 optional{}
             }
@@ -749,10 +749,10 @@ class TemplateLibrarySourceSpec extends Specification{
         libConfigErrors[1].trim().contains("Field ${requiredKey} must be a String matching ${expected} but is [${actual}]")
         where:
         expected      | actual
-        "~/\\d+/"     | "b"
-        "~/\\d?/"     | "44"
-        "~/[dD]ev(elop|eloper|elopment)+/" | "Dev"
-        "~/[dD]ev(elop|eloper|elopment)?/"  | "Developer"
+        "\\d+"     | "b"
+        "\\d?"     | "44"
+        "[dD]ev(elop|eloper|elopment)+" | "Dev"
+        "[dD]ev(elop)(er|ment)?"        | "Developmental"
     }
 
 }

@@ -40,7 +40,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
                 libConfigErrors << s.loadLibrary(script, libName, libConfig)
             }
         }
-        libConfigErrors = libConfigErrors.flatten() 
+        libConfigErrors = libConfigErrors.flatten().minus(null)
         
         // if library errors were found: 
         if(libConfigErrors){
