@@ -23,13 +23,16 @@ class LibraryLoaderSpec extends Specification {
         GroovySpy(RunUtils, global:true)
         _ * RunUtils.getJob() >> jenkins.createProject(WorkflowJob)
         _ * RunUtils.getLogger() >> logger
+
+        GroovySpy(TemplateLogger, global:true)
+        _ * TemplateLogger.printError(_) >>{ return }
     }
     
     @WithoutJenkins
     def "when library source has library, loadLibrary is called"(){
         setup: 
             TemplateLibrarySource s = Mock{
-                hasLibrary("test_library") >> true 
+                hasLibrary("test_library") >> true
             }
             GovernanceTier tier = GroovyMock(global: true){
                 getLibrarySources() >> [ s ] 
@@ -266,7 +269,12 @@ class LibraryLoaderSpec extends Specification {
     }
 
     @WithoutJenkins
-    def "Missing library throws exception"(){}
+    def "Missing library throws exception"(){
+      // now, when a library isn't found, we push a message onto the `libConfigErrors` array
+      // and throw the exception later after validating all the libraries.
+      // so this test represents making sure that an exception is thrown if a library does not exist.
+
+    }
 
     @WithoutJenkins
     def "single library configuration errors throws exception"(){}
