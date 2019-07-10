@@ -559,8 +559,9 @@ class TemplateLibrarySourceSpec extends Specification{
 
         then:
         2 == libConfigErrors.size()
-
+        libConfigErrors[0] == "test:"
         libConfigErrors[1].trim().contains(message)
+
 
         where:
         lib_value | config_value | message
@@ -657,6 +658,7 @@ class TemplateLibrarySourceSpec extends Specification{
         then:
         2 == libConfigErrors.size()
 
+        libConfigErrors[0] == "test:"
         libConfigErrors[1].trim().contains(message)
 
         where:
@@ -745,7 +747,7 @@ class TemplateLibrarySourceSpec extends Specification{
 
         then:
         2 == libConfigErrors.size()
-
+        libConfigErrors[0] == "test:"
         libConfigErrors[1].trim().contains("Field ${requiredKey} must be a String matching ${expected} but is [${actual}]")
         where:
         expected      | actual
