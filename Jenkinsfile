@@ -3,7 +3,7 @@ node{
         checkout scm 
         sh 'echo \'org.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8\' > gradle.properties'
         sh 'ls -al'
-        docker.image("gradle:4.10.2-jdk8").inside('-m 2000m'){
+        docker.image("gradle:4.10.2-jdk8").inside('-m 3000m'){
             sh "gradle clean test" 
         }
         sh 'ls -al'
