@@ -59,7 +59,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         return [baseDir, s?.trim()].findAll{ it }.join("/")
     }
 
-    public ArrayList loadLibrary(CpsScript script, String libName, Map libConfig){
+    public List loadLibrary(CpsScript script, String libName, Map libConfig){
         SCMFileSystem fs = createFs()
         if (!fs){ return }
 
@@ -91,7 +91,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         return libConfigErrors
     }
 
-    public ArrayList doLibraryConfigValidation(SCMFile configFile, Map libConfig){
+    public List doLibraryConfigValidation(SCMFile configFile, Map libConfig){
         ArrayList libConfigErrors = [] 
         Map allowedConfig = TemplateConfigDsl.parse(configFile.contentAsString()).getConfig()
 
