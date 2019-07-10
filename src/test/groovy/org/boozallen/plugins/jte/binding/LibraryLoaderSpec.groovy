@@ -273,17 +273,137 @@ class LibraryLoaderSpec extends Specification {
       // now, when a library isn't found, we push a message onto the `libConfigErrors` array
       // and throw the exception later after validating all the libraries.
       // so this test represents making sure that an exception is thrown if a library does not exist.
+        setup:
+        TemplateLibrarySource libSource = Mock{
+            hasLibrary("libA") >> true
+            hasLibrary("libB") >> false
+        }
+
+        GovernanceTier tier = GroovyMock(global:true){
+            getLibrarySources() >> [ libSource ]
+        }
+
+        GovernanceTier.getHierarchy() >> [ tier ]
+
+        // mock libraries to load
+        TemplateConfigObject config = new TemplateConfigObject(config: [
+                libraries: [
+                        libA: [
+                                fieldA: "A"
+                        ],
+                        libB: [
+                                fieldB: "B"
+                        ]
+                ]
+        ])
+
+        when:
+        LibraryLoader.doInject(config, script)
+        then:
+        thrown(TemplateConfigException)
+        1 * libSource.loadLibrary(script, "libA", [fieldA: "A"])
+        0 * libSource.loadLibrary(script, "libB", [fieldB: "B"])
+
+        1 * TemplateLogger.printError("Library libB Not Found.") >> { return }
+        4 * TemplateLogger.printError(_) >>{ return }
+    }
+
+
+    @WithoutJenkins
+    def "single library configuration errors gets TemplateLogger'd and throws exception"(){
+
+        setup:
+        String err = "Field 'fieldB' is not used."
+        TemplateLibrarySource libSource = Mock{
+            hasLibrary("libA") >> true
+            hasLibrary("libB") >> false
+        }
+
+        TemplateLibrarySource libSource2 = Mock{
+            hasLibrary("libA") >> false
+            hasLibrary("libB") >> true
+        }
+
+        GovernanceTier tier = GroovyMock(global:true){
+            getLibrarySources() >> [ libSource, libSource2 ]
+        }
+
+        GovernanceTier.getHierarchy() >> [ tier ]
+
+        // mock libraries to load
+        TemplateConfigObject config = new TemplateConfigObject(config: [
+                libraries: [
+                        libA: [
+                                fieldA: "A"
+                        ],
+                        libB: [
+                                fieldB: "B"
+                        ]
+                ]
+        ])
+
+        when:
+        LibraryLoader.doInject(config, script)
+        then:
+        thrown(TemplateConfigException)
+        1 * libSource.loadLibrary(script, "libA", [fieldA: "A"])
+        0 * libSource.loadLibrary(script, "libB", [fieldB: "B"])
+
+        0 * libSource2.loadLibrary(script, "libA", [fieldA: "A"])
+        1 * libSource2.loadLibrary(script, "libB", [fieldB: "B"]) >> { return [err]  }
+
+        1 * TemplateLogger.printError(err) >> { return }
+        4 * TemplateLogger.printError(_) >>{ return }
 
     }
 
     @WithoutJenkins
-    def "single library configuration errors throws exception"(){}
+    def "multiple library configuration errors gets TemplateLogger'd and throws exception"(){
+        setup:
+        String err = "Field 'fieldA' is not used."
+        String err2 = "Field 'fieldB' is not used."
+        TemplateLibrarySource libSource = Mock{
+            hasLibrary("libA") >> true
+            hasLibrary("libB") >> false
+        }
 
-    @WithoutJenkins
-    def "multiple library configuration errors throws exception"(){}
+        TemplateLibrarySource libSource2 = Mock{
+            hasLibrary("libA") >> false
+            hasLibrary("libB") >> true
+        }
 
-    @WithoutJenkins
-    def "TemplateLogger prints appropriate errors for multiple libraries with issue"(){}
+        GovernanceTier tier = GroovyMock(global:true){
+            getLibrarySources() >> [ libSource, libSource2 ]
+        }
+
+        GovernanceTier.getHierarchy() >> [ tier ]
+
+        // mock libraries to load
+        TemplateConfigObject config = new TemplateConfigObject(config: [
+                libraries: [
+                        libA: [
+                                fieldA: "A"
+                        ],
+                        libB: [
+                                fieldB: "B"
+                        ]
+                ]
+        ])
+
+        when:
+        LibraryLoader.doInject(config, script)
+        then:
+        thrown(TemplateConfigException)
+        1 * libSource.loadLibrary(script, "libA", [fieldA: "A"]) >> { return [err]  }
+        0 * libSource.loadLibrary(script, "libB", [fieldB: "B"])
+
+        0 * libSource2.loadLibrary(script, "libA", [fieldA: "A"])
+        1 * libSource2.loadLibrary(script, "libB", [fieldB: "B"]) >> { return [err2]  }
+
+        1 * TemplateLogger.printError(err) >> { return }
+        1 * TemplateLogger.printError(err2) >> { return }
+        4 * TemplateLogger.printError(_) >>{ return }
+    }
 
 
 }
