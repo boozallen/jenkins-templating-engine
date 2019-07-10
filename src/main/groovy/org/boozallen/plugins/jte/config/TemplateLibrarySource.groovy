@@ -72,7 +72,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         SCMFile libConfigFile = lib.child(CONFIG_FILE)
         ArrayList libConfigErrors = []
         if(libConfigFile.exists() && libConfigFile.isFile()){
-            Map allowedConfig = getLibConfig(libConfigFile)
+            Map allowedConfig = libAllowedFileToMap(libConfigFile)
             libConfigErrors = doLibraryConfigValidation(allowedConfig, libConfig)
             if(libConfigErrors){
                 return [ "${libName}:" ] + libConfigErrors.collect{ " - ${it}" }
@@ -92,7 +92,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         return libConfigErrors
     }
 
-    public Map getLibConfig(SCMFile configFile) {
+    public Map libAllowedFileToMap(SCMFile configFile) {
         return TemplateConfigDsl.parse(configFile.contentAsString()).getConfig()
     }
 
