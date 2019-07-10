@@ -72,7 +72,8 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         SCMFile libConfigFile = lib.child(CONFIG_FILE)
         ArrayList libConfigErrors = []
         if(libConfigFile.exists() && libConfigFile.isFile()){
-            libConfigErrors = doLibraryConfigValidation(libConfigFile, libConfig)
+            Map allowedConfig = getLibConfig(libConfigFile)
+            libConfigErrors = doLibraryConfigValidation(allowedConfig, libConfig)
             if(libConfigErrors){
                 return [ "${libName}:" ] + libConfigErrors.collect{ " - ${it}" }
             }
@@ -91,9 +92,12 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         return libConfigErrors
     }
 
-    public List doLibraryConfigValidation(SCMFile configFile, Map libConfig){
+    public Map getLibConfig(SCMFile configFile) {
+        return TemplateConfigDsl.parse(configFile.contentAsString()).getConfig()
+    }
+
+    public List doLibraryConfigValidation(Map allowedConfig, Map libConfig){
         ArrayList libConfigErrors = [] 
-        Map allowedConfig = TemplateConfigDsl.parse(configFile.contentAsString()).getConfig()
 
         // define keysets in dot notation 
         ArrayList keys = getNestedKeys(libConfig).collect{ it.toString() }
