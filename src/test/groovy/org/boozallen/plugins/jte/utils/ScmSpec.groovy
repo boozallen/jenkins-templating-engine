@@ -468,6 +468,8 @@ class ScmSpec extends Specification {
 
     def "getFileContents in script; no scm argument; testing logging output"(){
 
+        GroovyMock(TemplateLogger, global:true)
+
         def project = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "scmSandbox_project");
         project.setDefinition(new SandboxCpsScmFlowDefinition(scm, cpsScriptPath2));
 
@@ -477,10 +479,10 @@ class ScmSpec extends Specification {
 
         then:
         notThrown(Exception)
-        groovyJenkinsRule.assertLogNotContains("[inferred]", build);
-        groovyJenkinsRule.assertLogContains(pipelineConfigPath, build);
-        groovyJenkinsRule.assertLogContains("template configuration file", build);
-        groovyJenkinsRule.assertLogContains(pipelineConfigScript, build);
+        1 * TemplateLogger.print({it.matches(~/Obtained template configuration file(.|\n)*file path: ${pipelineConfigPath}/)}, [initiallyHidden:true])
+//        groovyJenkinsRule.assertLogContains(pipelineConfigPath, build);
+//        groovyJenkinsRule.assertLogContains("template configuration file", build);
+//        groovyJenkinsRule.assertLogContains(pipelineConfigScript, build);
 
     }
 
