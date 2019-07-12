@@ -18,7 +18,8 @@ The following lifecycle hook annotations are available:
    :align: center
    :header: "Annotation", "Description" 
 
-    "``@Init``", "Will get executed at the beginning of a pipeline run"
+    "``@Validate``", "Will get executed at the beginning of a pipeline run, should throw exception if this step does not have its prerequesites"
+    "``@Init``", "Will get executed at the beginning of a pipeline run, after Validate"
     "``@BeforeStep``", "Will get executed before every pipeline step invocation" 
     "``@AfterStep``", "Will get executed after every pipeline step invocation"
     "``@CleanUp``", "Will get executed at the end of a pipeline run" 
