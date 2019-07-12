@@ -30,14 +30,30 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
         // 1. Inject steps from loaded libraries
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy() 
         List<TemplateLibrarySource> sources = tiers.collect{ it.librarySources }.flatten().minus(null)
-        
+
+        ArrayList libConfigErrors = []
         config.getConfig().libraries.each{ libName, libConfig ->
             TemplateLibrarySource s = sources.find{ it.hasLibrary(libName) }
             if (!s){ 
-                throw new TemplateConfigException("Library ${libName} Not Found.") 
+                libConfigErrors << "Library ${libName} Not Found." 
+            } else {
+                libConfigErrors << s.loadLibrary(script, libName, libConfig)
             }
-            s.loadLibrary(script, libName, libConfig)
         }
+        libConfigErrors = libConfigErrors.flatten().minus(null)
+        
+        // if library errors were found: 
+        if(libConfigErrors){
+            TemplateLogger.printError("----------------------------------")
+            TemplateLogger.printError("   Library Configuration Errors   ")
+            TemplateLogger.printError("----------------------------------")
+            libConfigErrors.each{ line -> 
+                TemplateLogger.printError(line)
+            }
+            TemplateLogger.printError("----------------------------------")
+            throw new TemplateConfigException("There were library configuration errors.")
+        }
+
         // 2. Inject steps with default step implementation for configured steps
         TemplateBinding binding = script.getBinding() 
         config.getConfig().steps.findAll{ stepName, stepConfig ->
