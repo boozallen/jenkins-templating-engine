@@ -55,12 +55,12 @@ class TemplateLibrarySourceSpec extends Specification{
         repo.init()
 
         GitSCM scm = new GitSCM(
-            GitSCM.createRepoList(repo.toString(), null), 
-            Collections.singletonList(new BranchSpec("*/master")), 
-            false, 
-            Collections.<SubmoduleConfig>emptyList(), 
-            null, 
-            null, 
+            GitSCM.createRepoList(repo.toString(), null),
+            Collections.singletonList(new BranchSpec("*/master")),
+            false,
+            Collections.<SubmoduleConfig>emptyList(),
+            null,
+            null,
             Collections.<GitSCMExtension>emptyList()
         )
 
@@ -75,23 +75,23 @@ class TemplateLibrarySourceSpec extends Specification{
             repo.write("test_library/a.groovy", "doesnt matter")
             repo.git("add", "*")
             repo.git("commit", "--message=init")
-        when: 
+        when:
             Boolean libExists = librarySource.hasLibrary("test_library")
-        then: 
+        then:
             libExists
     }
 
     @WithoutJenkins
     def "hasLibrary returns false when library doesn't exist"(){
-        when: 
+        when:
             Boolean libExists = librarySource.hasLibrary("test_library")
-        then: 
+        then:
             !libExists
     }
 
     @WithoutJenkins
     def "loadLibrary loads each groovy file in library as a step"(){
-        setup: 
+        setup:
             repo.write("test_library/a.groovy", "doesnt matter")
             repo.write("test_library/b.groovy", "doesnt matter")
             repo.write("test_library/c.txt", "doesnt matter")
@@ -100,43 +100,43 @@ class TemplateLibrarySourceSpec extends Specification{
 
             TemplateBinding binding = Mock()
             CpsScript script = Mock{
-                getBinding() >> binding 
+                getBinding() >> binding
             }
 
             GroovySpy(StepWrapper, global:true)
-            StepWrapper.createFromFile(*_) >>> [ 
+            StepWrapper.createFromFile(*_) >>> [
                 new StepWrapper(name: "a"),
                 new StepWrapper(name: "b"),
                 new StepWrapper(name: "c")
             ]
 
-        when: 
+        when:
             librarySource.loadLibrary(script, "test_library", [:])
-        then: 
+        then:
             1 * binding.setVariable("a", _)
-            1 * binding.setVariable("b", _)            
+            1 * binding.setVariable("b", _)
     }
 
     @WithoutJenkins
     def "loadLibrary ignores non-groovy files in library"(){
-        setup: 
+        setup:
             repo.write("test_library/a.txt", "doesnt matter")
             repo.git("add", "*")
             repo.git("commit", "--message=init")
 
             TemplateBinding binding = Mock()
             CpsScript script = GroovyMock(){
-                getBinding() >> binding 
+                getBinding() >> binding
             }
         when:
             librarySource.loadLibrary(script, "test_library", [:])
-        then: 
+        then:
             0 * binding.setVariable(_, _)
     }
 
     @WithoutJenkins
     def "loadLibrary only loads groovy files from 1 library"(){
-        setup: 
+        setup:
             repo.write("test_library/a.groovy", "doesnt matter")
             repo.write("test_library/b.groovy", "doesnt matter")
             repo.write("other_library/c.groovy", "doesnt matter")
@@ -145,16 +145,16 @@ class TemplateLibrarySourceSpec extends Specification{
 
             TemplateBinding binding = Mock()
             CpsScript script = GroovyMock{
-                getBinding() >> binding 
+                getBinding() >> binding
             }
             GroovySpy(StepWrapper, global:true)
             2 * StepWrapper.createFromFile(*_) >>> [
                 new StepWrapper(name: "a"),
                 new StepWrapper(name: "b")
             ]
-        when: 
+        when:
             librarySource.loadLibrary(script, "test_library", [:])
-        then: 
+        then:
             1 * binding.setVariable("a", _)
             1 * binding.setVariable("b", _)
             0 * binding.setVariable("c", _)
@@ -163,91 +163,91 @@ class TemplateLibrarySourceSpec extends Specification{
     @Unroll
     @WithoutJenkins
     def "when baseDir='#baseDir' then prefixBaseDir('#arg') is #expected "(){
-        setup: 
+        setup:
             TemplateLibrarySource libSource = new TemplateLibrarySource()
             libSource.setBaseDir(baseDir)
-        expect: 
-            libSource.prefixBaseDir(arg) == expected 
+        expect:
+            libSource.prefixBaseDir(arg) == expected
 
-        where: 
-        baseDir    | arg    || expected 
+        where:
+        baseDir    | arg    || expected
         " someDir" | "lib"  || "someDir/lib"
-        "someDir " | "lib"  || "someDir/lib" 
+        "someDir " | "lib"  || "someDir/lib"
         "someDir"  | " lib" || "someDir/lib"
-        "someDir"  | "lib " || "someDir/lib" 
+        "someDir"  | "lib " || "someDir/lib"
         "someDir"  | null   || "someDir"
         "someDir"  | ""     || "someDir"
-        null       | "lib"  || "lib" 
-        ""         | "lib"  || "lib" 
+        null       | "lib"  || "lib"
+        ""         | "lib"  || "lib"
         null       | null   || ""
     }
 
     /*
-    begin testing library config validation 
+    begin testing library config validation
     */
     @Unroll
-    @WithoutJenkins 
+    @WithoutJenkins
     def "when config value is '#actual' and expected type/value is #expected then result is #result"(){
-        setup: 
-            TemplateLibrarySource libSource = new TemplateLibrarySource() 
-        expect: 
-            libSource.validateType(actual, expected) == result 
-        where: 
-        actual      |     expected      | result 
-        true        |      boolean      | true 
-        false       |      boolean      | true 
-        true        |      Boolean      | true 
-        false       |      Boolean      | true 
-        "nope"      |      boolean      | false 
-        "hey"       |      String       | true 
-        "${4}"      |      String       | true 
-        4           |      String       | false 
-        4           |      Integer      | true 
-        4           |      int          | true 
-        4.2         |      Integer      | false  
-        4.2         |      int          | false 
-        1           |      Double       | false 
+        setup:
+            TemplateLibrarySource libSource = new TemplateLibrarySource()
+        expect:
+            libSource.validateType(actual, expected) == result
+        where:
+        actual      |     expected      | result
+        true        |      boolean      | true
+        false       |      boolean      | true
+        true        |      Boolean      | true
+        false       |      Boolean      | true
+        "nope"      |      boolean      | false
+        "hey"       |      String       | true
+        "${4}"      |      String       | true
+        4           |      String       | false
+        4           |      Integer      | true
+        4           |      int          | true
+        4.2         |      Integer      | false
+        4.2         |      int          | false
+        1           |      Double       | false
         1.0         |      Double       | true
-        1           |      Number       | true 
-        1.0         |      Number       | true 
-        "hey"       |     ~/.*he.*/     | true 
-        "heyyy"     |     ~/^hey.*/     | true 
-        "hi"        |     ~/^hey.*/     | false 
-        "hi"        |    ["hi","hey"]   | true 
-        "opt3"      |  ["opt1", "opt2"] | false 
-        
+        1           |      Number       | true
+        1.0         |      Number       | true
+        "hey"       |     ~/.*he.*/     | true
+        "heyyy"     |     ~/^hey.*/     | true
+        "hi"        |     ~/^hey.*/     | false
+        "hi"        |    ["hi","hey"]   | true
+        "opt3"      |  ["opt1", "opt2"] | false
+
     }
 
 
-    @WithoutJenkins 
+    @WithoutJenkins
     def "Missing library config file prints warning"(){
-        setup: 
+        setup:
             repo.write("test/a.txt", "_")
             repo.git("add", "*")
             repo.git("commit", "--message=init")
 
             TemplateBinding binding = Mock()
             CpsScript script = Mock{
-                getBinding() >> binding 
+                getBinding() >> binding
             }
 
-            PrintStream logger = Mock() 
+            PrintStream logger = Mock()
 
-            GroovySpy(TemplateLogger, global:true) 
-            TemplateLogger.printWarning(*_) >> { args -> 
+            GroovySpy(TemplateLogger, global:true)
+            TemplateLogger.printWarning(*_) >> { args ->
                 logger.println(args[0])
             }
-        when: 
+        when:
             librarySource.loadLibrary(script, "test", [:])
 
-        then: 
+        then:
             1 * logger.println("Library test does not have a configuration file.")
 
     }
 
     @WithoutJenkins
     def "Library config file is not loaded as a step"(){
-        setup: 
+        setup:
             repo.write("test/a.groovy", "_")
             repo.write("test/library_config.groovy", """
             fields{
@@ -260,26 +260,26 @@ class TemplateLibrarySourceSpec extends Specification{
 
             TemplateBinding binding = Mock()
             CpsScript script = Mock{
-                getBinding() >> binding 
+                getBinding() >> binding
             }
 
-            GroovySpy(StepWrapper, global:true) 
-            StepWrapper.createFromFile(*_) >> { args -> 
+            GroovySpy(StepWrapper, global:true)
+            StepWrapper.createFromFile(*_) >> { args ->
                 String name = args[0].getName() - ".groovy"
                 return new StepWrapper(name: name)
             }
 
-        when: 
+        when:
             librarySource.loadLibrary(script, "test", [:])
-            
-        then: 
+
+        then:
             1 * binding.setVariable("a", _)
             0 * binding.getVariable("library_config", _)
     }
 
     @WithoutJenkins
     def "Empty array returned when no errors present"(){
-        setup: 
+        setup:
             repo.write("test/a.groovy", "_")
             repo.write("test/library_config.groovy", """
             fields{
@@ -294,26 +294,26 @@ class TemplateLibrarySourceSpec extends Specification{
 
             TemplateBinding binding = Mock()
             CpsScript script = Mock{
-                getBinding() >> binding 
+                getBinding() >> binding
             }
 
-            GroovySpy(StepWrapper, global:true) 
-            StepWrapper.createFromFile(*_) >> { args -> 
+            GroovySpy(StepWrapper, global:true)
+            StepWrapper.createFromFile(*_) >> { args ->
                 String name = args[0].getName() - ".groovy"
                 return new StepWrapper(name: name)
             }
 
-            ArrayList libConfigErrors = [] 
-        when: 
+            ArrayList libConfigErrors = []
+        when:
             libConfigErrors = librarySource.loadLibrary(script, "test", [field1: true])
-            
-        then: 
-            libConfigErrors.isEmpty() 
+
+        then:
+            libConfigErrors.isEmpty()
     }
 
     @WithoutJenkins
     def "Library config error array contains library name as first element"(){
-        setup: 
+        setup:
             repo.write("test/a.groovy", "_")
             repo.write("test/library_config.groovy", """
             fields{
@@ -328,20 +328,20 @@ class TemplateLibrarySourceSpec extends Specification{
 
             TemplateBinding binding = Mock()
             CpsScript script = Mock{
-                getBinding() >> binding 
+                getBinding() >> binding
             }
 
-            GroovySpy(StepWrapper, global:true) 
-            StepWrapper.createFromFile(*_) >> { args -> 
+            GroovySpy(StepWrapper, global:true)
+            StepWrapper.createFromFile(*_) >> { args ->
                 String name = args[0].getName() - ".groovy"
                 return new StepWrapper(name: name)
             }
 
-            ArrayList libConfigErrors = [] 
-        when: 
+            ArrayList libConfigErrors = []
+        when:
             libConfigErrors = librarySource.loadLibrary(script, "test", [field2: true])
-            
-        then: 
+
+        then:
             libConfigErrors[0].trim().equals("test:")
     }
 
@@ -460,7 +460,7 @@ class TemplateLibrarySourceSpec extends Specification{
         String libName = "test"
         repo.write("test/library_config.groovy", """
             fields{
-                
+
             }
             """)
         repo.git("add", "*")
@@ -619,6 +619,48 @@ class TemplateLibrarySourceSpec extends Specification{
         "Number"  | 4.0
         "Integer" | 4
 
+    }
+
+    @WithoutJenkins
+    def "Library config enum match throws no error"() {
+      setup:
+      String requiredKey = "field1"
+      String unusedKey = "field3"
+      String optionalKey = "field2"
+      String libName = "test"
+      repo.write("test/a.groovy", "_")
+      repo.write("test/library_config.groovy", """
+          fields{
+              required{
+                  ${requiredKey} = ${lib_value}
+              }
+              optional{}
+          }
+          """)
+      repo.git("add", "*")
+      repo.git("commit", "--message=init")
+      TemplateBinding binding = Mock()
+      CpsScript script = Mock{
+          getBinding() >> binding
+      }
+
+      GroovySpy(StepWrapper, global:true)
+      StepWrapper.createFromFile(*_) >> { args ->
+          String name = args[0].getName() - ".groovy"
+          return new StepWrapper(name: name)
+      }
+
+      ArrayList libConfigErrors = []
+
+      when:
+      libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+
+      then:
+      0 == libConfigErrors.size()
+
+      where:
+      lib_value   | config_value
+      "[1, 2, 3]" | 2
     }
 
     @WithoutJenkins
