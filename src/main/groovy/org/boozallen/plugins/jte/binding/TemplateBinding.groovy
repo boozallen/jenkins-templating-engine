@@ -17,6 +17,7 @@
 package org.boozallen.plugins.jte.binding
 
 import org.jenkinsci.plugins.workflow.cps.CpsThread
+import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
 import org.jenkinsci.plugins.workflow.cps.DSL
 import org.codehaus.groovy.runtime.InvokerHelper
 
@@ -39,8 +40,9 @@ class TemplateBinding extends Binding implements Serializable{
             a variable called "config".  as such, reject 
             attempts to override this in the binding. 
         */
-        if (name.equals(StepWrapper.libraryConfigVariable)){
-            throw new TemplateException("Cannot set ${StepWrapper.libraryConfigVariable}. Reserved for use by library steps.")
+        String reservedConfigVar = LibraryLoader.getPrimitiveClass().libraryConfigVariable 
+        if (name.equals(reservedConfigVar)){
+            throw new TemplateException("Cannot set ${reservedConfigVar}. Reserved for use by library steps.")
         }
 
         if (name in registry){
@@ -73,13 +75,14 @@ class TemplateBinding extends Binding implements Serializable{
 
     public Boolean hasStep(String stepName){
         if (hasVariable(stepName)){
-            return getVariable(stepName) instanceof StepWrapper
+            Class StepWrapper = LibraryLoader.getPrimitiveClass()
+            return StepWrapper.isInstance(getVariable(stepName))
         } else{
             return false
         } 
     }
 
-    public StepWrapper getStep(String stepName){
+    public def getStep(String stepName){
         if (hasStep(stepName)){
             return getVariable(stepName)
         } else {

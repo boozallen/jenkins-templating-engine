@@ -17,6 +17,7 @@
 package org.boozallen.plugins.jte.binding
 
 import org.boozallen.plugins.jte.config.*
+import org.boozallen.plugins.jte.binding.TemplatePrimitive
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.Extension 
 
@@ -67,33 +68,6 @@ class ApplicationEnvironment extends TemplatePrimitive{
 
     void throwPostLockException(){
         throw new TemplateException ("Variable ${var_name} is reserved as an Application Environment.")
-    }
-
-    /*
-        inject ApplicationEnvironment objects into the binding. 
-
-        example configuration: 
-
-        application_environments{
-            dev{
-                openshift_url = "https://example.com:8443" 
-            }
-            test
-            prod{
-                long_name = "Production" 
-            }
-        }
-
-        would create ApplicationEnvironment objects dev, test, and prod 
-        that could be referenced from a pipeline template
-    */
-    @Extension static class Injector extends TemplatePrimitiveInjector {
-        static void doInject(TemplateConfigObject config, CpsScript script){
-            config.getConfig().application_environments.each{ name, appEnvConfig ->
-                ApplicationEnvironment appEnv = new ApplicationEnvironment(name, appEnvConfig)
-                script.getBinding().setVariable(name, appEnv)
-            }
-        }
     }
 
 }

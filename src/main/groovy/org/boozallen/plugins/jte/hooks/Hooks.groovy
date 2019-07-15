@@ -18,6 +18,7 @@ package org.boozallen.plugins.jte.hooks
 
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.boozallen.plugins.jte.binding.* 
+import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
 import java.lang.annotation.Annotation
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 import jenkins.model.Jenkins
@@ -28,7 +29,10 @@ class Hooks implements Serializable{
     static List<AnnotatedMethod> discover(Class<? extends Annotation> a, TemplateBinding b){
         List<AnnotatedMethod> discovered = new ArrayList() 
 
-        List<StepWrapper> stepWrappers = b.getVariables().collect{ it.value }.findAll{ it instanceof StepWrapper }
+        Class StepWrapper = LibraryLoader.getPrimitiveClass()
+        ArrayList stepWrappers = b.getVariables().collect{ it.value }.findAll{
+             StepWrapper.isInstance(it)
+        }
 
         stepWrappers.each{ step ->
             step.impl.class.methods.each{ method ->
