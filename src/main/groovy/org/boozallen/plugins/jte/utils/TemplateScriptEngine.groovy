@@ -21,6 +21,7 @@ import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.jenkinsci.plugins.workflow.cps.CpsThreadGroup
+import java.lang.LinkageError
 
 /*
     We do a lot of executing the code inside files and JTE is
@@ -66,8 +67,13 @@ class TemplateScriptEngine implements Serializable{
 
     static Class parseClass(String classText){
         GroovyShell shell = createShell() 
-        Class clazz = shell.getClassLoader().parseClass(classText)
-        shell.getClassLoader().setClassCacheEntry(clazz)
-        return clazz 
+        try{
+            Class clazz = shell.getClassLoader().parseClass(classText)
+            shell.getClassLoader().setClassCacheEntry(clazz)
+            return clazz 
+        }catch(LinkageError ex){
+            String className = ex.getMessage().split(" ").last().replaceAll("/",".").replaceAll('"',"")
+            return shell.getClassLoader().loadClass(className)
+        }
     }
 }

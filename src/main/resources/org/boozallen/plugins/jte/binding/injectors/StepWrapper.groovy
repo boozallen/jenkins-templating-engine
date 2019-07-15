@@ -14,16 +14,21 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding
+package org.boozallen.plugins.jte.binding.injectors
 
+import org.boozallen.plugins.jte.binding.*
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.hooks.*
-import org.boozallen.plugins.jte.utils.TemplateScriptEngine
+import org.boozallen.plugins.jte.config.*
+import org.boozallen.plugins.jte.console.TemplateLogger
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.InvokerInvocationException
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 import jenkins.model.Jenkins
 import jenkins.scm.api.SCMFile 
+
 /*
     represents a library step. 
 
@@ -68,19 +73,26 @@ class StepWrapper extends TemplatePrimitive{
     @Whitelisted
     def invoke(String methodName, Object... args){
         if(InvokerHelper.getMetaClass(impl).respondsTo(impl, methodName, args)){
-            /*
-                any invocation of pipeline code from a plugin class of more than one
-                executable script or closure requires to be parsed through the execution
-                shell or the method returns prematurely after the first execution
-            */
-            String invoke =  Jenkins.instance
-                                    .pluginManager
-                                    .uberClassLoader
-                                    .loadClass("org.boozallen.plugins.jte.binding.StepWrapper")
-                                    .getResource("StepWrapperImpl.groovy")
-                                    .text
-            Script step = TemplateScriptEngine.parse(invoke, script.getBinding())
-            return step(name, library, script, impl, methodName, args)
+            def result
+            def context = [
+                step: name, 
+                library: library,
+                status: script.currentBuild.result
+            ]
+            try{
+                Hooks.invoke(BeforeStep, script.getBinding(), context)
+                TemplateLogger.print "[Step - ${library}/${name}.${methodName}(${args.collect{ it.getClass().simpleName }.join(", ")})]" 
+                // result = InvokerHelper.getMetaClass(impl).invokeMethod(impl, methodName, args)
+                result = impl.invokeMethod(methodName, args) 
+            } catch (Exception x) {
+                script.currentBuild.result = "Failure"
+                throw new InvokerInvocationException(x)
+            } finally{
+                context.status = script.currentBuild.result
+                Hooks.invoke(AfterStep, script.getBinding(), context)
+                Hooks.invoke(Notify, script.getBinding(), context)
+            }
+            return result 
         }else{
             throw new TemplateException("Step ${name} from the library ${library} does not have the method ${methodName}(${args.collect{ it.getClass().simpleName }.join(", ")})")
         }
@@ -104,7 +116,7 @@ class StepWrapper extends TemplatePrimitive{
         String defaultImpl = Jenkins.instance
                                     .pluginManager
                                     .uberClassLoader
-                                    .loadClass("org.boozallen.plugins.jte.binding.StepWrapper")
+                                    .loadClass("org.boozallen.plugins.jte.binding.injectors.LibraryLoader")
                                     .getResource("defaultStepImplementation.groovy")
                                     .text
         if (!stepConfig.name) stepConfig.name = name 
