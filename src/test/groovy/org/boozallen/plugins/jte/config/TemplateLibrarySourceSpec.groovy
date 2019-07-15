@@ -705,6 +705,7 @@ class TemplateLibrarySourceSpec extends Specification{
 
         where:
         lib_value   | config_value | message
+        "[1.0, 2, 3]" | 1            | "Field 'field1' must be one of ${lib_value} but is [${config_value}]"
         "[1, 2, 3]" | 4            | "Field 'field1' must be one of ${lib_value} but is [${config_value}]"
         "['cars', 'boats']" | 'planes'            | "Field 'field1' must be one of [cars, boats] but is [${config_value}]"
     }
