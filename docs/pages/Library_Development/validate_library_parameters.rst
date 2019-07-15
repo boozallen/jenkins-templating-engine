@@ -313,7 +313,7 @@ Additional Validation Methods
 While using a library configuration covers most libraries' validation
 requirements, you may wish to do more complex validation, or you may have
 a particular need that's not met. For those cases, you can either create a
-separate pipeline step with the ``@validate`` annotation, or you can validate
+separate pipeline step with the ``@Validate`` annotation, or you can validate
 the parameters within the step itself.
 
 Validating Within the Step
