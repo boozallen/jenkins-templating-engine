@@ -170,8 +170,8 @@ throw an error. For example, this pipeline config snippet would be valid:
 
 .. code-block:: groovy
 
-   fields{
-     required{
+   libraries{
+     your_library{
        intensity = "medium"
      }
    }
@@ -180,8 +180,8 @@ But this snippet would cause an error:
 
 .. code-block:: groovy
 
-   fields{
-     required{
+   libraries{
+     your_library{
        intensity = "intense"
        // throws an error because "intense" is neither "high," "medium", nor "low"
      }
