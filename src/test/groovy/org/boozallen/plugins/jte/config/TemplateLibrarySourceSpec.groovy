@@ -706,6 +706,54 @@ class TemplateLibrarySourceSpec extends Specification{
         where:
         lib_value   | config_value | message
         "[1, 2, 3]" | 4            | "Field 'field1' must be one of ${lib_value} but is [${config_value}]"
+        "['cars', 'boats']" | 'planes'            | "Field 'field1' must be one of [cars, boats] but is [${config_value}]"
+    }
+
+    @WithoutJenkins
+    def "Library config enum has no errors when one of the options"(){
+        setup:
+        String requiredKey = "field1"
+        String unusedKey = "field3"
+        String optionalKey = "field2"
+        String libName = "test"
+        repo.write("test/a.groovy", "_")
+        repo.write("test/library_config.groovy", """
+            fields{
+                required{
+                    ${requiredKey} = ${lib_value}
+                }
+                optional{}
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
+
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
+
+        ArrayList libConfigErrors = []
+
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+
+        then:
+        0 == libConfigErrors.size()
+
+        where:
+        lib_value   | config_value
+        "[1, 2, 3]" | 3
+        "[1, 2, 3]" | 2
+        "['4', 'cars']" | '4'
+        "['cars', 4.0]" | 4.0
+        "['cars', 4.0]" | "cars"
+        "[6.0]" | 6.0
     }
 
     @Unroll
