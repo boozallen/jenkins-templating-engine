@@ -41,9 +41,7 @@ import com.cloudbees.groovy.cps.NonCPS
             if (!s){ 
                 throw new TemplateConfigException("Library ${libName} Not Found.") 
             }
-            TemplateLogger.printWarning "[DEBUG] loading library ${libName}"
             s.loadLibrary(script, libName, libConfig)
-            TemplateLogger.printWarning "[DEBUG] loaded library ${libName}"
         }
         // 2. Inject steps with default step implementation for configured steps
         TemplateBinding binding = script.getBinding() 
