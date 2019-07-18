@@ -54,6 +54,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
     }
 
     public void loadLibrary(CpsScript script, String libName, Map libConfig){
+        TemplateLogger.printWarning "[DEBUG] inside libSource loadLibrary and loading ${libName}"
         SCMFileSystem fs = createFs()
         if (!fs){ return }
 
@@ -64,7 +65,9 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
             it.getName().endsWith(".groovy") 
         }.each{ stepFile ->
             Class StepWrapper = LibraryLoader.getPrimitiveClass()
+            TemplateLogger.printWarning "[DEBUG] creating step for ${stepFile}"
             def s = StepWrapper.createFromFile(stepFile, libName, script, libConfig)
+            TemplateLogger.printWarning "[DEBUG] created step" 
             script.getBinding().setVariable(s.getName(), s)
         }
     }

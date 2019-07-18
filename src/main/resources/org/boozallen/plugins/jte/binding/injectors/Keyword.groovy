@@ -17,14 +17,14 @@
 package org.boozallen.plugins.jte.binding.injectors
 
 import org.boozallen.plugins.jte.config.TemplateConfigObject
-import org.boozallen.plugins.jte.binding.TemplatePrimitive
+import org.boozallen.plugins.jte.binding.*
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.Extension 
 
 /*
     represents a protected variable in the jenkinsfile
 */
-class Keyword extends TemplatePrimitive{
+class Keyword extends TemplatePrimitive implements Serializable{
     String var_name
     Object value
 

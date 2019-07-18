@@ -18,16 +18,17 @@ package org.boozallen.plugins.jte.binding.injectors
 
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
-import org.boozallen.plugins.jte.binding.TemplatePrimitive
+import org.boozallen.plugins.jte.binding.*
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.Extension 
 import jenkins.model.Jenkins
+import org.codehaus.groovy.runtime.InvokerHelper
 
 /*
     represents a group of library steps to be called. 
 */
-class Stage extends TemplatePrimitive {
+class Stage extends TemplatePrimitive implements Serializable{
     CpsScript script 
     String name
     ArrayList<String> steps
