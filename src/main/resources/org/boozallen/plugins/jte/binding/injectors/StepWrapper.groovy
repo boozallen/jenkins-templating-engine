@@ -25,9 +25,9 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
-import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 import jenkins.model.Jenkins
 import jenkins.scm.api.SCMFile 
+import com.cloudbees.groovy.cps.NonCPS
 
 /*
     represents a library step. 
@@ -37,7 +37,7 @@ import jenkins.scm.api.SCMFile
     1. To give steps binding protection via TemplatePrimitive
     2. To provide a means to do LifeCycle Hooks before/after step execution
 */
-class StepWrapper extends TemplatePrimitive{
+class StepWrapper extends TemplatePrimitive implements Serializable{
     public static final String libraryConfigVariable = "config" 
     private Object impl
     private CpsScript script
@@ -49,7 +49,6 @@ class StepWrapper extends TemplatePrimitive{
         CpsScript recognizes the StepWrapper as something it 
         should execute in the binding. 
     */
-    @Whitelisted
     def call(Object... args){
         return invoke("call", args) 
     }
@@ -59,18 +58,17 @@ class StepWrapper extends TemplatePrimitive{
         first retrieve the StepWrapper and then attempt to invoke a 
         method on it. 
     */
-    @Whitelisted
     def methodMissing(String methodName, args){
         return invoke(methodName, args)     
     }
-
+    
+    @NonCPS
     String getName(){ return name }
 
     /*
         pass method invocations on the wrapper to the underlying
         step implementation script. 
     */
-    @Whitelisted
     def invoke(String methodName, Object... args){
         if(InvokerHelper.getMetaClass(impl).respondsTo(impl, methodName, args)){
             def result
@@ -82,8 +80,7 @@ class StepWrapper extends TemplatePrimitive{
             try{
                 Hooks.invoke(BeforeStep, script.getBinding(), context)
                 TemplateLogger.print "[Step - ${library}/${name}.${methodName}(${args.collect{ it.getClass().simpleName }.join(", ")})]" 
-                // result = InvokerHelper.getMetaClass(impl).invokeMethod(impl, methodName, args)
-                result = impl.invokeMethod(methodName, args) 
+                result = InvokerHelper.getMetaClass(impl).invokeMethod(impl, methodName, args) 
             } catch (Exception x) {
                 script.currentBuild.result = "Failure"
                 throw new InvokerInvocationException(x)
@@ -105,12 +102,14 @@ class StepWrapper extends TemplatePrimitive{
         throw new TemplateException ("Library Step Collision. The variable ${name} is reserved as a library step via the ${library} library.")
     }
 
+    @NonCPS
     static StepWrapper createFromFile(SCMFile file, String library, CpsScript script, Map libConfig){
         String name = file.getName() - ".groovy" 
         String stepText = file.contentAsString()
         return createFromString(stepText, script, name, library, libConfig)
     }
 
+    @NonCPS
     static StepWrapper createDefaultStep(CpsScript script, String name, Map stepConfig){
         // create default step implementation Script 
         String defaultImpl = Jenkins.instance
@@ -123,11 +122,13 @@ class StepWrapper extends TemplatePrimitive{
         return createFromString(defaultImpl, script, name, "Default Step Implementation", stepConfig) 
     }
 
+    @NonCPS
     static StepWrapper createNullStep(String stepName, CpsScript script){
         String nullImpl = "def call(){ println \"Step ${stepName} is not implemented.\" }"
         return createFromString(nullImpl, script, stepName, "Null Step", [:])
     }
 
+    @NonCPS
     static StepWrapper createFromString(String stepText, CpsScript script, String name, String library, Map libConfig){
         Script impl = TemplateScriptEngine.parse(stepText, script.getBinding())
         impl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return libConfig }

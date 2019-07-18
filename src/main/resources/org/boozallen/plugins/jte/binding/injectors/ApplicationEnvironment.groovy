@@ -24,7 +24,7 @@ import hudson.Extension
 /*
     represents an immutable application environment. 
 */
-class ApplicationEnvironment extends TemplatePrimitive{
+class ApplicationEnvironment extends TemplatePrimitive implements Serializable{
     String var_name
     String short_name
     String long_name

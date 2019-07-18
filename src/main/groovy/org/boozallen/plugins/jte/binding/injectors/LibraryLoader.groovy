@@ -26,9 +26,11 @@ import org.boozallen.plugins.jte.console.TemplateLogger
 import hudson.Extension 
 import jenkins.model.Jenkins
 import org.jenkinsci.plugins.workflow.cps.CpsScript
+import com.cloudbees.groovy.cps.NonCPS
 
 @Extension public class LibraryLoader extends TemplatePrimitiveInjector {
 
+    @NonCPS
     static void doInject(TemplateConfigObject config, CpsScript script){
         // 1. Inject steps from loaded libraries
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy() 
@@ -39,7 +41,9 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
             if (!s){ 
                 throw new TemplateConfigException("Library ${libName} Not Found.") 
             }
+            TemplateLogger.printWarning "[DEBUG] loading library ${libName}"
             s.loadLibrary(script, libName, libConfig)
+            TemplateLogger.printWarning "[DEBUG] loaded library ${libName}"
         }
         // 2. Inject steps with default step implementation for configured steps
         TemplateBinding binding = script.getBinding() 
