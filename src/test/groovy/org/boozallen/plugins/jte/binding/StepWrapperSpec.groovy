@@ -13,8 +13,8 @@
 
 package org.boozallen.plugins.jte.binding
 
-import org.boozallen.plugins.jte.Utils 
-import spock.lang.* 
+import org.boozallen.plugins.jte.utils.RunUtils
+import spock.lang.*
 import spock.util.mop.ConfineMetaClassChanges
 import org.junit.ClassRule
 import org.jvnet.hudson.test.JenkinsRule
@@ -44,9 +44,10 @@ class StepWrapperSpec extends Specification{
     """
 
     def setup(){
-        GroovySpy(Utils)
+
+        GroovySpy(RunUtils, global:true)
         job = jenkins.createProject(WorkflowJob)
-        _ * Utils.getCurrentJob() >> job
+        _ * RunUtils.getJob() >> job
     }
 
     /*

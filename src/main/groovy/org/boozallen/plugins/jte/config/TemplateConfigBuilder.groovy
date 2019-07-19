@@ -31,8 +31,35 @@ abstract class TemplateConfigBuilder extends Script{
     ArrayList object_stack = []
     ArrayList node_stack = []
 
+    /*
+        used purely to catch syntax errors such as:
+
+        1. someone trying to set a configuraiton key to an unquoted string
+        
+            a = b 
+            vs 
+            a = "b"
+        
+        2. to a block
+
+            a = b{
+                c = 3
+            }
+    */
+    static enum BuilderMethod{ 
+        METHOD_MISSING, PROPERTY_MISSING
+        
+        String name
+        BuilderMethod call(String name){
+            this.name = name 
+            return this 
+        }
+
+        String getName(){return name}
+    }
+
     @Whitelisted
-    Object methodMissing(String name, args){
+    BuilderMethod methodMissing(String name, args){
         object_stack.push([:])
         node_stack.push(name)
 
@@ -46,17 +73,29 @@ abstract class TemplateConfigBuilder extends Script{
         } else {
             templateConfig.config << [ (name): node_config]
         }
+        return BuilderMethod.METHOD_MISSING(name)
     }
-
-    /*
-    @Whitelisted
-    Object getVariable(String name){
-        return super.getVariable(name)
-    }
-    */
 
     @Whitelisted
     void setProperty(String name, value){
+
+        // validate syntax errors 
+        if (value instanceof BuilderMethod){
+            ArrayList ex = [ "Template Configuration File Syntax Error: " ]
+            switch(value){
+                case BuilderMethod.METHOD_MISSING:
+                    ex += "line containing: ${name} = ${value.getName()} { "
+                    ex += "cannot set property equal to configuration block"
+                    break
+                case BuilderMethod.PROPERTY_MISSING:
+                    ex += "line containing: ${name} = ${value.getName()} "
+                    ex += "Referencing other configs is not permitted, or you forgot to quote the value."
+                    ex += "did you mean: ${name} = \"${value.getName()}\""
+                    break
+            }
+            throw new TemplateConfigException(ex.join("\n"))
+        }
+
         if (name.equals("merge") && value.equals(true)){
             templateConfig.merge << node_stack.join(".")
         } else if (name.equals("override") && value.equals(true)){
@@ -69,12 +108,13 @@ abstract class TemplateConfigBuilder extends Script{
     }
 
     @Whitelisted
-    void propertyMissing(String name){
+    BuilderMethod propertyMissing(String name){
         if (object_stack.size()){
             object_stack.last()[name] = [:]
         } else {
             templateConfig.config[name] = [:]
         }
+        return BuilderMethod.PROPERTY_MISSING(name)
     }
 
 }
