@@ -17,15 +17,18 @@
 package org.boozallen.plugins.jte
 
 import org.boozallen.plugins.jte.config.TemplateConfigBuilder
+import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.binding.* 
 import org.boozallen.plugins.jte.config.* 
 import org.boozallen.plugins.jte.hooks.* 
+import org.boozallen.plugins.jte.utils.*
 import jenkins.model.Jenkins
 import hudson.Extension
 import hudson.ExtensionList 
 import org.jenkinsci.plugins.workflow.cps.GlobalVariable
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AbstractWhitelist
+import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 import java.lang.reflect.Method
 import java.lang.reflect.Constructor
 import javax.annotation.Nonnull
@@ -60,6 +63,8 @@ import javax.annotation.Nonnull
             // more than just their own library config block 
             script.getBinding().setVariable("pipelineConfig", pipelineConfig.getConfig().getConfig())
 
+            script.getBinding().setVariable("templateConfigObject", pipelineConfig.getConfig())
+
             // populate the template
             initializeBinding(pipelineConfig, script) 
 
@@ -71,7 +76,7 @@ import javax.annotation.Nonnull
                                 .getResource("TemplateEntryPoint.groovy")
                                 .text
 
-            template = Utils.parseScript(entryPoint, script.getBinding())
+            template = TemplateScriptEngine.parse(entryPoint, script.getBinding())
             script.getBinding().setVariable(getName(), template)
         }
         return template
@@ -92,7 +97,9 @@ import javax.annotation.Nonnull
         }
 
         // get job config if present 
-        String repoConfigFile = Utils.getFileContents(GovernanceTier.CONFIG_FILE, null, "Template Configuration File")
+        FileSystemWrapper fsw = FileSystemWrapper.createFromJob()
+
+        String repoConfigFile = fsw.getFileContents(GovernanceTier.CONFIG_FILE, "Template Configuration File", false)
         if (repoConfigFile){
             TemplateConfigObject repoConfig = TemplateConfigDsl.parse(repoConfigFile)
             pipelineConfig.join(repoConfig)
@@ -126,6 +133,56 @@ import javax.annotation.Nonnull
     }
 
 
+    /*
+        called from TemplateEntryPoint.groovy at the start of a pipeline
+        run to determine the template to be executed
+    */
+    @Whitelisted
+    static String getTemplate(Map config){
+
+        // tenant Jenkinsfile if allowed 
+        FileSystemWrapper fs = FileSystemWrapper.createFromJob()
+        String repoJenkinsfile = fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false)
+        if (repoJenkinsfile){
+            if (config.allow_scm_jenkinsfile){
+                return repoJenkinsfile
+            }else{
+                TemplateLogger.print "Warning: Repository provided Jenkinsfile that will not be used, per organizational policy."
+            }
+        }
+
+        // specified pipeline template from pipeline template directories in governance tiers
+        List<GovernanceTier> tiers = GovernanceTier.getHierarchy()
+        if (config.pipeline_template){ 
+            for (tier in tiers){
+                String pipelineTemplate = tier.getTemplate(config.pipeline_template)
+                if (pipelineTemplate){
+                    return pipelineTemplate 
+                }
+            }
+            throw new TemplateConfigException("Pipeline Template ${config.pipeline_template} could not be found in hierarchy.")
+        }
+
+        /*
+            look for default Jenkinsfile in ascending order of governance tiers
+        */
+        for (tier in tiers){
+            String pipelineTemplate = tier.getJenkinsfile()
+            if (pipelineTemplate){
+                return pipelineTemplate 
+            }
+        }
+
+        throw new TemplateConfigException("Could not determine pipeline template.")
+
+    }
+
+    @Whitelisted
+    static void runTemplate(String template, TemplateBinding binding){
+        TemplateScriptEngine.parse(template, binding).run() 
+    }
+
+
     @Extension public static class MiscWhitelist extends AbstractWhitelist {    
         @Override public boolean permitsMethod(Method method, Object receiver, Object[] args) {
             return ( 
@@ -142,7 +199,6 @@ import javax.annotation.Nonnull
 
         @Override public boolean permitsStaticMethod(Method method, Object[] args){
             return (
-                method.getDeclaringClass().equals(Utils) || 
                 method.getDeclaringClass().equals(Hooks)
             )
         }
