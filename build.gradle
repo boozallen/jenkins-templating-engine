@@ -38,7 +38,6 @@ jenkinsPlugin {
     }
 }
 
-
 dependencies {    
     // plugin dependencies
     jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-multibranch:2.20"
