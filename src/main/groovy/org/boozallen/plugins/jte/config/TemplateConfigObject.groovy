@@ -16,10 +16,56 @@
 
 package org.boozallen.plugins.jte.config
 
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+
 class TemplateConfigObject implements Serializable{
     LinkedHashMap config = [:]
     Set<String> merge = []
     Set<String> override = []
+
+
+
+    static TemplateConfigObject createFromMap(Map config){
+        LinkedHashMap c = new JsonSlurper().parseText(JsonOutput.toJson(config))
+        Set<String> merge = []
+        Set<String> override = []
+
+        (merge, override) = findMergeAndOverride([], [], [], c)
+        return new TemplateConfigObject(config: c, merge: merge, override: override)
+    }
+
+    
+    static def findMergeAndOverride(ArrayList merge, ArrayList override, ArrayList breadcrumbs, Map config){
+        Boolean removeMerge = false 
+        Boolean removeOverride = false 
+        config.each{ key, value -> 
+            if (key.equals("merge") && value){
+                merge += breadcrumbs.join(".")
+                removeMerge = true 
+            }
+            if (key.equals("override") && value){
+                removeOverride = true 
+                override += breadcrumbs.join(".")
+                config.remove("override")
+            }
+            if (value instanceof Map){
+                breadcrumbs += key
+                (merge, override) = findMergeAndOverride(merge,override,breadcrumbs, value)
+                breadcrumbs -= key 
+            }
+        }
+        /*
+            done after the fact to avoid ConcurrentModificationException
+        */
+        if (removeMerge){
+            config.remove("merge")
+        }
+        if (removeOverride){
+            config.remove("override")
+        }
+        return [ merge, override ]
+    }
 
     /*
     TODO:
