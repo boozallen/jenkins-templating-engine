@@ -28,6 +28,7 @@ version = u''
 # The full version, including alpha/beta/rc tags
 release = u''
 
+googleanalytics_id = "UA-144247959-2"
 
 # -- General configuration ---------------------------------------------------
 
@@ -38,9 +39,8 @@ release = u''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    'sphinx.ext.githubpages',
-]
+extensions = [ 'sphinx.ext.githubpages', 'sphinxcontrib.googleanalytics' ]
+
 
 scv_whitelist_branches = ('master', )
 
