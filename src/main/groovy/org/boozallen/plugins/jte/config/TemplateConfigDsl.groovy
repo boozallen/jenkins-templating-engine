@@ -122,6 +122,8 @@ class TemplateConfigDsl implements Serializable{
       }else{
         if (value instanceof String){
           file += "${tab*depth}${key} = '${StringEscapeUtils.escapeJava(value)}'"
+        } else if (value instanceof ArrayList){
+          file += "${tab*depth}${key} = ${value.inspect()}" 
         }else{
           file += "${tab*depth}${key} = ${value}" 
         }
