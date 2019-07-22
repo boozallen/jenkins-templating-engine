@@ -257,4 +257,19 @@ class TemplateConfigDslSpec extends Specification {
             thrown(TemplateConfigException)
     }
 
+    def "array lists are appropriately serialized"(){
+        setup: 
+            String config = "field = [ 'a', 'b-c' ]"
+            Map expectedConfig = [
+                field: [ "a", "b-c" ]
+            ]
+            def originalConfig, reparsedConfig
+        when: 
+            originalConfig = TemplateConfigDsl.parse(config)
+            reparsedConfig = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(originalConfig))
+        then: 
+            originalConfig.getConfig() == expectedConfig
+            reparsedConfig.getConfig() == expectedConfig
+    }
+
 }
