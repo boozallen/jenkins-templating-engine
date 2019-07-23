@@ -68,7 +68,7 @@ create a more organized code base for your pipelines.
    :hidden:
    :titlesonly:
    :glob:
-   :caption: Pipeline Templating
+   :caption: Pipeline Templating 💡
 
    pages/Pipeline_Templating/what_is_a_pipeline_template
    pages/Pipeline_Templating/*
@@ -77,7 +77,7 @@ create a more organized code base for your pipelines.
    :hidden:
    :titlesonly:
    :glob:
-   :caption: Primitives
+   :caption: Primitives ⚡️
 
    pages/Primitives/what_is_a_primitive_in_jte
    pages/Primitives/*
@@ -86,7 +86,7 @@ create a more organized code base for your pipelines.
    :hidden:
    :titlesonly:
    :glob:
-   :caption: Library Development
+   :caption: Library Development 📖
 
    pages/Library_Development/getting_started
    pages/Library_Development/*
@@ -95,13 +95,13 @@ create a more organized code base for your pipelines.
    :hidden:
    :maxdepth: 3
    :titlesonly:
-   :caption: Configuration
+   :caption: Configuration 🛠
 
 
 .. toctree::
    :hidden:
    :titlesonly:
    :glob: 
-   :caption: Governance
+   :caption: Governance 👮‍
 
    pages/Governance/*
