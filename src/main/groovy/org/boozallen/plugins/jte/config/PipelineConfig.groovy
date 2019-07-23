@@ -165,9 +165,9 @@ class PipelineConfig implements Serializable{
 
         keys = newKeys.findAll{ k -> data.prev.nested[k] != data.incoming.nested[k] }
         def overriddenChangedKeys = keys.findAll({k -> data.prev.c.override.find({ 1 == (k.toString() - it).count(".")})})
-        def notOverridenChangedKeys = keys - overriddenChangedKeys
+        def notOverriddenChangedKeys = keys - overriddenChangedKeys
         output << "overriddenChangedKeys:${overriddenChangedKeys}"
-        output << "notOverridenChangedKeys:${notOverridenChangedKeys}"
+        output << "notOverriddenChangedKeys:${notOverriddenChangedKeys}"
 
         output << "Configurations Changed:${overriddenChangedKeys.empty? ' None': '' }"
         overriddenChangedKeys.each{ k ->
@@ -181,11 +181,11 @@ class PipelineConfig implements Serializable{
         }
 
         keys = (data.incoming.nestedKeys - data.outcome.nestedKeys)
-        output << "Configurations Ignored:${(notOverridenChangedKeys + keys).empty? ' None': '' }"
+        output << "Configurations Ignored:${(notOverriddenChangedKeys + keys).empty? ' None': '' }"
         keys.each{ k ->
             output << "- ${k}"
         }
-        notOverridenChangedKeys.each{ k ->
+        notOverriddenChangedKeys.each{ k ->
             output << "- ${k} ignored change from ${data.prev.nested[k]} to ${data.incoming.nested[k]}"
         }
 
