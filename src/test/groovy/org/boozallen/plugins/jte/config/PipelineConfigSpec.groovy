@@ -330,6 +330,81 @@ class PipelineConfigSpec extends Specification {
 
     }
 
+    def 'printJoin add'(){
+        setup:
+        PipelineConfig p = new PipelineConfig(TemplateConfigDsl.parse(basePipelineConfig))
+
+        when:
+        p.join(new TemplateConfigObject(config:[a:1]))
+        p.join(new TemplateConfigObject(config:[b:0]))
+
+        then:
+        1 * TemplateLogger.print({it.contains("Configurations Added:\n- a set to 1") &&
+                it.contains("Configurations Changed: None") &&
+                it.contains("Configurations Duplicated: None") &&
+                it.contains("Configurations Ignored: None")
+        }, _) >> { s, c -> return System.out.print(s + "\n") }
+        1 * TemplateLogger.print({it.contains("Configurations Added:\n- b set to 0") &&
+                it.contains("Configurations Changed: None") &&
+                it.contains("Configurations Duplicated: None") &&
+                it.contains("Configurations Ignored: None")
+        }, _) >> { s, c -> return System.out.print(s + "\n") }
+
+    }
+
+    def 'printJoin failed change'(){
+        setup:
+
+        PipelineConfig p = new PipelineConfig(TemplateConfigDsl.parse(basePipelineConfig))
+        TemplateConfigObject t = new TemplateConfigObject(config:[a:[b:1]])
+
+        when:
+        p.join(t)
+        p.join(new TemplateConfigObject(config:[a:[b:2]]))
+
+        then:
+        1 * TemplateLogger.print({it.contains("Configurations Added:\n- a.b set to 1") &&
+                it.contains("Configurations Changed: None") &&
+                it.contains("Configurations Duplicated: None") &&
+                it.contains("Configurations Ignored: None")
+        }, _) >> { s, c -> return System.out.print(s + "\n") }
+        1 * TemplateLogger.print({it.contains("Configurations Added: None") &&
+                it.contains("Configurations Changed: None") &&
+                it.contains("Configurations Duplicated: None") &&
+                it.contains("Configurations Ignored:\n" +
+                        "- a.b ignored change from 1 to 2")
+        }, _) >> { s, c -> return System.out.print(s + "\n") }
+
+    }
+
+    def 'printJoin change'(){
+        setup:
+
+
+        PipelineConfig p = new PipelineConfig(TemplateConfigDsl.parse(basePipelineConfig))
+        TemplateConfigObject t = new TemplateConfigObject(config:[a:1])
+
+        when:
+        TemplateConfigObject configObject = combine("""
+a{
+  b = 1
+  override = true
+}
+""", """
+a{
+  b = 2
+  override = true
+}
+""")
+        println(configObject.override)
+        then:
+        1 * TemplateLogger.print({it.contains("Configurations Added:\n- a.b set to 1") &&
+                it.contains("Configurations Changed: None") &&
+                it.contains("Configurations Duplicated: None") &&
+                it.contains("Configurations Ignored: None")
+        }, _) >> { s, c -> return System.out.print(s + "\n") }
+
+    }
 
     /*
     helpers
