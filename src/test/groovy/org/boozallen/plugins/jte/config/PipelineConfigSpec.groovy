@@ -308,6 +308,29 @@ class PipelineConfigSpec extends Specification {
         configObject.override.isEmpty()
     }
 
+    def 'printJoin false-positive change fix'(){
+        setup:
+        PipelineConfig p = new PipelineConfig(TemplateConfigDsl.parse(basePipelineConfig))
+
+        when:
+        p.join(new TemplateConfigObject(config:[a:1]))
+        p.join(new TemplateConfigObject(config:[b:0, a:1]))
+
+        then:
+        1 * TemplateLogger.print({it.contains("Configurations Added:\n- a set to 1") &&
+                it.contains("Configurations Changed: None") &&
+                it.contains("Configurations Duplicated: None") &&
+                it.contains("Configurations Ignored: None")
+        }, _) >> { s, c -> return System.out.print(s + "\n") }
+        1 * TemplateLogger.print({it.contains("Configurations Added:\n- b set to 0") &&
+                it.contains("Configurations Changed: None") &&
+                it.contains("Configurations Duplicated:\n- a duplicated with 1") &&
+                it.contains("Configurations Ignored: None")
+        }, _) >> { s, c -> return System.out.print(s + "\n") }
+
+    }
+
+
     /*
     helpers
      */

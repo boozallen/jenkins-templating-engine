@@ -161,11 +161,17 @@ class PipelineConfig implements Serializable{
             output << "- ${k} set to ${data.outcome.nested[k]}"
         }
 
-        keys = data.incoming.nestedKeys.intersect(data.prev.nestedKeys)
+        keys = data.incoming.nestedKeys.intersect(data.prev.nestedKeys).findAll{ k -> data.prev.nested[k] != data.incoming.nested[k] }
         output << "Configurations Changed:${keys.empty? ' None': '' }"
 
         keys.each{ k ->
             output << "- ${k} changed from ${data.prev.nested[k]} to ${data.outcome.nested[k]}"
+        }
+
+        keys = data.incoming.nestedKeys.intersect(data.prev.nestedKeys).findAll{ k -> data.prev.nested[k] == data.incoming.nested[k] }
+        output << "Configurations Duplicated:${keys.empty? ' None': '' }"
+        keys.each{ k ->
+          output << "- ${k} duplicated with ${data.prev.nested[k]}"
         }
 
         keys = (data.incoming.nestedKeys - data.outcome.nestedKeys)
