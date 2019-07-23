@@ -157,12 +157,3 @@ is followed until all Library Sources have been inspected for the library.
 
     If a library is specified and not present in any of the Governance Tier's Library Sources, JTE will throw 
     a Library Not Found Exception and fail the build. 
-
-
-
-.. toctree::
-   :maxdepth: 4
-   :glob:
-   :titlesonly:
-
-   *

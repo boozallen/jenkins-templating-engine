@@ -66,10 +66,42 @@ create a more organized code base for your pipelines.
 
 .. toctree::
    :hidden:
-   :maxdepth: 2
    :titlesonly:
+   :glob:
+   :caption: Pipeline Templating
 
-   pages/Templating/index
-   pages/Governance/index
-   pages/Library_Development/index
+   pages/Pipeline_Templating/what_is_a_pipeline_template
+   pages/Pipeline_Templating/*
    
+.. toctree::
+   :hidden:
+   :titlesonly:
+   :glob:
+   :caption: Primitives
+
+   pages/Primitives/what_is_a_primitive_in_jte
+   pages/Primitives/*
+
+.. toctree::
+   :hidden:
+   :titlesonly:
+   :glob:
+   :caption: Library Development
+
+   pages/Library_Development/getting_started
+   pages/Library_Development/*
+
+.. toctree::
+   :hidden:
+   :maxdepth: 3
+   :titlesonly:
+   :caption: Configuration
+
+
+.. toctree::
+   :hidden:
+   :titlesonly:
+   :glob: 
+   :caption: Governance
+
+   pages/Governance/*
