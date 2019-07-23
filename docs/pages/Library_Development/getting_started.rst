@@ -1,8 +1,8 @@
-.. _Library Development: 
+.. _Getting Started: 
 
--------------------
-Library Development
--------------------
+---------------
+Getting Started
+---------------
 
 Within the Jenkins Templating Engine framework, the technical implementation of different actions is 
 done via libraries composed of one or more steps.  
@@ -109,13 +109,3 @@ template you can now move on to some of the more advanced library development co
    ":ref:`Externalizing Library Configuration <Externalizing Library Configuration>`", "Learn how to build reusable libraries by externalizing configurations to the pipeline configuration file"
    ":ref:`Validate Library Parameters <Validate Library Parameters>`", "Learn how to validate library input parameters as part of your steps." 
    ":ref:`Leverage Lifecycle Hooks <Leverage Lifecycle Hooks>`", "Learn how to register steps for automatic invocation through annotation based registration"
-
-
-
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-   :glob:
-   :titlesonly:
-
-   *

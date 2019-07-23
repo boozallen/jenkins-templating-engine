@@ -1,8 +1,8 @@
 .. _Pipeline Templating: 
 
--------------------
-Pipeline Templating
--------------------
+----------------------------
+What is a pipeline template?
+----------------------------
 
 Templates
 *********

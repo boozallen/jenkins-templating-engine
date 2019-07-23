@@ -28,8 +28,6 @@ version = u''
 # The full version, including alpha/beta/rc tags
 release = u''
 
-googleanalytics_id = "UA-144247959-2"
-
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -39,8 +37,7 @@ googleanalytics_id = "UA-144247959-2"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [ 'sphinx.ext.githubpages', 'sphinxcontrib.googleanalytics' ]
-
+extensions = [ 'sphinx.ext.githubpages' ]
 
 scv_whitelist_branches = ('master', )
 
