@@ -166,8 +166,6 @@ class PipelineConfig implements Serializable{
         keys = changeKeys.findAll{ k -> data.prev.nested[k] != data.incoming.nested[k] }
         def overriddenChangedKeys = keys.findAll({k -> data.prev.c.override.find({ 1 == (k.toString() - it).count(".")})})
         def notOverriddenChangedKeys = keys - overriddenChangedKeys
-        output << "overriddenChangedKeys:${overriddenChangedKeys}"
-        output << "notOverriddenChangedKeys:${notOverriddenChangedKeys}"
 
         output << "Configurations Changed:${overriddenChangedKeys.empty? ' None': '' }"
         overriddenChangedKeys.each{ k ->
