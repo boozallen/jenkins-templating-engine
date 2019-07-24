@@ -320,12 +320,14 @@ class PipelineConfigSpec extends Specification {
         1 * TemplateLogger.print({it.contains("Configurations Added:\n- a set to 1") &&
                 it.contains("Configurations Changed: None") &&
                 it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored: None")
+                it.contains("Configurations Ignored: None") &&
+                it.contains("Subsequent may merge: None")
         }, _) >> { s, c -> return System.out.print(s + "\n") }
         1 * TemplateLogger.print({it.contains("Configurations Added:\n- b set to 0") &&
                 it.contains("Configurations Changed: None") &&
                 it.contains("Configurations Duplicated:\n- a duplicated with 1") &&
-                it.contains("Configurations Ignored: None")
+                it.contains("Configurations Ignored: None") &&
+                it.contains("Subsequent may merge: None")
         }, _) >> { s, c -> return System.out.print(s + "\n") }
 
     }
@@ -342,12 +344,14 @@ class PipelineConfigSpec extends Specification {
         1 * TemplateLogger.print({it.contains("Configurations Added:\n- a set to 1") &&
                 it.contains("Configurations Changed: None") &&
                 it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored: None")
+                it.contains("Configurations Ignored: None") &&
+                it.contains("Subsequent may merge: None")
         }, _) >> { s, c -> return System.out.print(s + "\n") }
         1 * TemplateLogger.print({it.contains("Configurations Added:\n- b set to 0") &&
                 it.contains("Configurations Changed: None") &&
                 it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored: None")
+                it.contains("Configurations Ignored: None") &&
+                it.contains("Subsequent may merge: None")
         }, _) >> { s, c -> return System.out.print(s + "\n") }
 
     }
@@ -366,13 +370,15 @@ class PipelineConfigSpec extends Specification {
         1 * TemplateLogger.print({it.contains("Configurations Added:\n- a.b set to 1") &&
                 it.contains("Configurations Changed: None") &&
                 it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored: None")
+                it.contains("Configurations Ignored: None") &&
+                it.contains("Subsequent may merge: None")
         }, _) >> { s, c -> return System.out.print(s + "\n") }
         1 * TemplateLogger.print({it.contains("Configurations Added: None") &&
                 it.contains("Configurations Changed: None") &&
                 it.contains("Configurations Duplicated: None") &&
                 it.contains("Configurations Ignored:\n" +
-                        "- a.b ignored change from 1 to 2")
+                        "- a.b ignored change from 1 to 2") &&
+                it.contains("Subsequent may merge: None")
         }, _) >> { s, c -> return System.out.print(s + "\n") }
 
     }
@@ -396,12 +402,22 @@ a{
   override = true
 }
 """)
-        println(configObject.override)
+
         then:
         1 * TemplateLogger.print({it.contains("Configurations Added:\n- a.b set to 1") &&
                 it.contains("Configurations Changed: None") &&
                 it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored: None")
+                it.contains("Configurations Ignored: None") &&
+                it.contains("Subsequent may merge: None") &&
+                it.contains("Subsequent may override:\n- a")
+        }, _) >> { s, c -> return System.out.print(s + "\n") }
+        1 * TemplateLogger.print({it.contains("Configurations Added: None") &&
+                it.contains("Configurations Changed:\n" +
+                        "- a.b changed from 1 to 2") &&
+                it.contains("Configurations Duplicated: None") &&
+                it.contains("Configurations Ignored: None") &&
+                it.contains("Subsequent may merge: None") &&
+                it.contains("Subsequent may override:\n- a")
         }, _) >> { s, c -> return System.out.print(s + "\n") }
 
     }
