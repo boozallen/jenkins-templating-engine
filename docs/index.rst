@@ -67,29 +67,35 @@ create a more organized code base for your pipelines.
 .. toctree::
    :hidden:
    :titlesonly:
-   :glob:
    :caption: Pipeline Templating 💡
 
    pages/Pipeline_Templating/what_is_a_pipeline_template
-   pages/Pipeline_Templating/*
+   pages/Pipeline_Templating/configuration_files
+   pages/Pipeline_Templating/configuration_file_sandboxing
    
 .. toctree::
    :hidden:
    :titlesonly:
-   :glob:
    :caption: Primitives ⚡️
 
    pages/Primitives/what_is_a_primitive_in_jte
-   pages/Primitives/*
+   pages/Primitives/application_environments
+   pages/Primitives/stages
+   pages/Primitives/keywords
+   pages/Primitives/default_step_implementation
 
 .. toctree::
    :hidden:
    :titlesonly:
-   :glob:
    :caption: Library Development 📖
 
    pages/Library_Development/getting_started
-   pages/Library_Development/*
+   pages/Library_Development/externalizing_config
+   pages/Library_Development/validate_library_parameters
+   pages/Library_Development/lifecycle_hooks
+   pages/Library_Development/noncall_methods
+   pages/Library_Development/library_sources
+   
 
 .. toctree::
    :hidden:

@@ -129,12 +129,3 @@ code repository in a file called ``pipeline_config.groovy``.
 
 :ref:`Go here to learn more about JTE Configuration Files<Configuration Files>`
 
-.. toctree::
-   :hidden:
-   :maxdepth: 3
-   :glob:
-   :titlesonly:
-
-   configuration_files/index
-   primitives/index
-
