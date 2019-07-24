@@ -161,9 +161,9 @@ class PipelineConfig implements Serializable{
             output << "- ${k} set to ${data.outcome.nested[k]}"
         }
 
-        def newKeys = data.incoming.nestedKeys.intersect(data.prev.nestedKeys)
+        def changeKeys = data.incoming.nestedKeys.intersect(data.prev.nestedKeys)
 
-        keys = newKeys.findAll{ k -> data.prev.nested[k] != data.incoming.nested[k] }
+        keys = changeKeys.findAll{ k -> data.prev.nested[k] != data.incoming.nested[k] }
         def overriddenChangedKeys = keys.findAll({k -> data.prev.c.override.find({ 1 == (k.toString() - it).count(".")})})
         def notOverriddenChangedKeys = keys - overriddenChangedKeys
         output << "overriddenChangedKeys:${overriddenChangedKeys}"
@@ -174,7 +174,7 @@ class PipelineConfig implements Serializable{
             output << "- ${k} changed from ${data.prev.nested[k]} to ${data.outcome.nested[k]}"
         }
 
-        keys = newKeys.findAll{ k -> data.prev.nested[k] == data.incoming.nested[k] }
+        keys = changeKeys.findAll{ k -> data.prev.nested[k] == data.incoming.nested[k] }
         output << "Configurations Duplicated:${keys.empty? ' None': '' }"
         keys.each{ k ->
           output << "- ${k} duplicated with ${data.prev.nested[k]}"
