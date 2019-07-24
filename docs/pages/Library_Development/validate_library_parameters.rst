@@ -54,7 +54,7 @@ Here's an example of a *library_config.groovy* file:
        mode = [ "mode1", "mode2" ]
      }
      optional{
-       library_option = /[oO]ption\s*\d+/
+       library_option = ~/[oO]ption\s*\d+/
        do_optional_thing = Boolean
      }
    }
@@ -204,7 +204,7 @@ alphanumeric characters, your *library_config.groovy* would contain:
 
    fields{
      required{
-       library_option = /^[a-zA-Z0-9]+$/
+       credential = ~/^[a-zA-Z0-9]+$/
      }
    }
 
