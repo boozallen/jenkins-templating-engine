@@ -34,9 +34,7 @@ import jenkins.model.Jenkins
 
     static Class getPrimitiveClass(){
         String self = "org.boozallen.plugins.jte.binding.injectors.ApplicationEnvironmentInjector"
-        String classText = Jenkins.instance
-                                    .pluginManager
-                                    .uberClassLoader
+        String classText = TemplatePrimitiveInjector.Impl.classLoader
                                     .loadClass(self)
                                     .getResource("ApplicationEnvironment.groovy")
                                     .text

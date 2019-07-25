@@ -14,10 +14,10 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding
+package org.boozallen.plugins.jte.binding.injectors
 
 import org.boozallen.plugins.jte.config.*
-import org.boozallen.plugins.jte.binding.TemplatePrimitive
+import org.boozallen.plugins.jte.binding.*
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.Extension 
 

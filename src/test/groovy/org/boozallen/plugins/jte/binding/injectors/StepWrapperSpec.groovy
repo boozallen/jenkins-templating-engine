@@ -11,8 +11,10 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding
+package org.boozallen.plugins.jte.binding.injectors
 
+import org.boozallen.plugins.jte.binding.TemplateBinding
+import org.boozallen.plugins.jte.binding.TemplateException
 import org.boozallen.plugins.jte.utils.RunUtils
 import spock.lang.*
 import spock.util.mop.ConfineMetaClassChanges
@@ -36,7 +38,7 @@ class StepWrapperSpec extends Specification{
         pipeline jobs 
     */
     String jenkinsfile = """ 
-    import org.boozallen.plugins.jte.binding.StepWrapper
+    import org.boozallen.plugins.jte.binding.injectors.StepWrapper
     import org.boozallen.plugins.jte.binding.TemplateBinding
     import org.boozallen.plugins.jte.config.TemplateConfigObject 
 
@@ -236,13 +238,13 @@ class StepWrapperSpec extends Specification{
     }
 
     def "step override during initialization throws exception"(){
-        when: 
-            TemplateBinding binding = new TemplateBinding()
+        when:
+        TemplateBinding binding = new TemplateBinding()
             StepWrapper s = new StepWrapper(name: "test", library: "testlib")
             binding.setVariable("test", s) 
             binding.setVariable("test", "whatever")
-        then: 
-            TemplateException ex = thrown() 
+        then:
+        TemplateException ex = thrown()
             ex.message == "Library Step Collision. The step test already defined via the testlib library."
     }
 

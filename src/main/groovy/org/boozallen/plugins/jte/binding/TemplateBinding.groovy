@@ -75,8 +75,8 @@ class TemplateBinding extends Binding implements Serializable{
 
     public Boolean hasStep(String stepName){
         if (hasVariable(stepName)){
-            Class StepWrapper = LibraryLoader.getPrimitiveClass()
-            return StepWrapper.isInstance(getVariable(stepName))
+            def stepWrapper = LibraryLoader.getPrimitiveClass()
+            return stepWrapper.isInstance(getVariable(stepName))
         } else{
             return false
         } 

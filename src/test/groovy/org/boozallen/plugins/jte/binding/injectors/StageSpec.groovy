@@ -11,9 +11,11 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding
+package org.boozallen.plugins.jte.binding.injectors
 
-import spock.lang.* 
+import org.boozallen.plugins.jte.binding.TemplateBinding
+import org.boozallen.plugins.jte.binding.TemplateException
+import spock.lang.*
 import org.junit.*
 import org.jvnet.hudson.test.JenkinsRule
 import org.jvnet.hudson.test.BuildWatcher
@@ -132,12 +134,12 @@ class StageSpec extends Specification{
 
     @WithoutJenkins
     def "validate override during initialization throws exception"(){
-        when: 
-            TemplateBinding binding = new TemplateBinding() 
+        when:
+        TemplateBinding binding = new TemplateBinding()
             binding.setVariable("a", new Stage(name: "a"))
             binding.setVariable("a", 1)
-        then: 
-            TemplateException ex = thrown() 
+        then:
+        TemplateException ex = thrown()
             assert ex.message == "The Stage a is already defined."
     }
 
