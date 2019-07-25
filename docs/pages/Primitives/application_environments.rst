@@ -81,5 +81,5 @@ The configuration file for such a situation could be:
         }
     }
 
-Refer to :ref:`Library Development<Library Development>` for more information on how to build 
+Refer to :ref:`Library Development<Getting Started>` for more information on how to build 
 libraries that can leverage this pattern. 
