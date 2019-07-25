@@ -1,8 +1,8 @@
 .. _Pipeline Templating: 
 
--------------------
-Pipeline Templating
--------------------
+----------------------------
+What is a pipeline template?
+----------------------------
 
 Templates
 *********
@@ -46,7 +46,7 @@ In our simple example, a pipeline template could be defined as follows:
     build()
     deploy_to dev 
 
-This template could be reused by multiple teams using different tools by creating :ref:`libraries<Library Development>` which
+This template could be reused by multiple teams using different tools by creating :ref:`libraries<Getting Started>` which
 implement the pipeline steps ``unit_test``, ``static_code_analysis``, ``build``, and ``deploy_to``.  Once these libraries
 are created, a configuration file is created to specify which libraries to load. 
 
@@ -128,13 +128,4 @@ configuration and place the application specific configurations at the root of t
 code repository in a file called ``pipeline_config.groovy``.  
 
 :ref:`Go here to learn more about JTE Configuration Files<Configuration Files>`
-
-.. toctree::
-   :hidden:
-   :maxdepth: 3
-   :glob:
-   :titlesonly:
-
-   configuration_files/index
-   primitives/index
 

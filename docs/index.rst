@@ -8,6 +8,11 @@ The `Jenkins Templating Engine (JTE) <https://plugins.jenkins.io/templating-engi
 pipeline templating and governance. JTE  allows you to consolidate pipelines into shareable workflows that define the business logic of 
 your software delivery processes while allowing for optimal pipeline code reuse by pulling out tool specific implementations into library modules. 
 
+.. note:: 
+
+    We recommend you read `Introducing the Jenkins Templating Engine <https://jenkins.io/blog/2019/05/09/templating-engine/>`_ as a 
+    starting point to get a feel for what JTE can do for your pipeline development.
+
 How Does It Work? 
 *****************
 
@@ -66,10 +71,54 @@ create a more organized code base for your pipelines.
 
 .. toctree::
    :hidden:
-   :maxdepth: 2
    :titlesonly:
+   :caption: Pipeline Templating 💡
 
-   pages/Templating/index
-   pages/Governance/index
-   pages/Library_Development/index
+   pages/Pipeline_Templating/what_is_a_pipeline_template
+   pages/Pipeline_Templating/configuration_files
+   pages/Pipeline_Templating/configuration_file_sandboxing
    
+.. toctree::
+   :hidden:
+   :titlesonly:
+   :caption: Primitives ⚡️
+
+   pages/Primitives/what_is_a_primitive_in_jte
+   pages/Primitives/application_environments
+   pages/Primitives/stages
+   pages/Primitives/keywords
+   pages/Primitives/default_step_implementation
+
+.. toctree::
+   :hidden:
+   :titlesonly:
+   :caption: Library Development 📖
+
+   pages/Library_Development/getting_started
+   pages/Library_Development/externalizing_config
+   pages/Library_Development/validate_library_parameters
+   pages/Library_Development/lifecycle_hooks
+   pages/Library_Development/multimethod_steps
+   pages/Library_Development/library_sources
+   
+
+.. toctree::
+   :hidden:
+   :maxdepth: 3
+   :titlesonly:
+   :caption: Configuration 🛠
+
+
+.. toctree::
+   :hidden:
+   :titlesonly:
+   :glob: 
+   :caption: Governance 👮‍
+
+   pages/Governance/governance_model
+   pages/Governance/governance_tier
+   pages/Governance/hierarchical_governance
+   pages/Governance/config_file_aggregation
+   pages/Governance/conditional_inheritance
+   pages/Governance/pipeline_template_selection
+   pages/Governance/library_selection
