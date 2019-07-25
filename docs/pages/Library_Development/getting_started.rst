@@ -62,7 +62,7 @@ could be:
 .. note:: 
 
     Steps, like regular global variables in Jenkins Shared Libraries, can define methods other than call. 
-    See an example :ref:`here <noncall_methods>` 
+    See an example :ref:`here <multimethod-steps>` 
 
 
 ================
