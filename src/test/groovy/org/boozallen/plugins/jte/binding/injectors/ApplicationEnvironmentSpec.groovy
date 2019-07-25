@@ -11,31 +11,59 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding
+package org.boozallen.plugins.jte.binding.injectors
 
-import spock.lang.* 
+
+import org.boozallen.plugins.jte.binding.TemplateBinding
+import org.boozallen.plugins.jte.binding.TemplateException
+import org.boozallen.plugins.jte.binding.TemplatePrimitiveInjector
+import spock.lang.*
 import org.junit.*
 import org.jenkinsci.plugins.workflow.cps.CpsScript
+import org.boozallen.plugins.jte.binding.*
+
 import org.boozallen.plugins.jte.config.TemplateConfigObject
 import org.boozallen.plugins.jte.config.TemplateConfigException
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
+import org.jvnet.hudson.test.GroovyJenkinsRule
 
 class ApplicationEnvironmentSpec extends Specification{
 
-    TemplateBinding binding = new TemplateBinding() 
+    TemplateBinding binding = new TemplateBinding()
     CpsScript script = GroovyMock(CpsScript)
 
+    @Shared
+    @ClassRule
+    @SuppressWarnings('JUnitPublicField')
+    public GroovyJenkinsRule groovyJenkinsRule = new GroovyJenkinsRule()
+
+    @Shared
+    public ClassLoader classLoader = null
+
+    def setupSpec(){
+        classLoader = groovyJenkinsRule.jenkins.getPluginManager().uberClassLoader
+    }
+
     def setup(){
+        GroovySpy(TemplatePrimitiveInjector.Impl.class, global:true)
+        TemplatePrimitiveInjector.Impl.getClassLoader() >> { return classLoader }
+
+        GroovySpy(TemplateScriptEngine.class, global:true)
+        TemplateScriptEngine.createShell() >> { return new GroovyShell() }
+
+
         _ * script.getBinding() >> {
-            return binding 
+            return binding
         }
     }
 
     void injectEnvironments(Map env_config){
         TemplateConfigObject config = new TemplateConfigObject(config: [
-            application_environments: env_config
+                application_environments: env_config
         ])
-        ApplicationEnvironment.Injector.doInject(config, script)
+        ApplicationEnvironmentInjector.doInject(config, script)
     }
+
 
     def "Injector populates binding"(){
         when:
@@ -137,8 +165,8 @@ class ApplicationEnvironmentSpec extends Specification{
         when: 
             injectEnvironments([dev: [:]])
             binding.setVariable("dev", "whatever")
-        then: 
-            TemplateException ex = thrown() 
+        then:
+        TemplateException ex = thrown()
             assert ex.message == "Application Environment dev already defined." 
     }
 

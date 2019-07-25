@@ -13,10 +13,13 @@
 
 package org.boozallen.plugins.jte.config
 
-import org.boozallen.plugins.jte.binding.StepWrapper
+import org.boozallen.plugins.jte.binding.TemplatePrimitiveInjector
+import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
+import org.boozallen.plugins.jte.binding.injectors.StepWrapper
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.utils.RunUtils
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import spock.lang.*
 import org.junit.Rule
 import org.junit.ClassRule
@@ -41,7 +44,21 @@ class TemplateLibrarySourceSpec extends Specification{
     PrintStream logger = Mock()
     String scmKey = null
 
+    @Shared
+    public ClassLoader classLoader = null
+
+    def setupSpec(){
+        classLoader = jenkins.jenkins.getPluginManager().uberClassLoader
+    }
+
     def setup(){
+//        GroovySpy(TemplatePrimitiveInjector.Impl.class, global:true)
+//        TemplatePrimitiveInjector.Impl.getClassLoader() >> { return classLoader }
+//
+//        GroovyShell s = GroovySpy(GroovyShell)
+//        s.getClassLoader() >> { return new GroovyClassLoader(classLoader) }
+//        GroovySpy(TemplateScriptEngine.class, global:true)
+//        TemplateScriptEngine.createShell() >> { return s }
 
         WorkflowJob job = jenkins.createProject(WorkflowJob)
 
@@ -103,12 +120,15 @@ class TemplateLibrarySourceSpec extends Specification{
                 getBinding() >> binding 
             }
 
-            GroovySpy(StepWrapper, global:true)
-            StepWrapper.createFromFile(*_) >>> [ 
-                new StepWrapper(name: "a"),
-                new StepWrapper(name: "b"),
-                new StepWrapper(name: "c")
+            Object s = GroovyMock(Object)
+            s.createFromFile(*_) >>> [
+                    new StepWrapper(name: "a"),
+                    new StepWrapper(name: "b"),
+                    new StepWrapper(name: "c")
             ]
+
+            GroovySpy(LibraryLoader.class, global:true)
+            LibraryLoader.getPrimitiveClass() >> { return s }
 
         when: 
             librarySource.loadLibrary(script, "test_library", [:])
@@ -147,11 +167,16 @@ class TemplateLibrarySourceSpec extends Specification{
             CpsScript script = GroovyMock{
                 getBinding() >> binding 
             }
-            GroovySpy(StepWrapper, global:true)
-            2 * StepWrapper.createFromFile(*_) >>> [
-                new StepWrapper(name: "a"),
-                new StepWrapper(name: "b")
+
+            Object s = GroovyMock(Object)
+            2 * s.createFromFile(*_) >>> [
+                    new StepWrapper(name: "a"),
+                    new StepWrapper(name: "b")
             ]
+
+            GroovySpy(LibraryLoader.class, global:true)
+            LibraryLoader.getPrimitiveClass() >> { return s }
+
         when: 
             librarySource.loadLibrary(script, "test_library", [:])
         then: 
