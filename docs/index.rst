@@ -116,6 +116,7 @@ create a more organized code base for your pipelines.
    :caption: Governance 👮‍
 
    pages/Governance/governance_model
+   pages/Governance/governance_tier
    pages/Governance/hierarchical_governance
    pages/Governance/config_file_aggregation
    pages/Governance/conditional_inheritance
