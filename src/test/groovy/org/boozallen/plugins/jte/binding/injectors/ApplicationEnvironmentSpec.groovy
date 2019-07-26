@@ -107,7 +107,7 @@ class ApplicationEnvironmentSpec extends Specification{
         when:
             def envName = "dev"
             injectEnvironments(["${envName}": [:]])
-            ApplicationEnvironment env = binding.getVariable(envName)
+            def env = binding.getVariable(envName)
         then: 
             env.long_name == envName
     }
@@ -120,7 +120,7 @@ class ApplicationEnvironmentSpec extends Specification{
                     long_name: "develop"
                 ]
             ])
-            ApplicationEnvironment env = binding.getVariable(envName)
+            def env = binding.getVariable(envName)
         then: 
             assert env.long_name == "develop"
     }
@@ -133,7 +133,7 @@ class ApplicationEnvironmentSpec extends Specification{
                     random: 11
                 ]
             ])
-            ApplicationEnvironment env = binding.getVariable(envName)
+            def env = binding.getVariable(envName)
         then: 
             assert env.random == 11 
     }
@@ -142,7 +142,7 @@ class ApplicationEnvironmentSpec extends Specification{
         when: 
             def envName = "dev" 
             injectEnvironments(["${envName}": [:]])
-            ApplicationEnvironment env = binding.getVariable(envName)
+            def env = binding.getVariable(envName)
         then: 
             assert env.random == null 
     } 
@@ -151,7 +151,7 @@ class ApplicationEnvironmentSpec extends Specification{
         when: 
             def envName = "dev" 
             injectEnvironments(["${envName}": [:]])
-            ApplicationEnvironment env = binding.getVariable(envName)
+            def env = binding.getVariable(envName)
             env.short_name = "something else" 
         then: 
             thrown(TemplateConfigException)
