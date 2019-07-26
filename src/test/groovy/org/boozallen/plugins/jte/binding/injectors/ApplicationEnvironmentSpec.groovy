@@ -45,11 +45,16 @@ class ApplicationEnvironmentSpec extends Specification{
     }
 
     def setup(){
+        ClassLoader shellClassLoader = new groovy.lang.GroovyClassLoader(classLoader)
+
         GroovySpy(TemplatePrimitiveInjector.Impl.class, global:true)
-        TemplatePrimitiveInjector.Impl.getClassLoader() >> { return classLoader }
+        TemplatePrimitiveInjector.Impl.getClassLoader() >> { return shellClassLoader }
+
+        GroovyShell shell = Spy(GroovyShell)
+        shell.getClassLoader() >> { return shellClassLoader }
 
         GroovySpy(TemplateScriptEngine.class, global:true)
-        TemplateScriptEngine.createShell() >> { return new GroovyShell() }
+        TemplateScriptEngine.createShell() >> { return shell }
 
 
         _ * script.getBinding() >> {
@@ -69,18 +74,19 @@ class ApplicationEnvironmentSpec extends Specification{
         when:
             def envName = "dev"
             injectEnvironments(["${envName}": [:]])
-        then: 
+        then:
             assert binding.hasVariable(envName) 
-            assert binding.getVariable(envName) instanceof ApplicationEnvironment
+            assert getApplicationEnvironmentClass().isInstance( binding.getVariable(envName) )
     }
 
     def "default short_name is environment key"(){
         when:
             def envName = "dev"
             injectEnvironments(["${envName}": [:]])
-            ApplicationEnvironment env = binding.getVariable(envName)
-        then: 
-            assert env.short_name == envName
+            def env = binding.getVariable(envName)
+        then:
+            getApplicationEnvironmentClass().isInstance( binding.getVariable(envName) )
+            env.short_name == envName
     }
 
     def "set short_name"(){
@@ -91,9 +97,10 @@ class ApplicationEnvironmentSpec extends Specification{
                     short_name: "develop"
                 ]
             ])
-            ApplicationEnvironment env = binding.getVariable(envName)
-        then: 
-            assert env.short_name == "develop"
+            def env = binding.getVariable(envName)
+        then:
+            getApplicationEnvironmentClass().isInstance( binding.getVariable(envName) )
+            env.short_name == "develop"
     }
 
     def "default long_name is environment key"(){
@@ -102,7 +109,7 @@ class ApplicationEnvironmentSpec extends Specification{
             injectEnvironments(["${envName}": [:]])
             ApplicationEnvironment env = binding.getVariable(envName)
         then: 
-            assert env.long_name == envName
+            env.long_name == envName
     }
 
     def "set long_name"(){
@@ -178,5 +185,10 @@ class ApplicationEnvironmentSpec extends Specification{
         then: 
             TemplateException ex = thrown() 
             assert ex.message == "Variable dev is reserved as an Application Environment." 
+    }
+
+    def getApplicationEnvironmentClass(){
+        /* ApplicationEnvironmentInjector.primitiveClass */
+        return TemplateScriptEngine.createShell().classLoader.loadClass("org.boozallen.plugins.jte.binding.injectors.ApplicationEnvironment")
     }
 }
