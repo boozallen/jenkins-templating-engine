@@ -115,7 +115,7 @@ html_context = {
 # Format Template: https://{{ github_host|default("github.com") }}/{{ github_user }}/{{ github_repo }}/blob/{{ github_version }}{{ conf_py_path }}{{ pagename }}{{ suffix }}
 'github_user': 'jenkinsci',
 'github_repo': 'templating-engine-plugin',
-'github_version': 'master/docs/'
+# 'github_version': 'master/docs'
 }
 
 # Custom sidebar templates, must be a dictionary that maps document names
