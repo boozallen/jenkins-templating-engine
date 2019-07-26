@@ -3,7 +3,7 @@
 Jenkins Templating Engine
 =========================
 
-`Full Documentation Can Be Found Here <https://boozallen.github.io/jenkins-templating-engine/index.html>`_
+`Full Documentation Can Be Found Here <https://jenkinsci.github.io/templating-engine-plugin>`_
 
 `Jenkins.io: Introducing the Jenkins Templating Engine! <https://jenkins.io/blog/2019/05/09/templating-engine/>`_
 
