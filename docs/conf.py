@@ -39,6 +39,7 @@ release = u''
 # ones.
 extensions = [ 'sphinx.ext.githubpages' ]
 
+
 scv_whitelist_branches = ('master', )
 
 # Add any paths that contain templates here, relative to this directory.
@@ -52,7 +53,7 @@ source_parsers = {
 }
 source_suffix = ['.rst', '.md']
 
-
+github_url = "https://github.com/jenkinsci/templating-engine-plugin"
 
 # The master toctree document.
 master_doc = 'index'
@@ -105,11 +106,17 @@ html_theme_options = {
 html_static_path = ['_static']
 
 html_context = {
-    'css_files': [
-        '_static/theme_overrides.css',  # override wide tables in RTD theme
-        '_static/style.css',
-        ],
-     }
+'css_files': [
+    '_static/theme_overrides.css',  # override wide tables in RTD theme
+    '_static/style.css',
+],
+'display_github': True,
+# Set the following variables to generate the resulting github URL for each page. 
+# Format Template: https://{{ github_host|default("github.com") }}/{{ github_user }}/{{ github_repo }}/blob/{{ github_version }}{{ conf_py_path }}{{ pagename }}{{ suffix }}
+'github_user': 'jenkinsci',
+'github_repo': 'templating-engine-plugin',
+'github_version': 'master/docs/'
+}
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
