@@ -33,7 +33,7 @@ class StageSpec extends Specification{
             WorkflowJob job = jenkins.createProject(WorkflowJob); 
             job.setDefinition(new CpsFlowDefinition("""
             import org.boozallen.plugins.jte.binding.TemplateBinding
-            import org.boozallen.plugins.jte.binding.Stage
+            import org.boozallen.plugins.jte.binding.injectors.StageInjector
             import org.boozallen.plugins.jte.config.TemplateConfigObject
             
             /*
@@ -48,7 +48,7 @@ class StageSpec extends Specification{
                     ]
                 ]
             ])            
-            Stage.Injector.doInject(config, this)
+            StageInjector.doInject(config, this)
             
             // run stage 
             test_stage()
@@ -64,7 +64,7 @@ class StageSpec extends Specification{
             WorkflowJob job = jenkins.createProject(WorkflowJob); 
             job.setDefinition(new CpsFlowDefinition("""
             import org.boozallen.plugins.jte.binding.TemplateBinding
-            import org.boozallen.plugins.jte.binding.Stage
+            import org.boozallen.plugins.jte.binding.injectors.StageInjector
             import org.boozallen.plugins.jte.config.TemplateConfigObject
             
             /*
@@ -81,7 +81,7 @@ class StageSpec extends Specification{
                     ]
                 ]
             ])            
-            Stage.Injector.doInject(config, this)
+            StageInjector.doInject(config, this)
             
             // run stage 
             test_stage()
@@ -98,7 +98,7 @@ class StageSpec extends Specification{
             WorkflowJob job = jenkins.createProject(WorkflowJob); 
             job.setDefinition(new CpsFlowDefinition("""
             import org.boozallen.plugins.jte.binding.TemplateBinding
-            import org.boozallen.plugins.jte.binding.Stage
+            import org.boozallen.plugins.jte.binding.injectors.StageInjector
             import org.boozallen.plugins.jte.config.TemplateConfigObject
             
             /*
@@ -115,7 +115,7 @@ class StageSpec extends Specification{
                     ]
                 ]
             ])            
-            Stage.Injector.doInject(config, this)
+            StageInjector.doInject(config, this)
             
             // run stage 
             test_stage()
@@ -134,6 +134,14 @@ class StageSpec extends Specification{
 
     @WithoutJenkins
     def "validate override during initialization throws exception"(){
+        setup:
+        def stepWrapper = GroovyMock(Object)
+        stepWrapper.getLibraryConfigVariable() >> { return "config" }
+        stepWrapper.isInstance(_) >>{ return false }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return stepWrapper }
+
         when:
         TemplateBinding binding = new TemplateBinding()
             binding.setVariable("a", new Stage(name: "a"))
@@ -145,6 +153,14 @@ class StageSpec extends Specification{
 
     @WithoutJenkins
     def "validate override post initialization throws exception"(){
+        setup:
+        def stepWrapper = GroovyMock(Object)
+        stepWrapper.getLibraryConfigVariable() >> { return "config" }
+        stepWrapper.isInstance(_) >>{ return false }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return stepWrapper }
+
         when: 
             TemplateBinding binding = new TemplateBinding() 
             binding.setVariable("a", new Stage(name: "a"))
