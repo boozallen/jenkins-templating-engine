@@ -110,14 +110,15 @@ html_context = {
     '_static/theme_overrides.css',  # override wide tables in RTD theme
     '_static/style.css',
 ],
-'js_files': [
-    '_static/fix_gh_links.js'
-],
 'display_github': True,
 'github_user': 'jenkinsci',
 'github_repo': 'templating-engine-plugin',
 'github_version': '<REPLACE>'
 }
+
+html_js_files = [
+    'fix_gh_links.js',
+]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
