@@ -109,11 +109,7 @@ html_context = {
 'css_files': [
     '_static/theme_overrides.css',  # override wide tables in RTD theme
     '_static/style.css',
-],
-'display_github': True,
-'github_user': 'jenkinsci',
-'github_repo': 'templating-engine-plugin',
-'github_version': '<REPLACE>'
+]
 }
 
 html_js_files = [
