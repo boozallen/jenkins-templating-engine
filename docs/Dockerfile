@@ -3,7 +3,7 @@ ARG token
 FROM python:2.7
 
 # install documentation dependencies
-RUN pip install sphinx==1.6.7               \
+RUN pip install sphinx==1.8.2               \
                 sphinx-autobuild==0.7.1     \
                 sphinx-rtd-theme==0.4.3     \
                 recommonmark==0.4.0      && \
