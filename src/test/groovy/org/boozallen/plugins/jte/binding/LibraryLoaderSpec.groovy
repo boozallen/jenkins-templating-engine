@@ -268,18 +268,6 @@ class LibraryLoaderSpec extends Specification {
             0 * binding.setVariable(_ , _)
     }
 
-    static class DummyPrimitive extends TemplatePrimitive {
-        @Override
-        void throwPreLockException() {
-
-        }
-
-        @Override
-        void throwPostLockException() {
-
-        }
-    }
-
     @WithoutJenkins
     def "template methods not implemented are Null Step"(){
         setup:
