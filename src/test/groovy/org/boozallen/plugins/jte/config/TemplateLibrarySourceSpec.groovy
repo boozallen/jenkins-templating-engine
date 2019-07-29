@@ -13,13 +13,13 @@
 
 package org.boozallen.plugins.jte.config
 
-import org.boozallen.plugins.jte.binding.TemplatePrimitiveInjector
+
 import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
 import org.boozallen.plugins.jte.binding.injectors.StepWrapper
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.utils.RunUtils
-import org.boozallen.plugins.jte.utils.TemplateScriptEngine
+
 import spock.lang.*
 import org.junit.Rule
 import org.junit.ClassRule
@@ -52,13 +52,6 @@ class TemplateLibrarySourceSpec extends Specification{
     }
 
     def setup(){
-//        GroovySpy(TemplatePrimitiveInjector.Impl.class, global:true)
-//        TemplatePrimitiveInjector.Impl.getClassLoader() >> { return classLoader }
-//
-//        GroovyShell s = GroovySpy(GroovyShell)
-//        s.getClassLoader() >> { return new GroovyClassLoader(classLoader) }
-//        GroovySpy(TemplateScriptEngine.class, global:true)
-//        TemplateScriptEngine.createShell() >> { return s }
 
         WorkflowJob job = jenkins.createProject(WorkflowJob)
 
