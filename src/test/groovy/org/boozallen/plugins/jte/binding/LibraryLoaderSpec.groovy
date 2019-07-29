@@ -1,5 +1,7 @@
 package org.boozallen.plugins.jte.binding
 
+import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import spock.lang.*
 import org.boozallen.plugins.jte.binding.injectors.StepWrapper
 import org.boozallen.plugins.jte.config.GovernanceTier
@@ -18,9 +20,13 @@ class LibraryLoaderSpec extends Specification {
     
     @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
     CpsScript script = Mock()
-    PrintStream logger = Mock() 
+    PrintStream logger = Mock()
 
     def setup(){
+
+        GroovySpy(TemplateLogger.class, global:true)
+        TemplateLogger.print(_,_) >> {return }
+
         GroovySpy(RunUtils, global:true)
         _ * RunUtils.getJob() >> jenkins.createProject(WorkflowJob)
         _ * RunUtils.getLogger() >> logger
@@ -69,6 +75,11 @@ class LibraryLoaderSpec extends Specification {
                 ]
             ])
 
+            GroovySpy(TemplateLogger.class, global:true)
+            TemplateLogger.print(_,_) >> {return }
+            1 * TemplateLogger.printWarning("[DEBUG] loading library test_library") >> { return }
+            1 * TemplateLogger.printWarning("[DEBUG] loaded library test_library") >> { return }
+
         when: 
             LibraryLoader.doInject(config, script)
         then: 
@@ -96,6 +107,11 @@ class LibraryLoaderSpec extends Specification {
                     libB: [:]
                 ]
             ])
+
+            1 * TemplateLogger.printWarning("[DEBUG] loading library libA") >> { return }
+            1 * TemplateLogger.printWarning("[DEBUG] loaded library libA") >> { return }
+            1 * TemplateLogger.printWarning("[DEBUG] loading library libB") >> { return }
+            1 * TemplateLogger.printWarning("[DEBUG] loaded library libB") >> { return }
 
         when: 
             LibraryLoader.doInject(config, script)
@@ -246,7 +262,6 @@ class LibraryLoaderSpec extends Specification {
             LibraryLoader.doInject(config, script)
             LibraryLoader.doPostInject(config, script) 
         then: 
-            //1 * logger.println("[JTE] Warning: Configured step test_step ignored. Loaded by the libA Library.")
             0 * binding.setVariable(_ , _)
     }
 
@@ -266,7 +281,7 @@ class LibraryLoaderSpec extends Specification {
             script.getBinding() >> binding 
             StepWrapper s = Mock()
             StepWrapper s2 = GroovyMock(global: true)
-            StepWrapper.createDefaultStep(script, "test_step1", [:]) >> s 
+            StepWrapper.createDefaultStep(script, "test_step1", [:]) >> s
             StepWrapper.createNullStep("test_step2", script) >> s2
 
             GroovyMock(TemplateLogger, global:true)
@@ -285,7 +300,7 @@ class LibraryLoaderSpec extends Specification {
         when: 
             LibraryLoader.doInject(config, script)
             LibraryLoader.doPostInject(config, script) 
-        then: 
+        then:
             1 * StepWrapper.createDefaultStep(script, "test_step1", [:])
             1 * StepWrapper.createNullStep("test_step2", script)
             0 * StepWrapper.createNullStep("test_step1", script)
