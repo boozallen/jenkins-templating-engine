@@ -222,8 +222,11 @@ class LibraryLoaderSpec extends Specification {
         setup:
             TemplateBinding binding = Mock()
             script.getBinding() >> binding 
-            StepWrapper s = GroovyMock(StepWrapper, global: true)
-            StepWrapper.createDefaultStep(script, "test_step", [:]) >> s
+            def s = GroovyMock(StepWrapper, global: true)
+            s.createDefaultStep(script, "test_step", [:]) >> s
+
+            GroovySpy(LibraryLoader.class, global: true)
+            LibraryLoader.getPrimitiveClass() >> { return s }
 
             GroovyMock(TemplateLogger, global:true)
             1 * TemplateLogger.print("Creating step test_step from the default step implementation." )
@@ -265,6 +268,18 @@ class LibraryLoaderSpec extends Specification {
             0 * binding.setVariable(_ , _)
     }
 
+    static class DummyPrimitive extends TemplatePrimitive {
+        @Override
+        void throwPreLockException() {
+
+        }
+
+        @Override
+        void throwPostLockException() {
+
+        }
+    }
+
     @WithoutJenkins
     def "template methods not implemented are Null Step"(){
         setup:
@@ -279,10 +294,13 @@ class LibraryLoaderSpec extends Specification {
                 getProperty("registry") >> registry 
             }
             script.getBinding() >> binding 
-            StepWrapper s = Mock()
-            StepWrapper s2 = GroovyMock(global: true)
-            StepWrapper.createDefaultStep(script, "test_step1", [:]) >> s
-            StepWrapper.createNullStep("test_step2", script) >> s2
+            def s = GroovyMock(Object)
+            def s2 = GroovyMock(Object)
+            s.createDefaultStep(script, "test_step1", _) >> s
+            s.createNullStep("test_step2", script) >> s2
+
+            GroovySpy(LibraryLoader.class, global: true)
+            LibraryLoader.getPrimitiveClass() >> { return s }
 
             GroovyMock(TemplateLogger, global:true)
             1 * TemplateLogger.print(_)
@@ -301,9 +319,9 @@ class LibraryLoaderSpec extends Specification {
             LibraryLoader.doInject(config, script)
             LibraryLoader.doPostInject(config, script) 
         then:
-            1 * StepWrapper.createDefaultStep(script, "test_step1", [:])
-            1 * StepWrapper.createNullStep("test_step2", script)
-            0 * StepWrapper.createNullStep("test_step1", script)
+            1 * s.createDefaultStep(script, "test_step1", [:])
+            1 * s.createNullStep("test_step2", script)
+            0 * s.createNullStep("test_step1", script)
     }
 
 }

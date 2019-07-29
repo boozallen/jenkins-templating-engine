@@ -56,8 +56,8 @@ import com.cloudbees.groovy.cps.NonCPS
             return true 
         }.each{ stepName, stepConfig ->
             TemplateLogger.print "Creating step ${stepName} from the default step implementation."
-            Class StepWrapper = getPrimitiveClass() 
-            binding.setVariable(stepName, StepWrapper.createDefaultStep(script, stepName, stepConfig))
+            def stepWrapper = LibraryLoader.getPrimitiveClass()
+            binding.setVariable(stepName, stepWrapper.createDefaultStep(script, stepName, stepConfig))
         }
     }
 
@@ -67,8 +67,8 @@ import com.cloudbees.groovy.cps.NonCPS
         config.getConfig().template_methods.findAll{ step ->
             !(step.key in binding.registry)
         }.each{ step -> 
-            Class StepWrapper = getPrimitiveClass() 
-            binding.setVariable(step.key, StepWrapper.createNullStep(step.key, script))
+            def stepWrapper = LibraryLoader.getPrimitiveClass()
+            binding.setVariable(step.key, stepWrapper.createNullStep(step.key, script))
         }
     }
 
