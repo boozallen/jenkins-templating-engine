@@ -44,9 +44,6 @@ import javax.annotation.Nonnull
     @Nonnull
     @Override
     public Object getValue(CpsScript script) throws Exception {
-
-        TemplateLogger.printWarning "[DEBUG] TemplateEntryPointVariable.getValue entered"
-
         Object template
 
         if (script.getBinding().hasVariable(getName())) {
@@ -59,9 +56,7 @@ import javax.annotation.Nonnull
             PipelineConfig pipelineConfig = new PipelineConfig()
 
             // aggregate pipeline configs
-            TemplateLogger.printWarning "[DEBUG] aggregating configuration files"
             aggregateTemplateConfigurations(pipelineConfig)
-            TemplateLogger.printWarning "[DEBUG] configuration files aggregated"
 
             // make accessible to libs if they need to access
             // more than just their own library config block 
@@ -70,9 +65,7 @@ import javax.annotation.Nonnull
             script.getBinding().setVariable("templateConfigObject", pipelineConfig.getConfig())
 
             // populate the template
-            TemplateLogger.printWarning "[DEBUG] initializing binding"
             initializeBinding(pipelineConfig, script) 
-            TemplateLogger.printWarning "[DEBUG] binding initialized" 
 
             // parse entrypoint and return 
             String entryPoint = Jenkins.instance
@@ -118,23 +111,17 @@ import javax.annotation.Nonnull
         TemplateConfigObject config = pipelineConfig.getConfig() 
         
         // get registered injectors
-        TemplateLogger.printWarning "[DEBUG] getting injectors" 
         ExtensionList<TemplatePrimitiveInjector> injectors = TemplatePrimitiveInjector.all() 
-        TemplateLogger.printWarning "[DEBUG] got injectors: ${injectors}"
         
         // do first pass at binding  
         injectors.each{ injector -> 
-            TemplateLogger.printWarning "[DEBUG] doing doInject for ${injector}"
             injector.doInject(config, script)
-            TemplateLogger.printWarning "[DEBUG] did doInject for ${injector}" 
         }
 
         // give injectors opportunity to plug
         // holes in the template. 
         injectors.each{ injector ->
-            TemplateLogger.printWarning "[DEBUG] doing doPostInject for ${injector}"
             injector.doPostInject(config, script)
-            TemplateLogger.printWarning "[DEBUG] did doPostInject for ${injector}"
         }
 
         /*

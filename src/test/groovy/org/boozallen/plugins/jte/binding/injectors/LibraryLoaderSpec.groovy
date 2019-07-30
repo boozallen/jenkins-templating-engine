@@ -55,8 +55,6 @@ class LibraryLoaderSpec extends Specification {
 
             GroovySpy(TemplateLogger.class, global:true)
             TemplateLogger.print(_,_) >> {return }
-            1 * TemplateLogger.printWarning("[DEBUG] loading library test_library") >> { return }
-            1 * TemplateLogger.printWarning("[DEBUG] loaded library test_library") >> { return }
 
         when: 
             LibraryLoader.doInject(config, script)
@@ -85,11 +83,6 @@ class LibraryLoaderSpec extends Specification {
                     libB: [:]
                 ]
             ])
-
-            1 * TemplateLogger.printWarning("[DEBUG] loading library libA") >> { return }
-            1 * TemplateLogger.printWarning("[DEBUG] loaded library libA") >> { return }
-            1 * TemplateLogger.printWarning("[DEBUG] loading library libB") >> { return }
-            1 * TemplateLogger.printWarning("[DEBUG] loaded library libB") >> { return }
 
         when: 
             LibraryLoader.doInject(config, script)
