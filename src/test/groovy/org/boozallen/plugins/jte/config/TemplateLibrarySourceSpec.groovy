@@ -315,6 +315,13 @@ class TemplateLibrarySourceSpec extends Specification{
                 getBinding() >> binding
             }
 
+            PrintStream logger = Mock()
+
+            GroovySpy(TemplateLogger, global:true)
+            TemplateLogger.printWarning(*_) >> { args ->
+                logger.println(args[0])
+            }
+
             GroovySpy(StepWrapper, global:true)
             StepWrapper.createFromFile(*_) >> { args ->
                 String name = args[0].getName() - ".groovy"
@@ -641,44 +648,51 @@ class TemplateLibrarySourceSpec extends Specification{
 
     @WithoutJenkins
     def "Library config enum match throws no error"() {
-      setup:
-      String requiredKey = "field1"
-      String unusedKey = "field3"
-      String optionalKey = "field2"
-      String libName = "test"
-      repo.write("test/a.groovy", "_")
-      repo.write("test/library_config.groovy", """
-          fields{
-              required{
-                  ${requiredKey} = ${lib_value}
-              }
-              optional{}
-          }
-          """)
-      repo.git("add", "*")
-      repo.git("commit", "--message=init")
-      TemplateBinding binding = Mock()
-      CpsScript script = Mock{
-          getBinding() >> binding
-      }
+        setup:
+        String requiredKey = "field1"
+        String unusedKey = "field3"
+        String optionalKey = "field2"
+        String libName = "test"
+        repo.write("test/a.groovy", "_")
+        repo.write("test/library_config.groovy", """
+            fields{
+                required{
+                    ${requiredKey} = ${lib_value}
+                }
+                optional{}
+            }
+            """)
+        repo.git("add", "*")
+        repo.git("commit", "--message=init")
 
-      GroovySpy(StepWrapper, global:true)
-      StepWrapper.createFromFile(*_) >> { args ->
-          String name = args[0].getName() - ".groovy"
-          return new StepWrapper(name: name)
-      }
+        PrintStream logger = Mock()
+        GroovySpy(TemplateLogger, global:true)
+        TemplateLogger.printWarning(*_) >> { args ->
+            logger.println(args[0])
+        }
 
-      ArrayList libConfigErrors = []
+        TemplateBinding binding = Mock()
+        CpsScript script = Mock{
+            getBinding() >> binding
+        }
 
-      when:
-      libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+        GroovySpy(StepWrapper, global:true)
+        StepWrapper.createFromFile(*_) >> { args ->
+            String name = args[0].getName() - ".groovy"
+            return new StepWrapper(name: name)
+        }
 
-      then:
-      0 == libConfigErrors.size()
+        ArrayList libConfigErrors = []
 
-      where:
-      lib_value   | config_value
-      "[1, 2, 3]" | 2
+        when:
+        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+
+        then:
+        0 == libConfigErrors.size()
+
+        where:
+        lib_value   | config_value
+        "[1, 2, 3]" | 2
     }
 
     @WithoutJenkins

@@ -86,9 +86,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
             !it.getName().endsWith("library_config.groovy") // exclude lib config file 
         }.each{ stepFile ->
             def StepWrapper = LibraryLoader.getPrimitiveClass()
-            TemplateLogger.printWarning "[DEBUG] creating step for ${stepFile}"
             def s = StepWrapper.createFromFile(stepFile, libName, script, libConfig)
-            TemplateLogger.printWarning "[DEBUG] created step" 
             script.getBinding().setVariable(s.getName(), s)
         }
 
