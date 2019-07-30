@@ -110,10 +110,3 @@ By default, JTE provides the following default values for ``template_methods``.
         functional_test
     }
 
-.. toctree::
-   :hidden:
-   :maxdepth: 1
-   :glob:
-   :titlesonly:
-
-   **
