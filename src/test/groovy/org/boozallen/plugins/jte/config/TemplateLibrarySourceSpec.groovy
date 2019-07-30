@@ -40,8 +40,7 @@ class TemplateLibrarySourceSpec extends Specification{
     @Shared @ClassRule BuildWatcher bw = new BuildWatcher()
     @Rule GitSampleRepoRule repo = new GitSampleRepoRule()
     TemplateLibrarySource librarySource = new TemplateLibrarySource()
-    WorkflowJob job = GroovyMock()
-    PrintStream logger = Mock()
+
     String scmKey = null
 
     @Shared
@@ -410,10 +409,8 @@ class TemplateLibrarySourceSpec extends Specification{
 
     @WithoutJenkins
     def "Missing optional library config key throws no error"(){
-        String requiredKey = "field1"
-        String unusedKey = "field3"
         String optionalKey = "field2"
-        String libName = "test"
+
         repo.write("test/library_config.groovy", """
             fields{
                 optional{
@@ -428,12 +425,6 @@ class TemplateLibrarySourceSpec extends Specification{
             getBinding() >> binding
         }
 
-        GroovySpy(StepWrapper, global:true)
-        StepWrapper.createFromFile(*_) >> { args ->
-            String name = args[0].getName() - ".groovy"
-            return new StepWrapper(name: name)
-        }
-
         ArrayList libConfigErrors = []
 
         when:
@@ -446,10 +437,7 @@ class TemplateLibrarySourceSpec extends Specification{
     @WithoutJenkins
     def "Missing required block in library config file throws no error"(){
         setup:
-        String requiredKey = "field1"
-        String unusedKey = "field3"
-        String optionalKey = "field2"
-        String libName = "test"
+
         repo.write("test/library_config.groovy", """
             fields{
                 optional{}
@@ -460,12 +448,6 @@ class TemplateLibrarySourceSpec extends Specification{
         TemplateBinding binding = Mock()
         CpsScript script = Mock{
             getBinding() >> binding
-        }
-
-        GroovySpy(StepWrapper, global:true)
-        StepWrapper.createFromFile(*_) >> { args ->
-            String name = args[0].getName() - ".groovy"
-            return new StepWrapper(name: name)
         }
 
         ArrayList libConfigErrors = []
@@ -480,10 +462,7 @@ class TemplateLibrarySourceSpec extends Specification{
     @WithoutJenkins
     def "Missing optional block in library config file throws no error"(){
         setup:
-        String requiredKey = "field1"
-        String unusedKey = "field3"
-        String optionalKey = "field2"
-        String libName = "test"
+
         repo.write("test/library_config.groovy", """
             fields{
 
@@ -494,12 +473,6 @@ class TemplateLibrarySourceSpec extends Specification{
         TemplateBinding binding = Mock()
         CpsScript script = Mock{
             getBinding() >> binding
-        }
-
-        GroovySpy(StepWrapper, global:true)
-        StepWrapper.createFromFile(*_) >> { args ->
-            String name = args[0].getName() - ".groovy"
-            return new StepWrapper(name: name)
         }
 
         ArrayList libConfigErrors = []
@@ -514,10 +487,9 @@ class TemplateLibrarySourceSpec extends Specification{
     @WithoutJenkins
     def "Extraneous library config key throws error"(){
         setup:
-        String requiredKey = "field1"
+
         String unusedKey = "field3"
-        String optionalKey = "field2"
-        String libName = "test"
+
         repo.write("test/a.groovy", "_")
         repo.write("test/library_config.groovy", """
             fields{
@@ -530,12 +502,6 @@ class TemplateLibrarySourceSpec extends Specification{
         TemplateBinding binding = Mock()
         CpsScript script = Mock{
             getBinding() >> binding
-        }
-
-        GroovySpy(StepWrapper, global:true)
-        StepWrapper.createFromFile(*_) >> { args ->
-            String name = args[0].getName() - ".groovy"
-            return new StepWrapper(name: name)
         }
 
         ArrayList libConfigErrors = []
@@ -553,9 +519,7 @@ class TemplateLibrarySourceSpec extends Specification{
     def "Library config key type mismatch throws error"(){
         setup:
         String requiredKey = "field1"
-        String unusedKey = "field3"
-        String optionalKey = "field2"
-        String libName = "test"
+
         repo.write("test/a.groovy", "_")
         repo.write("test/library_config.groovy", """
             fields{
@@ -570,12 +534,6 @@ class TemplateLibrarySourceSpec extends Specification{
         TemplateBinding binding = Mock()
         CpsScript script = Mock{
             getBinding() >> binding
-        }
-
-        GroovySpy(StepWrapper, global:true)
-        StepWrapper.createFromFile(*_) >> { args ->
-            String name = args[0].getName() - ".groovy"
-            return new StepWrapper(name: name)
         }
 
         ArrayList libConfigErrors = []
@@ -603,9 +561,7 @@ class TemplateLibrarySourceSpec extends Specification{
     def "Library config key type match throws no error"(){
         setup:
         String requiredKey = "field1"
-        String unusedKey = "field3"
-        String optionalKey = "field2"
-        String libName = "test"
+
         repo.write("test/a.groovy", "_")
         repo.write("test/library_config.groovy", """
             fields{
@@ -706,9 +662,7 @@ class TemplateLibrarySourceSpec extends Specification{
     def "Library config enum returns appropriate error if not one of the options"(){
         setup:
         String requiredKey = "field1"
-        String unusedKey = "field3"
-        String optionalKey = "field2"
-        String libName = "test"
+
         repo.write("test/a.groovy", "_")
         repo.write("test/library_config.groovy", """
             fields{
@@ -747,9 +701,7 @@ class TemplateLibrarySourceSpec extends Specification{
     def "Library config enum has no errors when one of the options"(){
         setup:
         String requiredKey = "field1"
-        String unusedKey = "field3"
-        String optionalKey = "field2"
-        String libName = "test"
+
         repo.write("test/a.groovy", "_")
         repo.write("test/library_config.groovy", """
             fields{
