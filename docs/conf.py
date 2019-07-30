@@ -28,7 +28,6 @@ version = u''
 # The full version, including alpha/beta/rc tags
 release = u''
 
-
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -38,9 +37,8 @@ release = u''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    'sphinx.ext.githubpages',
-]
+extensions = [ 'sphinx.ext.githubpages' ]
+
 
 scv_whitelist_branches = ('master', )
 
@@ -55,7 +53,7 @@ source_parsers = {
 }
 source_suffix = ['.rst', '.md']
 
-
+github_url = "https://github.com/jenkinsci/templating-engine-plugin"
 
 # The master toctree document.
 master_doc = 'index'
@@ -97,7 +95,7 @@ html_theme_options = {
     # Toc options
     'collapse_navigation': False,
     'sticky_navigation': True,
-    'navigation_depth': 4,
+    'navigation_depth': -1,
     'includehidden': True,
     'titles_only': False
 }
@@ -108,11 +106,15 @@ html_theme_options = {
 html_static_path = ['_static']
 
 html_context = {
-    'css_files': [
-        '_static/theme_overrides.css',  # override wide tables in RTD theme
-        '_static/style.css',
-        ],
-     }
+'css_files': [
+    '_static/theme_overrides.css',  # override wide tables in RTD theme
+    '_static/style.css',
+]
+}
+
+html_js_files = [
+    'fix_gh_links.js',
+]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
