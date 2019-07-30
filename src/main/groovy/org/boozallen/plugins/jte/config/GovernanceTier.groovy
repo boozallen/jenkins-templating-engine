@@ -18,6 +18,8 @@ package org.boozallen.plugins.jte.config
 
 import org.boozallen.plugins.jte.utils.RunUtils
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
+import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.job.TemplateFlowDefinition
 import com.cloudbees.hudson.plugins.folder.AbstractFolder
 import hudson.model.ItemGroup
 import hudson.model.Descriptor.FormException
@@ -41,6 +43,7 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
     String baseDir
     SCM scm 
     List<TemplateLibrarySource> librarySources = new ArrayList()
+    String pipelineConfig 
 
     // added for unit testing
     public GovernanceTier(){}
@@ -54,15 +57,37 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
     public String getBaseDir(){ return baseDir }
     public SCM getScm(){ return scm }
     public List<TemplateLibrarySource> getLibrarySources(){ return librarySources }
+    
+    public String getPipelineConfig(){
+        return pipelineConfig
+    }
+
+    public String setPipelineConfig(String pipelineConfig){
+        this.pipelineConfig = pipelineConfig
+    }
 
     @Whitelisted
     public TemplateConfigObject getConfig() throws Exception{
         TemplateConfigObject configObject 
-        if (scm && !(scm instanceof NullSCM)){
+        if(pipelineConfig){
+            try{
+                configObject = TemplateConfigDsl.parse(pipelineConfig)
+            }catch(any){
+                TemplateLogger.printError("Error parsing user provided pipeline configuration")
+                throw any
+            }
+        }else if (scm && !(scm instanceof NullSCM)){
             FileSystemWrapper fsw = FileSystemWrapper.createFromSCM(scm)
             String filePath = "${baseDir ? "${baseDir}/" : ""}${CONFIG_FILE}"
             String configFile = fsw.getFileContents(filePath, "Template Configuration File")
-            if (configFile) configObject = TemplateConfigDsl.parse(configFile)
+            if (configFile){
+                try{
+                configObject = TemplateConfigDsl.parse(configFile)
+                }catch(any){
+                    TemplateLogger.printError("Error parsing scm provided pipeline configuration")
+                    throw any
+                }
+            }
         }
         return configObject
     }
@@ -100,8 +125,16 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
         
         // recurse through job hierarchy and get template configs 
         WorkflowJob job = RunUtils.getJob()
+
+        def flowDefinition = job.getDefinition() 
+        if(flowDefinition instanceof TemplateFlowDefinition){
+            String pipelineConfig = flowDefinition.getPipelineConfig()
+            GovernanceTier jobTier = new GovernanceTier()
+            jobTier.setPipelineConfig(pipelineConfig)
+            h.push(jobTier)
+        }
+        // folder pipeline configs 
         ItemGroup<?> parent = job.getParent()
-        
         while(parent instanceof AbstractFolder){
             GovernanceTier tier = parent.getProperties().get(TemplateConfigFolderProperty)?.getTier()
             if (tier){
