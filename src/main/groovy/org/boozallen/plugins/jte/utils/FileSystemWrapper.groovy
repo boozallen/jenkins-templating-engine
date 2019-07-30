@@ -87,7 +87,12 @@ class FileSystemWrapper {
             }
 
             return f.contentAsString()
-        } finally {
+        } catch(java.io.FileNotFoundException fne){
+            TemplateLogger.printWarning("""${filePath} threw FileNotFoundException.
+                                                -- scm: ${scmKey}""", true)
+            return null
+        }
+        finally {
             fs.close()
         }
 
