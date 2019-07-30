@@ -25,12 +25,16 @@
 
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler" xmlns:wfe="/org/jenkinsci/plugins/workflow/editor">
   <f:entry title="${%Pipeline Template}" field="template">
-    <wfe:workflow-editor />
+    <wfe:workflow-editor>
+      <div class="samples"/>
+    </wfe:workflow-editor>
   </f:entry>
   <f:entry field="sandbox">
     <f:checkbox title="${%Use Groovy Sandbox}" default="true"/>
   </f:entry>
   <f:entry title="${%Pipeline Configuration}" field="pipelineConfig">
-    <wfe:workflow-editor />
+    <wfe:workflow-editor>
+      <div class="samples"/>
+    </wfe:workflow-editor>
   </f:entry>
 </j:jelly>
