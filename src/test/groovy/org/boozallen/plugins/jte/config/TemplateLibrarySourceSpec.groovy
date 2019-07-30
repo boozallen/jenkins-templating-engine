@@ -281,18 +281,21 @@ class TemplateLibrarySourceSpec extends Specification{
                 getBinding() >> binding
             }
 
-            GroovySpy(StepWrapper, global:true)
-            StepWrapper.createFromFile(*_) >> { args ->
+            Object s = GroovyMock(Object)
+            1 * s.createFromFile(*_) >> { args ->
                 String name = args[0].getName() - ".groovy"
                 return new StepWrapper(name: name)
             }
+
+            GroovySpy(LibraryLoader.class, global:true)
+            LibraryLoader.getPrimitiveClass() >> { return s }
 
         when:
             librarySource.loadLibrary(script, "test", [:])
 
         then:
             1 * binding.setVariable("a", _)
-            0 * binding.getVariable("library_config", _)
+            0 * binding.setVariable("library_config", _)
     }
 
     @WithoutJenkins
@@ -322,11 +325,15 @@ class TemplateLibrarySourceSpec extends Specification{
                 logger.println(args[0])
             }
 
-            GroovySpy(StepWrapper, global:true)
-            StepWrapper.createFromFile(*_) >> { args ->
+            Object s = GroovyMock(Object)
+            1 * s.createFromFile(*_) >>{ args ->
                 String name = args[0].getName() - ".groovy"
                 return new StepWrapper(name: name)
             }
+
+            GroovySpy(LibraryLoader.class, global:true)
+            LibraryLoader.getPrimitiveClass() >> { return s }
+
 
             ArrayList libConfigErrors = []
         when:
@@ -388,12 +395,6 @@ class TemplateLibrarySourceSpec extends Specification{
         TemplateBinding binding = Mock()
         CpsScript script = Mock{
             getBinding() >> binding
-        }
-
-        GroovySpy(StepWrapper, global:true)
-        StepWrapper.createFromFile(*_) >> { args ->
-            String name = args[0].getName() - ".groovy"
-            return new StepWrapper(name: name)
         }
 
         ArrayList libConfigErrors = []
@@ -621,11 +622,14 @@ class TemplateLibrarySourceSpec extends Specification{
             getBinding() >> binding
         }
 
-        GroovySpy(StepWrapper, global:true)
-        StepWrapper.createFromFile(*_) >> { args ->
+        Object s = GroovyMock(Object)
+        1 * s.createFromFile(*_) >>{ args ->
             String name = args[0].getName() - ".groovy"
             return new StepWrapper(name: name)
         }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return s }
 
         ArrayList libConfigErrors = []
 
@@ -676,11 +680,14 @@ class TemplateLibrarySourceSpec extends Specification{
             getBinding() >> binding
         }
 
-        GroovySpy(StepWrapper, global:true)
-        StepWrapper.createFromFile(*_) >> { args ->
+        Object s = GroovyMock(Object)
+        1 * s.createFromFile(*_) >>{ args ->
             String name = args[0].getName() - ".groovy"
             return new StepWrapper(name: name)
         }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return s }
 
         ArrayList libConfigErrors = []
 
@@ -716,12 +723,6 @@ class TemplateLibrarySourceSpec extends Specification{
         TemplateBinding binding = Mock()
         CpsScript script = Mock{
             getBinding() >> binding
-        }
-
-        GroovySpy(StepWrapper, global:true)
-        StepWrapper.createFromFile(*_) >> { args ->
-            String name = args[0].getName() - ".groovy"
-            return new StepWrapper(name: name)
         }
 
         ArrayList libConfigErrors = []
@@ -765,11 +766,14 @@ class TemplateLibrarySourceSpec extends Specification{
             getBinding() >> binding
         }
 
-        GroovySpy(StepWrapper, global:true)
-        StepWrapper.createFromFile(*_) >> { args ->
+        Object s = GroovyMock(Object)
+        1 * s.createFromFile(*_) >>{ args ->
             String name = args[0].getName() - ".groovy"
             return new StepWrapper(name: name)
         }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return s }
 
         ArrayList libConfigErrors = []
 
@@ -812,11 +816,14 @@ class TemplateLibrarySourceSpec extends Specification{
             getBinding() >> binding
         }
 
-        GroovySpy(StepWrapper, global:true)
-        StepWrapper.createFromFile(*_) >> { args ->
+        Object s = GroovyMock(Object)
+        1 * s.createFromFile(*_) >>{ args ->
             String name = args[0].getName() - ".groovy"
             return new StepWrapper(name: name)
         }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return s }
 
         ArrayList libConfigErrors = []
 
