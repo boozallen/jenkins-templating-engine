@@ -30,48 +30,8 @@ import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 import org.jenkinsci.plugins.workflow.flow.FlowDurabilityHint
 import org.jenkinsci.plugins.workflow.flow.DurabilityHintProvider
 import org.jenkinsci.plugins.workflow.flow.GlobalDefaultFlowDurabilityLevel
-import org.jenkinsci.plugins.workflow.cps.persistence.PersistIn
-import static org.jenkinsci.plugins.workflow.cps.persistence.PersistenceContext.*
-import org.kohsuke.stapler.DataBoundConstructor
-import org.kohsuke.stapler.Stapler
-import org.kohsuke.stapler.StaplerRequest
-import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval
-import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext
-import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage
 
-@PersistIn(JOB)
-class TemplateFlowDefinition extends FlowDefinition {
-
-    private final String template
-    private final boolean sandbox
-    private final String pipelineConfig
-
-    @DataBoundConstructor
-    public TemplateFlowDefinition(String template, boolean sandbox, String pipelineConfig){
-        StaplerRequest req = Stapler.getCurrentRequest();
-        this.template = sandbox ? template : ScriptApproval.get().configuring(template, GroovyLanguage.get(), ApprovalContext.create().withCurrentUser().withItemAsKey(req != null ? req.findAncestorObject(Item.class) : null));
-        this.sandbox = sandbox
-        this.pipelineConfig = pipelineConfig
-    }
-
-    private Object readResolve() {
-        if (!sandbox) {
-            ScriptApproval.get().configuring(template, GroovyLanguage.get(), ApprovalContext.create());
-        }
-        return this;
-    }
-
-    public String getTemplate() {
-        return template
-    }
-
-    public boolean isSandbox() {
-        return sandbox
-    }
-
-    public getPipelineConfig(){
-        return pipelineConfig
-    }
+class MultibranchTemplateFlowDefinition extends FlowDefinition {
 
     @Override
     public FlowExecution create(FlowExecutionOwner handle, TaskListener listener, List<? extends Action> actions) throws Exception {
@@ -85,12 +45,11 @@ class TemplateFlowDefinition extends FlowDefinition {
         }
         FlowDurabilityHint hint = (exec instanceof Item) ? DurabilityHintProvider.suggestedFor((Item)exec) : GlobalDefaultFlowDurabilityLevel.getDefaultDurabilityHint()
         
-        String script = """
-            template{
-                ${ sandbox ? template : ScriptApproval.get().using(template, GroovyLanguage.get()) }
-            }
-        """
-        return new CpsFlowExecution(script, sandbox, handle, hint);
+        /*
+            TODO: 
+                make sandbox optional and debug why stepwrapper fails w/ sandboxing
+        */
+        return new CpsFlowExecution("template()", true, handle, hint)
     }
 
     @Extension
@@ -112,7 +71,7 @@ class TemplateFlowDefinition extends FlowDefinition {
         @Override
         public boolean filter(Object context, Descriptor descriptor) {
             if (descriptor instanceof DescriptorImpl) {
-                return context instanceof WorkflowJob && !(((WorkflowJob) context).getParent() instanceof WorkflowMultiBranchProject)
+                return context instanceof WorkflowJob && ((WorkflowJob) context).getParent() instanceof WorkflowMultiBranchProject
             }
             return true
         }

@@ -126,8 +126,3 @@ while an application using Ant and deploying to a GlassFish server would have
     }
 
 and in both instances, the applications would be using the same pipeline template. 
-
-.. note:: 
-
-    For a more in-depth view on how to build a library, go check out :ref:`Library Development<Library Development>`
-

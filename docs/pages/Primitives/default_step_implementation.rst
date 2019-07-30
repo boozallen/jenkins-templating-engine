@@ -71,7 +71,7 @@ repository. Below is an example
         unit_test{
             stage = "Unit Test"
             image = "maven"
-            script = ./tests/unit_test.sh
+            script = "./tests/unit_test.sh"
             stash{
                 name = "test-results"
                 includes = "./target"
