@@ -1,8 +1,8 @@
-.. _noncall_methods: 
+.. _multimethod-steps: 
 
-------------------------------------------
-Defining Non-Call Methods in Library Steps
-------------------------------------------
+------------------
+Multi-Method Steps
+------------------
 
 It is sometimes advantageous to define more steps than just the call method.  
 

@@ -161,18 +161,32 @@ class PipelineConfig implements Serializable{
             output << "- ${k} set to ${data.outcome.nested[k]}"
         }
 
-        keys = data.incoming.nestedKeys.intersect(data.prev.nestedKeys)
-        output << "Configurations Changed:${keys.empty? ' None': '' }"
+        def changeKeys = data.incoming.nestedKeys.intersect(data.prev.nestedKeys)
 
-        keys.each{ k ->
+        keys = changeKeys.findAll{ k -> data.prev.nested[k] != data.incoming.nested[k] }
+        def overriddenChangedKeys = keys.findAll({k -> data.prev.c.override.find({ 1 == (k.toString() - it).count(".")})})
+        def notOverriddenChangedKeys = keys - overriddenChangedKeys
+
+        output << "Configurations Changed:${overriddenChangedKeys.empty? ' None': '' }"
+        overriddenChangedKeys.each{ k ->
             output << "- ${k} changed from ${data.prev.nested[k]} to ${data.outcome.nested[k]}"
         }
 
+        keys = changeKeys.findAll{ k -> data.prev.nested[k] == data.incoming.nested[k] }
+        output << "Configurations Duplicated:${keys.empty? ' None': '' }"
+        keys.each{ k ->
+          output << "- ${k} duplicated with ${data.prev.nested[k]}"
+        }
+
         keys = (data.incoming.nestedKeys - data.outcome.nestedKeys)
-        output << "Configurations Ignored:${keys.empty? ' None': '' }"
+        output << "Configurations Ignored:${(notOverriddenChangedKeys + keys).empty? ' None': '' }"
         keys.each{ k ->
             output << "- ${k}"
         }
+        notOverriddenChangedKeys.each{ k ->
+            output << "- ${k} ignored change from ${data.prev.nested[k]} to ${data.incoming.nested[k]}"
+        }
+
 
         output << "Subsequent may merge:${data.outcome.c.merge.empty? ' None': '' }"
         data.outcome.c.merge.each{ k ->

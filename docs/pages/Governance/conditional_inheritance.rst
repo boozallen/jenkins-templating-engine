@@ -127,7 +127,7 @@ in the ``application_environments`` block.
 .. code:: 
 
     application_environments{
-        merge = true 
+        override = true 
         dev{
             long_name = "Development" 
         }
