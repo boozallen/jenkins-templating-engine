@@ -72,12 +72,22 @@ create a more organized code base for your pipelines.
 .. toctree::
    :hidden:
    :titlesonly:
-   :caption: Pipeline Templating 💡
+   :caption: Pipeline Templating 🧩
 
    pages/Pipeline_Templating/what_is_a_pipeline_template
    pages/Pipeline_Templating/configuration_files
    pages/Pipeline_Templating/configuration_file_sandboxing
    
+.. toctree::
+   :hidden: 
+   :titlesonly:
+   :caption: Job Types ⚙️
+
+   pages/Job_Configurations/template_step
+   pages/Job_Configurations/pipeline
+   pages/Job_Configurations/repository
+   pages/Job_Configurations/github_org
+
 .. toctree::
    :hidden:
    :titlesonly:
