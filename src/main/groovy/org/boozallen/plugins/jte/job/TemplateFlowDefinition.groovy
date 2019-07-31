@@ -33,43 +33,24 @@ import org.jenkinsci.plugins.workflow.flow.GlobalDefaultFlowDurabilityLevel
 import org.jenkinsci.plugins.workflow.cps.persistence.PersistIn
 import static org.jenkinsci.plugins.workflow.cps.persistence.PersistenceContext.*
 import org.kohsuke.stapler.DataBoundConstructor
-import org.kohsuke.stapler.Stapler
-import org.kohsuke.stapler.StaplerRequest
-import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval
-import org.jenkinsci.plugins.scriptsecurity.scripts.ApprovalContext
-import org.jenkinsci.plugins.scriptsecurity.scripts.languages.GroovyLanguage
 
 @PersistIn(JOB)
 class TemplateFlowDefinition extends FlowDefinition {
 
     private final String template
-    private final boolean sandbox
     private final String pipelineConfig
 
     @DataBoundConstructor
-    public TemplateFlowDefinition(String template, boolean sandbox, String pipelineConfig){
-        StaplerRequest req = Stapler.getCurrentRequest();
-        this.template = sandbox ? template : ScriptApproval.get().configuring(template, GroovyLanguage.get(), ApprovalContext.create().withCurrentUser().withItemAsKey(req != null ? req.findAncestorObject(Item.class) : null));
-        this.sandbox = sandbox
+    public TemplateFlowDefinition(String template, String pipelineConfig){
+        this.template = template 
         this.pipelineConfig = pipelineConfig
-    }
-
-    private Object readResolve() {
-        if (!sandbox) {
-            ScriptApproval.get().configuring(template, GroovyLanguage.get(), ApprovalContext.create());
-        }
-        return this;
     }
 
     public String getTemplate() {
         return template
     }
 
-    public boolean isSandbox() {
-        return sandbox
-    }
-
-    public getPipelineConfig(){
+    public String getPipelineConfig(){
         return pipelineConfig
     }
 
@@ -84,13 +65,8 @@ class TemplateFlowDefinition extends FlowDefinition {
             throw new IllegalStateException("inappropriate context")
         }
         FlowDurabilityHint hint = (exec instanceof Item) ? DurabilityHintProvider.suggestedFor((Item)exec) : GlobalDefaultFlowDurabilityLevel.getDefaultDurabilityHint()
-        
-        String script = """
-            template{
-                ${ sandbox ? template : ScriptApproval.get().using(template, GroovyLanguage.get()) }
-            }
-        """
-        return new CpsFlowExecution(script, sandbox, handle, hint);
+
+        return new CpsFlowExecution("template()", true, handle, hint);
     }
 
     @Extension
