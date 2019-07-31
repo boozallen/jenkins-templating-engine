@@ -14,16 +14,17 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding 
+package org.boozallen.plugins.jte.binding.injectors
 
 import org.boozallen.plugins.jte.config.TemplateConfigObject
+import org.boozallen.plugins.jte.binding.*
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.Extension 
 
 /*
     represents a protected variable in the jenkinsfile
 */
-class Keyword extends TemplatePrimitive{
+class Keyword extends TemplatePrimitive implements Serializable{
     String var_name
     Object value
 
@@ -45,14 +46,5 @@ class Keyword extends TemplatePrimitive{
     void throwPostLockException(){
         throw new TemplateException ("Variable ${var_name} is reserved as a template Keyword.")
     }
-
-    @Extension static class Injector extends TemplatePrimitiveInjector {
-        static void doInject(TemplateConfigObject config, CpsScript script){
-            config.getConfig().keywords.each{ key, value ->
-                script.getBinding().setVariable(key, new Keyword(key, value))
-            }
-        }
-    }
-
 
 }

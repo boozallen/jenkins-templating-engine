@@ -14,19 +14,21 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding 
+package org.boozallen.plugins.jte.binding.injectors
 
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
+import org.boozallen.plugins.jte.binding.*
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.Extension 
 import jenkins.model.Jenkins
+import org.codehaus.groovy.runtime.InvokerHelper
 
 /*
     represents a group of library steps to be called. 
 */
-class Stage extends TemplatePrimitive {
+class Stage extends TemplatePrimitive implements Serializable{
     CpsScript script 
     String name
     ArrayList<String> steps
@@ -40,19 +42,11 @@ class Stage extends TemplatePrimitive {
     }
 
     void call(){
-        /*
-            any invocation of pipeline code from a plugin class of more than one
-            executable script or closure requires to be parsed through the execution
-            shell or the method returns prematurely after the first execution
-        */
-        String invoke =  Jenkins.instance
-                                .pluginManager
-                                .uberClassLoader
-                                .loadClass("org.boozallen.plugins.jte.binding.Stage")
-                                .getResource("StageImpl.groovy")
-                                .text
         TemplateLogger.print "[Stage - ${name}]" 
-        TemplateScriptEngine.parse(invoke, script.getBinding())(script, steps)
+        for(def i = 0; i < steps.size(); i++){
+            String step = steps.get(i)
+            InvokerHelper.getMetaClass(script).invokeMethod(script, step, null)
+        }
     }
 
     void throwPreLockException(){
@@ -61,16 +55,6 @@ class Stage extends TemplatePrimitive {
 
     void throwPostLockException(){
         throw new TemplateException ("The variable ${name} is reserved as a template Stage.")
-    }
-
-    @Extension static class Injector extends TemplatePrimitiveInjector {
-        static void doInject(TemplateConfigObject config, CpsScript script){
-            config.getConfig().stages.each{name, steps ->
-                ArrayList<String> stepsList = new ArrayList()
-                steps.collect(stepsList){ it.key }
-                script.getBinding().setVariable(name, new Stage(script, name, stepsList))
-            }
-        }
     }
 
 }

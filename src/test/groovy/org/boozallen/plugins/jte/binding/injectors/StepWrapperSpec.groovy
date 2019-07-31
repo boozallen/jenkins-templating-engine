@@ -11,8 +11,10 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding
+package org.boozallen.plugins.jte.binding.injectors
 
+import org.boozallen.plugins.jte.binding.TemplateBinding
+import org.boozallen.plugins.jte.binding.TemplateException
 import org.boozallen.plugins.jte.utils.RunUtils
 import spock.lang.*
 import spock.util.mop.ConfineMetaClassChanges
@@ -36,11 +38,15 @@ class StepWrapperSpec extends Specification{
         pipeline jobs 
     */
     String jenkinsfile = """ 
-    import org.boozallen.plugins.jte.binding.StepWrapper
     import org.boozallen.plugins.jte.binding.TemplateBinding
     import org.boozallen.plugins.jte.config.TemplateConfigObject 
+    import org.boozallen.plugins.jte.hooks.HookInjector
+    import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
 
+    def StepWrapper = LibraryLoader.getPrimitiveClass()
+    
     setBinding(new TemplateBinding())
+    HookInjector.doInject(new TemplateConfigObject(), this)
     """
 
     def setup(){
@@ -236,18 +242,32 @@ class StepWrapperSpec extends Specification{
     }
 
     def "step override during initialization throws exception"(){
-        when: 
-            TemplateBinding binding = new TemplateBinding()
+        when:
+        Object stepWrapper = GroovyMock(Object)
+        stepWrapper.getLibraryConfigVariable() >> { return "config" }
+        stepWrapper.isInstance(_) >>{ return true }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return stepWrapper }
+
+        TemplateBinding binding = new TemplateBinding()
             StepWrapper s = new StepWrapper(name: "test", library: "testlib")
             binding.setVariable("test", s) 
             binding.setVariable("test", "whatever")
-        then: 
-            TemplateException ex = thrown() 
+        then:
+        TemplateException ex = thrown()
             ex.message == "Library Step Collision. The step test already defined via the testlib library."
     }
 
     def "step override post initialization throws exception"(){
-        when: 
+        when:
+        Object stepWrapper = GroovyMock(Object)
+        stepWrapper.getLibraryConfigVariable() >> { return "config" }
+        stepWrapper.isInstance(_) >>{ return true }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return stepWrapper }
+
             TemplateBinding binding = new TemplateBinding()
             StepWrapper s = new StepWrapper(name: "test", library: "testlib")
             binding.setVariable("test", s) 
@@ -259,7 +279,8 @@ class StepWrapperSpec extends Specification{
     }
 
     def "@BeforeStep executes before step"(){
-        when: 
+        when:
+
             createStep("test_step", "def call(){ println 'testing' }")
             createStep("test_step2", """
             @BeforeStep
@@ -285,12 +306,13 @@ class StepWrapperSpec extends Specification{
         when: 
             createStep("test_step", "def call(){ println 'testing' }")
             createStep("test_step2", """
+            
             @AfterStep
             def call(Map Context){ 
                 println "after!" 
             }
             """)
-            job.setDefinition(createFlowDefinition("test_step()"))
+            job.setDefinition(createFlowDefinition("test_step(); test_step2()"))
             def build = job.scheduleBuild2(0).get() 
             def aN, sN 
             jenkins.getLog(build).eachLine{ line, N -> 

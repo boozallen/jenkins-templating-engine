@@ -11,29 +11,61 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding
+package org.boozallen.plugins.jte.binding.injectors
 
 import spock.lang.* 
 import org.junit.*
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.boozallen.plugins.jte.config.TemplateConfigObject
+import org.boozallen.plugins.jte.binding.*
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
+import org.jvnet.hudson.test.GroovyJenkinsRule
 
 class KeywordSpec extends Specification{
+
+    @Shared
+    @ClassRule
+    @SuppressWarnings('JUnitPublicField')
+    public GroovyJenkinsRule groovyJenkinsRule = new GroovyJenkinsRule()
+
+    @Shared
+    public ClassLoader classLoader = null
 
     TemplateBinding binding = new TemplateBinding() 
     CpsScript script = GroovyMock(CpsScript)
 
+    def setupSpec(){
+        classLoader = groovyJenkinsRule.jenkins.getPluginManager().uberClassLoader
+    }
+
     def setup(){
+        ClassLoader shellClassLoader = new groovy.lang.GroovyClassLoader(classLoader)
+
+        GroovySpy(TemplatePrimitiveInjector.Impl.class, global:true)
+        TemplatePrimitiveInjector.Impl.getClassLoader() >> { return shellClassLoader }
+
+        GroovyShell shell = Spy(GroovyShell)
+        shell.getClassLoader() >> { return shellClassLoader }
+
+        GroovySpy(TemplateScriptEngine.class, global:true)
+        TemplateScriptEngine.createShell() >> { return shell }
+
         _ * script.getBinding() >> {
             return binding 
         }
+    }
+
+    def getKeywordClass(){
+        /* KeywordInjector.primitiveClass */
+        return TemplateScriptEngine.createShell().classLoader.loadClass("org.boozallen.plugins.jte.binding.injectors.Keyword")
     }
 
     void injectKeywords(Map keywords){
         TemplateConfigObject config = new TemplateConfigObject(config: [
             keywords: keywords
         ])
-        Keyword.Injector.doInject(config, script)
+        Class Keyword = getKeywordClass()
+        KeywordInjector.doInject(config, script)
     }
 
     def "injector inserts keyword into binding"(){

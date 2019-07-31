@@ -11,9 +11,11 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding
+package org.boozallen.plugins.jte.binding.injectors
 
-import spock.lang.* 
+import org.boozallen.plugins.jte.binding.TemplateBinding
+import org.boozallen.plugins.jte.binding.TemplateException
+import spock.lang.*
 import org.junit.*
 import org.jvnet.hudson.test.JenkinsRule
 import org.jvnet.hudson.test.BuildWatcher
@@ -31,7 +33,7 @@ class StageSpec extends Specification{
             WorkflowJob job = jenkins.createProject(WorkflowJob); 
             job.setDefinition(new CpsFlowDefinition("""
             import org.boozallen.plugins.jte.binding.TemplateBinding
-            import org.boozallen.plugins.jte.binding.Stage
+            import org.boozallen.plugins.jte.binding.injectors.StageInjector
             import org.boozallen.plugins.jte.config.TemplateConfigObject
             
             /*
@@ -46,7 +48,7 @@ class StageSpec extends Specification{
                     ]
                 ]
             ])            
-            Stage.Injector.doInject(config, this)
+            StageInjector.doInject(config, this)
             
             // run stage 
             test_stage()
@@ -62,7 +64,7 @@ class StageSpec extends Specification{
             WorkflowJob job = jenkins.createProject(WorkflowJob); 
             job.setDefinition(new CpsFlowDefinition("""
             import org.boozallen.plugins.jte.binding.TemplateBinding
-            import org.boozallen.plugins.jte.binding.Stage
+            import org.boozallen.plugins.jte.binding.injectors.StageInjector
             import org.boozallen.plugins.jte.config.TemplateConfigObject
             
             /*
@@ -79,7 +81,7 @@ class StageSpec extends Specification{
                     ]
                 ]
             ])            
-            Stage.Injector.doInject(config, this)
+            StageInjector.doInject(config, this)
             
             // run stage 
             test_stage()
@@ -96,7 +98,7 @@ class StageSpec extends Specification{
             WorkflowJob job = jenkins.createProject(WorkflowJob); 
             job.setDefinition(new CpsFlowDefinition("""
             import org.boozallen.plugins.jte.binding.TemplateBinding
-            import org.boozallen.plugins.jte.binding.Stage
+            import org.boozallen.plugins.jte.binding.injectors.StageInjector
             import org.boozallen.plugins.jte.config.TemplateConfigObject
             
             /*
@@ -113,7 +115,7 @@ class StageSpec extends Specification{
                     ]
                 ]
             ])            
-            Stage.Injector.doInject(config, this)
+            StageInjector.doInject(config, this)
             
             // run stage 
             test_stage()
@@ -132,17 +134,33 @@ class StageSpec extends Specification{
 
     @WithoutJenkins
     def "validate override during initialization throws exception"(){
-        when: 
-            TemplateBinding binding = new TemplateBinding() 
+        setup:
+        def stepWrapper = GroovyMock(Object)
+        stepWrapper.getLibraryConfigVariable() >> { return "config" }
+        stepWrapper.isInstance(_) >>{ return false }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return stepWrapper }
+
+        when:
+        TemplateBinding binding = new TemplateBinding()
             binding.setVariable("a", new Stage(name: "a"))
             binding.setVariable("a", 1)
-        then: 
-            TemplateException ex = thrown() 
+        then:
+        TemplateException ex = thrown()
             assert ex.message == "The Stage a is already defined."
     }
 
     @WithoutJenkins
     def "validate override post initialization throws exception"(){
+        setup:
+        def stepWrapper = GroovyMock(Object)
+        stepWrapper.getLibraryConfigVariable() >> { return "config" }
+        stepWrapper.isInstance(_) >>{ return false }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return stepWrapper }
+
         when: 
             TemplateBinding binding = new TemplateBinding() 
             binding.setVariable("a", new Stage(name: "a"))

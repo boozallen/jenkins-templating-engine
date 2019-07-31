@@ -8,4 +8,5 @@ docs/_build
 .idea
 .vscode/ 
 .scannerwork/
+target/
 .DS_Store

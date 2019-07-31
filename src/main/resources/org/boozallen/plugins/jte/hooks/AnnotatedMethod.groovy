@@ -16,24 +16,23 @@
 
 package org.boozallen.plugins.jte.hooks
 
-import org.boozallen.plugins.jte.binding.StepWrapper
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
+import org.boozallen.plugins.jte.binding.* 
 
 class AnnotatedMethod implements Serializable{
     String annotationName 
-    StepWrapper stepWrapper 
+    def stepWrapper 
     String methodName
 
-    AnnotatedMethod(String annotationName, String methodName, StepWrapper stepWrapper){
+    AnnotatedMethod(String annotationName, String methodName, def stepWrapper){
         this.annotationName = annotationName
         this.methodName = methodName
         this.stepWrapper = stepWrapper 
     } 
 
-    @Whitelisted
     void invoke(Map context){
         try{
             TemplateLogger.print "[@${annotationName} - ${stepWrapper.library}/${stepWrapper.name}.${methodName}]"

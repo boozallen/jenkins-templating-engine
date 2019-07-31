@@ -13,7 +13,9 @@
 
 package org.boozallen.plugins.jte.binding
 
-import spock.lang.* 
+import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
+import spock.lang.*
+import org.boozallen.plugins.jte.binding.injectors.StepWrapper
 import org.junit.*
 import org.jvnet.hudson.test.JenkinsRule
 import org.jvnet.hudson.test.BuildWatcher
@@ -58,6 +60,18 @@ class TemplateBindingSpec extends Specification{
         }
     }
 
+    Object stepWrapper;
+
+    def setup(){
+        stepWrapper = GroovyMock(Object)
+        stepWrapper.getLibraryConfigVariable() >> { return "config" }
+        stepWrapper.isInstance(_) >>{ return false }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return stepWrapper }
+
+    }
+
     @WithoutJenkins
     def "non-primitive variable set in binding maintains value"(){
         when: 
@@ -76,10 +90,13 @@ class TemplateBindingSpec extends Specification{
 
     @WithoutJenkins
     def "template primitive inserted into registry"(){
+        given:
+        String name = "x"
+
         when: 
-            binding.setVariable("x", new TestPrimitive())
+            binding.setVariable(name, new TestPrimitive())
         then: 
-            assert "x" in binding.registry 
+            assert name in binding.registry
     }
 
     @WithoutJenkins
@@ -140,8 +157,18 @@ class TemplateBindingSpec extends Specification{
     @WithoutJenkins
     def "hasStep returns true when variable exists and is a StepWrapper"(){
         setup:
-            binding.setVariable("test_step", new StepWrapper())
-        expect: 
+        stepWrapper = GroovyMock(Object)
+        stepWrapper.getLibraryConfigVariable() >> { return "config" }
+        stepWrapper.isInstance(_) >>{ return true }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return stepWrapper }
+
+            StepWrapper s = new StepWrapper()
+
+            binding.setVariable("test_step", s)
+        expect:
+            binding.hasVariable("test_step")
             binding.hasStep("test_step")
     }
 
@@ -149,7 +176,8 @@ class TemplateBindingSpec extends Specification{
     def "hasStep returns false when variable exists but is not a StepWrapper"(){
         setup:
             binding.setVariable("test_step", 1)
-        expect: 
+        expect:
+            binding.hasVariable("test_step")
             !binding.hasStep("test_step")
     }
 
@@ -162,7 +190,14 @@ class TemplateBindingSpec extends Specification{
     @WithoutJenkins
     def "getStep returns step when variable exists and is StepWrapper"(){
         setup:
-            StepWrapper step = new StepWrapper()
+        stepWrapper = GroovyMock(Object)
+        stepWrapper.getLibraryConfigVariable() >> { return "config" }
+        stepWrapper.isInstance(_) >>{ return true }
+
+        GroovySpy(LibraryLoader.class, global:true)
+        LibraryLoader.getPrimitiveClass() >> { return stepWrapper }
+
+        StepWrapper step = new StepWrapper()
             binding.setVariable("test_step", step)
         expect: 
             binding.getStep("test_step") == step
@@ -171,6 +206,7 @@ class TemplateBindingSpec extends Specification{
     @WithoutJenkins
     def "getStep throws exception when variable exists but is not StepWrapper"(){
         setup:
+
             binding.setVariable("test_step", 1)
         when: 
             binding.getStep("test_step")

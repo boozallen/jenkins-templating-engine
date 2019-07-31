@@ -21,6 +21,7 @@ import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.jenkinsci.plugins.workflow.cps.CpsThreadGroup
+import java.lang.LinkageError
 
 /*
     We do a lot of executing the code inside files and JTE is
@@ -33,7 +34,8 @@ import org.jenkinsci.plugins.workflow.cps.CpsThreadGroup
     </rant>
 */
 class TemplateScriptEngine implements Serializable{
-    static Script parse(String scriptText, Binding b){
+
+    static GroovyShell createShell(){
         // get current CpsGroovyShell
         GroovyShell shell = CpsThreadGroup.current().getExecution().getTrustedShell()
 
@@ -50,12 +52,28 @@ class TemplateScriptEngine implements Serializable{
         cc.addCompilationCustomizers(ic)
         configF.set(shell, cc)
 
+        return shell 
+    }
+    static Script parse(String scriptText, Binding b){
+        
         // parse the script 
-        Script script = shell.getClassLoader().parseClass(scriptText).newInstance()
+        Script script = createShell().getClassLoader().parseClass(scriptText).newInstance()
 
         // set the script binding to our TemplateBinding
         script.setBinding(b)
 
         return script 
+    }
+
+    static Class parseClass(String classText){
+        GroovyShell shell = createShell() 
+        try{
+            Class clazz = shell.getClassLoader().parseClass(classText)
+            shell.getClassLoader().setClassCacheEntry(clazz)
+            return clazz 
+        }catch(LinkageError ex){
+            String className = ex.getMessage().split(" ").last().replaceAll("/",".").replaceAll('"',"")
+            return shell.getClassLoader().loadClass(className)
+        }
     }
 }

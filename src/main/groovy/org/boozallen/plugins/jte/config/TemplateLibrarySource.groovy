@@ -18,7 +18,7 @@ package org.boozallen.plugins.jte.config
 
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.console.TemplateLogger
-import org.boozallen.plugins.jte.binding.StepWrapper
+import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.DataBoundSetter
 import hudson.scm.SCM
@@ -85,7 +85,8 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
             it.getName().endsWith(".groovy") && 
             !it.getName().endsWith("library_config.groovy") // exclude lib config file 
         }.each{ stepFile ->
-            StepWrapper s = StepWrapper.createFromFile(stepFile, libName, script, libConfig)
+            def StepWrapper = LibraryLoader.getPrimitiveClass()
+            def s = StepWrapper.createFromFile(stepFile, libName, script, libConfig)
             script.getBinding().setVariable(s.getName(), s)
         }
 
