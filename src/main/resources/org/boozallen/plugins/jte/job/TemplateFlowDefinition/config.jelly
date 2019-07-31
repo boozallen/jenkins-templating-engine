@@ -29,9 +29,6 @@
       <div class="samples"/>
     </wfe:workflow-editor>
   </f:entry>
-  <f:entry field="sandbox">
-    <f:checkbox title="${%Use Groovy Sandbox}" default="true"/>
-  </f:entry>
   <f:entry title="${%Pipeline Configuration}" field="pipelineConfig">
     <wfe:workflow-editor>
       <div class="samples"/>

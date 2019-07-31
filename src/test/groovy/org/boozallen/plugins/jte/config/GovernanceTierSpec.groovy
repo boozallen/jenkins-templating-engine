@@ -308,7 +308,7 @@ class GovernanceTierSpec extends Specification{
 
             String pipelineConfig = "field = 1" 
             WorkflowJob currentJob = jenkins.createProject(WorkflowJob, jenkins.createUniqueProjectName())
-            TemplateFlowDefinition flowDef = new TemplateFlowDefinition("template", true, pipelineConfig)
+            TemplateFlowDefinition flowDef = new TemplateFlowDefinition("template", pipelineConfig)
             currentJob.setDefinition(flowDef)
 
             GroovySpy(RunUtils, global:true)
