@@ -1,12 +1,15 @@
 package org.boozallen.plugins.jte.binding
 
-import org.boozallen.plugins.jte.console.TemplateLogger
-import org.boozallen.plugins.jte.utils.RunUtils
+import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import spock.lang.*
+import org.boozallen.plugins.jte.binding.injectors.StepWrapper
 import org.boozallen.plugins.jte.config.GovernanceTier
 import org.boozallen.plugins.jte.config.TemplateConfigException
 import org.boozallen.plugins.jte.config.TemplateConfigObject
 import org.boozallen.plugins.jte.config.TemplateLibrarySource
+import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.utils.RunUtils
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.junit.ClassRule
@@ -17,9 +20,13 @@ class LibraryLoaderSpec extends Specification {
     
     @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
     CpsScript script = Mock()
-    PrintStream logger = Mock() 
+    PrintStream logger = Mock()
 
     def setup(){
+
+        GroovySpy(TemplateLogger.class, global:true)
+        TemplateLogger.print(_,_) >> {return }
+
         GroovySpy(RunUtils, global:true)
         _ * RunUtils.getJob() >> jenkins.createProject(WorkflowJob)
         _ * RunUtils.getLogger() >> logger
@@ -45,6 +52,9 @@ class LibraryLoaderSpec extends Specification {
                     test_library: [:]
                 ]
             ])
+
+            GroovySpy(TemplateLogger.class, global:true)
+            TemplateLogger.print(_,_) >> {return }
 
         when: 
             LibraryLoader.doInject(config, script)
@@ -183,8 +193,11 @@ class LibraryLoaderSpec extends Specification {
         setup:
             TemplateBinding binding = Mock()
             script.getBinding() >> binding 
-            StepWrapper s = GroovyMock(StepWrapper, global: true)
-            StepWrapper.createDefaultStep(script, "test_step", [:]) >> s
+            def s = GroovyMock(StepWrapper, global: true)
+            s.createDefaultStep(script, "test_step", [:]) >> s
+
+            GroovySpy(LibraryLoader.class, global: true)
+            LibraryLoader.getPrimitiveClass() >> { return s }
 
             GroovyMock(TemplateLogger, global:true)
             1 * TemplateLogger.print("Creating step test_step from the default step implementation." )
@@ -223,7 +236,6 @@ class LibraryLoaderSpec extends Specification {
             LibraryLoader.doInject(config, script)
             LibraryLoader.doPostInject(config, script) 
         then: 
-            //1 * logger.println("[JTE] Warning: Configured step test_step ignored. Loaded by the libA Library.")
             0 * binding.setVariable(_ , _)
     }
 
@@ -241,10 +253,13 @@ class LibraryLoaderSpec extends Specification {
                 getProperty("registry") >> registry 
             }
             script.getBinding() >> binding 
-            StepWrapper s = Mock()
-            StepWrapper s2 = GroovyMock(global: true)
-            StepWrapper.createDefaultStep(script, "test_step1", [:]) >> s 
-            StepWrapper.createNullStep("test_step2", script) >> s2
+            def s = GroovyMock(Object)
+            def s2 = GroovyMock(Object)
+            s.createDefaultStep(script, "test_step1", _) >> s
+            s.createNullStep("test_step2", script) >> s2
+
+            GroovySpy(LibraryLoader.class, global: true)
+            LibraryLoader.getPrimitiveClass() >> { return s }
 
             GroovyMock(TemplateLogger, global:true)
             1 * TemplateLogger.print(_)
@@ -262,10 +277,10 @@ class LibraryLoaderSpec extends Specification {
         when: 
             LibraryLoader.doInject(config, script)
             LibraryLoader.doPostInject(config, script) 
-        then: 
-            1 * StepWrapper.createDefaultStep(script, "test_step1", [:])
-            1 * StepWrapper.createNullStep("test_step2", script)
-            0 * StepWrapper.createNullStep("test_step1", script)
+        then:
+            1 * s.createDefaultStep(script, "test_step1", [:])
+            1 * s.createNullStep("test_step2", script)
+            0 * s.createNullStep("test_step1", script)
     }
 
     @WithoutJenkins

@@ -46,7 +46,6 @@ import javax.annotation.Nonnull
     @Nonnull
     @Override
     public Object getValue(CpsScript script) throws Exception {
-
         Object template
 
         if (script.getBinding().hasVariable(getName())) {
@@ -207,11 +206,13 @@ import javax.annotation.Nonnull
             return constructor.getDeclaringClass().equals(TemplateConfigBuilder) 
         }
 
+        /*
         @Override public boolean permitsStaticMethod(Method method, Object[] args){
             return (
                 method.getDeclaringClass().equals(Hooks)
             )
         }
+        */
 
     }
 

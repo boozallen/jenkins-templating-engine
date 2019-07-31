@@ -14,18 +14,23 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding
+package org.boozallen.plugins.jte.binding.injectors
 
+import org.boozallen.plugins.jte.binding.*
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.boozallen.plugins.jte.config.TemplateConfigObject
 import org.boozallen.plugins.jte.config.TemplateConfigException
 import org.boozallen.plugins.jte.config.TemplateLibrarySource
 import org.boozallen.plugins.jte.config.GovernanceTier
 import org.boozallen.plugins.jte.console.TemplateLogger
 import hudson.Extension 
+import jenkins.model.Jenkins
 import org.jenkinsci.plugins.workflow.cps.CpsScript
+import com.cloudbees.groovy.cps.NonCPS
 
 @Extension public class LibraryLoader extends TemplatePrimitiveInjector {
 
+    @NonCPS
     static void doInject(TemplateConfigObject config, CpsScript script){
         // 1. Inject steps from loaded libraries
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy() 
@@ -65,8 +70,8 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
             return true 
         }.each{ stepName, stepConfig ->
             TemplateLogger.print "Creating step ${stepName} from the default step implementation."
-            StepWrapper step = StepWrapper.createDefaultStep(script, stepName, stepConfig)
-            binding.setVariable(stepName, step)
+            def stepWrapper = LibraryLoader.getPrimitiveClass()
+            binding.setVariable(stepName, stepWrapper.createDefaultStep(script, stepName, stepConfig))
         }
     }
 
@@ -76,9 +81,18 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
         config.getConfig().template_methods.findAll{ step ->
             !(step.key in binding.registry)
         }.each{ step -> 
-            StepWrapper sw = StepWrapper.createNullStep(step.key, script)
-            binding.setVariable(step.key, sw)
+            def stepWrapper = LibraryLoader.getPrimitiveClass()
+            binding.setVariable(step.key, stepWrapper.createNullStep(step.key, script))
         }
+    }
+
+    static getPrimitiveClass(){
+        String self = "org.boozallen.plugins.jte.binding.injectors.LibraryLoader"
+        String classText = TemplatePrimitiveInjector.Impl.classLoader
+                                    .loadClass(self)
+                                    .getResource("StepWrapper.groovy")
+                                    .text
+        return TemplateScriptEngine.parseClass(classText)
     }
 
 }

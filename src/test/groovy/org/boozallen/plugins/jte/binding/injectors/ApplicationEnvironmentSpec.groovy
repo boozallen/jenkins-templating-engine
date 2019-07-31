@@ -11,48 +11,82 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.binding
+package org.boozallen.plugins.jte.binding.injectors
 
-import spock.lang.* 
+
+import org.boozallen.plugins.jte.binding.TemplateBinding
+import org.boozallen.plugins.jte.binding.TemplateException
+import org.boozallen.plugins.jte.binding.TemplatePrimitiveInjector
+import spock.lang.*
 import org.junit.*
 import org.jenkinsci.plugins.workflow.cps.CpsScript
+import org.boozallen.plugins.jte.binding.*
+
 import org.boozallen.plugins.jte.config.TemplateConfigObject
 import org.boozallen.plugins.jte.config.TemplateConfigException
+import org.boozallen.plugins.jte.utils.TemplateScriptEngine
+import org.jvnet.hudson.test.GroovyJenkinsRule
 
 class ApplicationEnvironmentSpec extends Specification{
 
-    TemplateBinding binding = new TemplateBinding() 
+    TemplateBinding binding = new TemplateBinding()
     CpsScript script = GroovyMock(CpsScript)
 
+    @Shared
+    @ClassRule
+    @SuppressWarnings('JUnitPublicField')
+    public GroovyJenkinsRule groovyJenkinsRule = new GroovyJenkinsRule()
+
+    @Shared
+    public ClassLoader classLoader = null
+
+    def setupSpec(){
+        classLoader = groovyJenkinsRule.jenkins.getPluginManager().uberClassLoader
+    }
+
     def setup(){
+        ClassLoader shellClassLoader = new groovy.lang.GroovyClassLoader(classLoader)
+
+        GroovySpy(TemplatePrimitiveInjector.Impl.class, global:true)
+        TemplatePrimitiveInjector.Impl.getClassLoader() >> { return shellClassLoader }
+
+        GroovyShell shell = Spy(GroovyShell)
+        shell.getClassLoader() >> { return shellClassLoader }
+
+        GroovySpy(TemplateScriptEngine.class, global:true)
+        TemplateScriptEngine.createShell() >> { return shell }
+
+
         _ * script.getBinding() >> {
-            return binding 
+            return binding
         }
     }
 
     void injectEnvironments(Map env_config){
         TemplateConfigObject config = new TemplateConfigObject(config: [
-            application_environments: env_config
+                application_environments: env_config
         ])
-        ApplicationEnvironment.Injector.doInject(config, script)
+        ApplicationEnvironmentInjector.doInject(config, script)
     }
+
 
     def "Injector populates binding"(){
         when:
             def envName = "dev"
             injectEnvironments(["${envName}": [:]])
-        then: 
+        then:
             assert binding.hasVariable(envName) 
-            assert binding.getVariable(envName) instanceof ApplicationEnvironment
+            assert getApplicationEnvironmentClass().isInstance( binding.getVariable(envName) )
     }
 
     def "default short_name is environment key"(){
         when:
             def envName = "dev"
             injectEnvironments(["${envName}": [:]])
-            ApplicationEnvironment env = binding.getVariable(envName)
-        then: 
-            assert env.short_name == envName
+            def env = binding.getVariable(envName)
+        then:
+            getApplicationEnvironmentClass().isInstance( binding.getVariable(envName) )
+            env.short_name == envName
     }
 
     def "set short_name"(){
@@ -63,18 +97,19 @@ class ApplicationEnvironmentSpec extends Specification{
                     short_name: "develop"
                 ]
             ])
-            ApplicationEnvironment env = binding.getVariable(envName)
-        then: 
-            assert env.short_name == "develop"
+            def env = binding.getVariable(envName)
+        then:
+            getApplicationEnvironmentClass().isInstance( binding.getVariable(envName) )
+            env.short_name == "develop"
     }
 
     def "default long_name is environment key"(){
         when:
             def envName = "dev"
             injectEnvironments(["${envName}": [:]])
-            ApplicationEnvironment env = binding.getVariable(envName)
+            def env = binding.getVariable(envName)
         then: 
-            assert env.long_name == envName
+            env.long_name == envName
     }
 
     def "set long_name"(){
@@ -85,7 +120,7 @@ class ApplicationEnvironmentSpec extends Specification{
                     long_name: "develop"
                 ]
             ])
-            ApplicationEnvironment env = binding.getVariable(envName)
+            def env = binding.getVariable(envName)
         then: 
             assert env.long_name == "develop"
     }
@@ -98,7 +133,7 @@ class ApplicationEnvironmentSpec extends Specification{
                     random: 11
                 ]
             ])
-            ApplicationEnvironment env = binding.getVariable(envName)
+            def env = binding.getVariable(envName)
         then: 
             assert env.random == 11 
     }
@@ -107,7 +142,7 @@ class ApplicationEnvironmentSpec extends Specification{
         when: 
             def envName = "dev" 
             injectEnvironments(["${envName}": [:]])
-            ApplicationEnvironment env = binding.getVariable(envName)
+            def env = binding.getVariable(envName)
         then: 
             assert env.random == null 
     } 
@@ -116,7 +151,7 @@ class ApplicationEnvironmentSpec extends Specification{
         when: 
             def envName = "dev" 
             injectEnvironments(["${envName}": [:]])
-            ApplicationEnvironment env = binding.getVariable(envName)
+            def env = binding.getVariable(envName)
             env.short_name = "something else" 
         then: 
             thrown(TemplateConfigException)
@@ -137,8 +172,8 @@ class ApplicationEnvironmentSpec extends Specification{
         when: 
             injectEnvironments([dev: [:]])
             binding.setVariable("dev", "whatever")
-        then: 
-            TemplateException ex = thrown() 
+        then:
+        TemplateException ex = thrown()
             assert ex.message == "Application Environment dev already defined." 
     }
 
@@ -150,5 +185,10 @@ class ApplicationEnvironmentSpec extends Specification{
         then: 
             TemplateException ex = thrown() 
             assert ex.message == "Variable dev is reserved as an Application Environment." 
+    }
+
+    def getApplicationEnvironmentClass(){
+        /* ApplicationEnvironmentInjector.primitiveClass */
+        return TemplateScriptEngine.createShell().classLoader.loadClass("org.boozallen.plugins.jte.binding.injectors.ApplicationEnvironment")
     }
 }
