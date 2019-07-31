@@ -219,6 +219,36 @@ class FileSpec extends Specification {
 
     }
 
+    def "getFileContents returns null if f.exists"(){
+        given:
+        String filePath = "pipeline_config.groovy"
+        SCMFile childFile = GroovyMock(SCMFile)
+        1 * childFile.exists() >> true
+        1 * childFile.isFile() >> true
+        1 * childFile.contentAsString() >> { throw new java.io.FileNotFoundException(filePath)}
+
+        SCMFileSystem fs = GroovyMock(SCMFileSystem)
+        1 * fs.asBoolean() >> true
+        1 * fs.child("pipeline_config.groovy") >> childFile
+
+        FileSystemWrapper fsw = new FileSystemWrapper()
+        fsw.fs = fs
+
+        GroovyMock(TemplateLogger, global:true)
+        1 * TemplateLogger.printWarning({ it.contains(" threw FileNotFoundException.")}, _)
+
+        String retVal = ""
+
+        when:
+        retVal = fsw.getFileContents(filePath)
+
+        then:
+        null == retVal
+        notThrown(Exception)
+        1 * fs.close()
+
+    }
+
     def "'as SCMFileSystem' returns valid fs property"() {
         given:
         SCMFileSystem fs = GroovyMock(SCMFileSystem)
