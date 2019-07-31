@@ -9,3 +9,4 @@ docs/_build
 .vscode/ 
 .scannerwork/
 target/
+.DS_Store

@@ -22,6 +22,7 @@ import org.boozallen.plugins.jte.binding.*
 import org.boozallen.plugins.jte.config.* 
 import org.boozallen.plugins.jte.hooks.* 
 import org.boozallen.plugins.jte.utils.*
+import org.boozallen.plugins.jte.job.*
 import jenkins.model.Jenkins
 import hudson.Extension
 import hudson.ExtensionList 
@@ -29,6 +30,7 @@ import org.jenkinsci.plugins.workflow.cps.GlobalVariable
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AbstractWhitelist
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
+import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import java.lang.reflect.Method
 import java.lang.reflect.Constructor
 import javax.annotation.Nonnull
@@ -139,6 +141,14 @@ import javax.annotation.Nonnull
     @Whitelisted
     static String getTemplate(Map config){
 
+        WorkflowJob currentJob = RunUtils.getJob() 
+        def flowDefinition = currentJob.getDefinition()
+        if (flowDefinition instanceof TemplateFlowDefinition){
+            TemplateLogger.print "Obtained Pipeline Template from job configuration"
+            String template = flowDefinition.getTemplate()
+            return template
+        }
+
         // tenant Jenkinsfile if allowed 
         FileSystemWrapper fs = FileSystemWrapper.createFromJob()
         String repoJenkinsfile = fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false)
@@ -146,7 +156,7 @@ import javax.annotation.Nonnull
             if (config.allow_scm_jenkinsfile){
                 return repoJenkinsfile
             }else{
-                TemplateLogger.print "Warning: Repository provided Jenkinsfile that will not be used, per organizational policy."
+                TemplateLogger.printWarning "Repository provided Jenkinsfile that will not be used, per organizational policy."
             }
         }
 

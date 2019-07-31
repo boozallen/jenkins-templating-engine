@@ -30,29 +30,8 @@ import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 import org.jenkinsci.plugins.workflow.flow.FlowDurabilityHint
 import org.jenkinsci.plugins.workflow.flow.DurabilityHintProvider
 import org.jenkinsci.plugins.workflow.flow.GlobalDefaultFlowDurabilityLevel
-import org.jenkinsci.plugins.workflow.cps.persistence.PersistIn
-import static org.jenkinsci.plugins.workflow.cps.persistence.PersistenceContext.*
-import org.kohsuke.stapler.DataBoundConstructor
 
-@PersistIn(JOB)
-class TemplateFlowDefinition extends FlowDefinition {
-
-    private final String template
-    private final String pipelineConfig
-
-    @DataBoundConstructor
-    public TemplateFlowDefinition(String template, String pipelineConfig){
-        this.template = template 
-        this.pipelineConfig = pipelineConfig
-    }
-
-    public String getTemplate() {
-        return template
-    }
-
-    public String getPipelineConfig(){
-        return pipelineConfig
-    }
+class MultibranchTemplateFlowDefinition extends FlowDefinition {
 
     @Override
     public FlowExecution create(FlowExecutionOwner handle, TaskListener listener, List<? extends Action> actions) throws Exception {
@@ -65,8 +44,12 @@ class TemplateFlowDefinition extends FlowDefinition {
             throw new IllegalStateException("inappropriate context")
         }
         FlowDurabilityHint hint = (exec instanceof Item) ? DurabilityHintProvider.suggestedFor((Item)exec) : GlobalDefaultFlowDurabilityLevel.getDefaultDurabilityHint()
-
-        return new CpsFlowExecution("template()", true, handle, hint);
+        
+        /*
+            TODO: 
+                make sandbox optional and debug why stepwrapper fails w/ sandboxing
+        */
+        return new CpsFlowExecution("template()", true, handle, hint)
     }
 
     @Extension
@@ -88,7 +71,7 @@ class TemplateFlowDefinition extends FlowDefinition {
         @Override
         public boolean filter(Object context, Descriptor descriptor) {
             if (descriptor instanceof DescriptorImpl) {
-                return context instanceof WorkflowJob && !(((WorkflowJob) context).getParent() instanceof WorkflowMultiBranchProject)
+                return context instanceof WorkflowJob && ((WorkflowJob) context).getParent() instanceof WorkflowMultiBranchProject
             }
             return true
         }

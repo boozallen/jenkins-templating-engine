@@ -32,7 +32,7 @@ public class TemplateBranchProjectFactory extends WorkflowBranchProjectFactory {
     @DataBoundConstructor public TemplateBranchProjectFactory() {}
 
     @Override protected FlowDefinition createDefinition() {
-        return new TemplateFlowDefinition()
+        return new MultibranchTemplateFlowDefinition()
     }
 
     @Override

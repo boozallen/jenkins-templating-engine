@@ -14,6 +14,7 @@
 package org.boozallen.plugins.jte.config
 
 import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.job.TemplateFlowDefinition
 import org.boozallen.plugins.jte.utils.RunUtils
 import spock.lang.*
 import org.junit.Rule
@@ -298,6 +299,31 @@ class GovernanceTierSpec extends Specification{
         then: 
             assert list instanceof List<GovernanceTier> 
             assert list == expectedResult 
+    }
+
+     def "Get Governance Hierarchy: Global config and job level config"(){
+        given: 
+            TemplateGlobalConfig global = TemplateGlobalConfig.get() 
+            global.setTier(tier1) 
+
+            String pipelineConfig = "field = 1" 
+            WorkflowJob currentJob = jenkins.createProject(WorkflowJob, jenkins.createUniqueProjectName())
+            TemplateFlowDefinition flowDef = new TemplateFlowDefinition("template", pipelineConfig)
+            currentJob.setDefinition(flowDef)
+
+            GroovySpy(RunUtils, global:true)
+            _ * RunUtils.getJob() >> currentJob
+
+            GroovyMock(TemplateLogger, global:true)
+            _ * TemplateLogger.print(_,_)
+
+            def list 
+        when: 
+            list = GovernanceTier.getHierarchy()
+        then: 
+            assert list instanceof List<GovernanceTier> 
+            assert list.size() == 2 
+            assert list.get(0).getPipelineConfig() == pipelineConfig 
     }
 
     WorkflowJob getWorkflowJob(){
