@@ -28,7 +28,9 @@ import hudson.Extension
 import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
 import hudson.Util
+import hudson.util.ListBoxModel
 import org.jenkinsci.plugins.workflow.cps.CpsScript
+import jenkins.model.Jenkins
 
 public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibrarySource> implements Serializable{
 
@@ -36,6 +38,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
 
     public SCM scm
     public String baseDir
+    public LibraryProvider libProvider 
 
     @DataBoundConstructor public TemplateLibrarySource(){}
 
@@ -47,6 +50,12 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
 
     @DataBoundSetter public void setScm(SCM scm){ this.scm = scm }
     public SCM getScm(){ return scm }
+
+    @DataBoundSetter public void setLibProvider(LibraryProvider libProvider) {
+        this.libProvider = libProvider
+    }
+    public LibraryProvider getLibProvider(){ return this.libProvider }
+
 
     Boolean hasLibrary(String libName){
         SCMFileSystem fs = createFs()
@@ -213,5 +222,9 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         return FileSystemWrapper.createFromSCM(scm) as SCMFileSystem
     }
 
-    @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {}
+    @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {
+        public static List<LibraryProviderDescriptor> getLibraryProviders(){
+            return Jenkins.getActiveInstance().getExtensionList(LibraryProviderDescriptor)
+        }
+    }
 }
