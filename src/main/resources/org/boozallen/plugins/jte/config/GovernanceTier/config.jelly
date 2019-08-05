@@ -36,4 +36,9 @@
             </f:entry>
         </f:repeatableProperty>
     </f:entry>
+    <f:dropdownDescriptorSelector field="libraryProvider"
+                                  title="Library Provider Type"
+                                  descriptors="${descriptor.getLibraryProviders()}" 
+                                  targetType="${org.boozallen.plugins.jte.config.LibraryProvider.class}"
+    />
 </j:jelly>
