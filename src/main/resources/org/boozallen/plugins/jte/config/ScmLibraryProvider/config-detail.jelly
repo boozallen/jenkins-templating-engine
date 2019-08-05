@@ -17,19 +17,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
     <f:block>
-        <j:out value="${%Pipeline Configuration}"/>
+        <j:out value="${%SCM Library Provider}"/>
     </f:block>
-    <f:dropdownDescriptorSelector field="scm" title="Source Location" descriptors="${descriptor.applicableDescriptors}"/>
-    <f:entry field="baseDir" title="${%Configuration Base Directory}">
-        <f:textbox default=""/>
-    </f:entry>
-    <f:entry>
-        <f:repeatableProperty field="libraries" header="${%Library}">
-            <f:entry title="">
-                <div align="right">
-                    <f:repeatableDeleteButton/>
-                </div>
-            </f:entry>
-        </f:repeatableProperty>
-    </f:entry>
 </j:jelly>

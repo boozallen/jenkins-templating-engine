@@ -43,24 +43,21 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
 
     String baseDir
     SCM scm 
-    List<TemplateLibrarySource> librarySources = new ArrayList()
-    LibraryProvider libraryProvider 
+    List<LibraryConfiguration> libraries
     String pipelineConfig 
 
     // added for unit testing
     public GovernanceTier(){}
 
-    @DataBoundConstructor public GovernanceTier(SCM scm, String baseDir, List<TemplateLibrarySource> librarySources, LibraryProvider libraryProvider){
+    @DataBoundConstructor public GovernanceTier(SCM scm, String baseDir, List<LibraryConfiguration> libraries){
         this.scm = scm
         this.baseDir = Util.fixEmptyAndTrim(baseDir)
-        this.librarySources = librarySources
-        this.libraryProvider = libraryProvider
+        this.libraries = libraries 
     }
 
     public String getBaseDir(){ return baseDir }
     public SCM getScm(){ return scm }
-    public List<TemplateLibrarySource> getLibrarySources(){ return librarySources }
-    public LibraryProvider getLibraryProvider(){ return libraryProvider }
+    public List<LibraryConfiguration> getLibraries(){ return libraries }
     
     public String getPipelineConfig(){
         return pipelineConfig
