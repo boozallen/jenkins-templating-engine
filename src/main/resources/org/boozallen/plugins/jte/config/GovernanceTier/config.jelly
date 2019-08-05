@@ -23,9 +23,13 @@
     <f:entry field="baseDir" title="${%Configuration Base Directory}">
         <f:textbox default=""/>
     </f:entry>
+
+    <f:block>
+        <j:out value="${%Library Sources}"/>
+    </f:block>
     <f:entry>
         <f:repeatableProperty field="librarySources" header="${%Library}">
-            <f:entry title="Library Source">
+            <f:entry title="">
                 <div align="right">
                     <f:repeatableDeleteButton/>
                 </div>

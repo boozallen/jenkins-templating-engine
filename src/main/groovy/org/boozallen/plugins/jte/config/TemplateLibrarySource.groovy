@@ -38,7 +38,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
 
     public SCM scm
     public String baseDir
-    public LibraryProvider libProvider 
+    // public LibraryProvider libProvider 
 
     @DataBoundConstructor public TemplateLibrarySource(){}
 
@@ -51,10 +51,10 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
     @DataBoundSetter public void setScm(SCM scm){ this.scm = scm }
     public SCM getScm(){ return scm }
 
-    @DataBoundSetter public void setLibProvider(LibraryProvider libProvider) {
-        this.libProvider = libProvider
-    }
-    public LibraryProvider getLibProvider(){ return this.libProvider }
+    // @DataBoundSetter public void setLibProvider(LibraryProvider libProvider) {
+    //     this.libProvider = libProvider
+    // }
+    // public LibraryProvider getLibProvider(){ return this.libProvider }
 
 
     Boolean hasLibrary(String libName){
@@ -223,8 +223,8 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
     }
 
     @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {
-        public static List<LibraryProviderDescriptor> getLibraryProviders(){
-            return Jenkins.getActiveInstance().getExtensionList(LibraryProviderDescriptor)
-        }
+        // public static List<LibraryProviderDescriptor> getLibraryProviders(){
+        //     return Jenkins.getActiveInstance().getExtensionList(LibraryProviderDescriptor)
+        // }
     }
 }

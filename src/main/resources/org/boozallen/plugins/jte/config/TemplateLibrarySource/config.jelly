@@ -20,10 +20,8 @@
     <f:entry field="baseDir" title="${%Base Directory}">
         <f:textbox default=""/>
     </f:entry>
-    <f:dropdownDescriptorSelector name="products" 
-                                  items="${instance.products}" 
-                                  hasHeader="true" 
-                                  descriptors="${descriptor.libraryProviders}" 
+    <!-- <f:dropdownDescriptorSelector title="Library Provider Type"
+                                  descriptors="${descriptor.getLibraryProviders()}" 
                                   targetType="${org.boozallen.plugins.jte.config.LibraryProvider.class}"
-    />
+    /> -->
 </j:jelly>

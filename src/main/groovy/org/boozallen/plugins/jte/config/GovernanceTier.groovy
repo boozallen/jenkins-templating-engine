@@ -43,6 +43,7 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
     String baseDir
     SCM scm 
     List<TemplateLibrarySource> librarySources = new ArrayList()
+    List<TemplateLibrarySource> librarySources = new ArrayList()
     String pipelineConfig 
 
     // added for unit testing
