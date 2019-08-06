@@ -12,6 +12,8 @@ import hudson.model.DescriptorVisibilityFilter
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.model.Descriptor
 import jenkins.model.Jenkins
+import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
+
 
 class PluginLibraryProvider extends LibraryProvider{
 
@@ -20,7 +22,16 @@ class PluginLibraryProvider extends LibraryProvider{
 
     @DataBoundConstructor PluginLibraryProvider(LibraryProvidingPlugin plugin){
         this.plugin = plugin 
+        initialize()
+    }
 
+    /*
+        analyzes the contributing plugin's jar file to find libraries 
+        housed in the resources directory. 
+
+        populates this.libraries with data from parsing
+    */
+    void initialize(){
         // initialize libraries 
         def src = plugin.getClass().getProtectionDomain().getCodeSource()
         URL jar = src.getLocation()
@@ -32,14 +43,23 @@ class PluginLibraryProvider extends LibraryProvider{
             ArrayList parts = path.split("/")
             if(path.startsWith("libraries/") && path.endsWith(".groovy") && parts.size() >= 3){
                 String libName = parts.getAt(1)
-                String stepName = parts.last() - ".groovy" 
+                // create new library entry
                 if(!libraries[libName]){
-                    libraries[libName] = [:]
+                    libraries[libName] = [
+                        steps: [:],
+                        config: null 
+                    ]
                 }
-                libraries[libName][stepName] = getFileContents(zipFile, zipEntry) 
+                // store config or step 
+                String fileName = parts.last()
+                String fileContents = getFileContents(zipFile, zipEntry) 
+                if(parts.size() == 3 && fileName.equals(CONFIG_FILE)){
+                    libraries[libName].config = fileContents 
+                }else{
+                    libraries[libName].steps["${fileName - ".groovy"}"] = fileContents 
+                }
             } 
         }
-
     }
 
     String getFileContents(ZipFile z, ZipEntry e){
@@ -62,13 +82,37 @@ class PluginLibraryProvider extends LibraryProvider{
     }
 
     public List loadLibrary(CpsScript script, String libName, Map libConfig){
-        TemplateLogger.print "Loading jar library ${libName}"
-        libraries[libName].each{ stepName, stepContent -> 
-            TemplateLogger.print "loading step -> ${stepName}"
-            TemplateLogger.print stepContent
+        TemplateLogger.print("""Loading Library ${libName}
+                                -- plugin: ${getPluginDisplayName() ?: "can't determine plugin"}""", [initiallyHidden:true])
+
+        // do library configuration 
+        ArrayList libConfigErrors = []
+        if(libraries[libName].config){
+            libConfigErrors = doLibraryConfigValidation(libraries[libName].config, libConfig)
+            if(libConfigErrors){
+                return [ "${libName}:" ] + libConfigErrors.collect{ " - ${it}" }
+            }
+        }else{
+            TemplateLogger.printWarning("Library ${libName} does not have a configuration file.")
         }
-        
-        return new ArrayList()
+
+        // load steps 
+        def StepWrapper = LibraryLoader.getPrimitiveClass()
+        libraries[libName].steps.each{ stepName, stepContents -> 
+            def s = StepWrapper.createFromString(stepContents, script, stepName, libName, libConfig)
+            script.getBinding().setVariable(stepName, s)
+        }
+        return libConfigErrors
+    }
+
+    /*
+        returns null if for some reason plugin descriptor can't be found
+        -- this shouldn't technically be possible. 
+    */
+    public String getPluginDisplayName(){
+        List<LibraryProvidingPlugin> plugins = DescriptorImpl.getLibraryProvidingPlugins()
+        Descriptor pluginDescriptor = Descriptor.findByDescribableClassName(plugins, plugin.getClass().getName())
+        return pluginDescriptor?.getDisplayName()
     }
     
     @Extension public static class DescriptorImpl extends LibraryProviderDescriptor{
@@ -81,6 +125,10 @@ class PluginLibraryProvider extends LibraryProvider{
         }
     }
 
+    /*
+        hide this plugin as an option if there aren't any plugin providing libraries 
+        installed on the jenkins instance
+    */
     @Extension public static class FilterImpl extends DescriptorVisibilityFilter {
         @Override
         public boolean filter(Object context, Descriptor descriptor) {

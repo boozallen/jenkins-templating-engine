@@ -22,6 +22,8 @@ import org.boozallen.plugins.jte.config.TemplateConfigObject
 import org.boozallen.plugins.jte.config.TemplateConfigException
 import org.boozallen.plugins.jte.config.TemplateLibrarySource
 import org.boozallen.plugins.jte.config.GovernanceTier
+import org.boozallen.plugins.jte.config.libraries.LibraryConfiguration
+import org.boozallen.plugins.jte.config.libraries.LibraryProvider
 import org.boozallen.plugins.jte.console.TemplateLogger
 import hudson.Extension 
 import jenkins.model.Jenkins
@@ -34,15 +36,16 @@ import com.cloudbees.groovy.cps.NonCPS
     static void doInject(TemplateConfigObject config, CpsScript script){
         // 1. Inject steps from loaded libraries
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy() 
-        List<TemplateLibrarySource> sources = tiers.collect{ it.librarySources }.flatten().minus(null)
+        List<LibraryConfiguration> libs = tiers.collect{ it.getLibraries() }.flatten().minus(null)
+        List<LibraryProvider> providers = libs.collect{ it.getLibraryProvider() }.flatten().minus(null)
 
         ArrayList libConfigErrors = []
         config.getConfig().libraries.each{ libName, libConfig ->
-            TemplateLibrarySource s = sources.find{ it.hasLibrary(libName) }
-            if (!s){ 
+            LibraryProvider p = providers.find{ it.hasLibrary(libName) }
+            if (!p){ 
                 libConfigErrors << "Library ${libName} Not Found." 
             } else {
-                libConfigErrors << s.loadLibrary(script, libName, libConfig)
+                libConfigErrors << p.loadLibrary(script, libName, libConfig)
             }
         }
         libConfigErrors = libConfigErrors.flatten().minus(null)

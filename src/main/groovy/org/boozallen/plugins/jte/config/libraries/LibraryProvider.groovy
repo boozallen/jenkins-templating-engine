@@ -17,6 +17,7 @@
 package org.boozallen.plugins.jte.config.libraries
 
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
+import org.boozallen.plugins.jte.config.TemplateConfigDsl
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
 import org.kohsuke.stapler.DataBoundConstructor
