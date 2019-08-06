@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.config
+package org.boozallen.plugins.jte.config.libraries
 
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.console.TemplateLogger
@@ -34,6 +34,4 @@ import hudson.ExtensionList
 import jenkins.model.Jenkins 
 
 
-abstract class LibraryProvider extends AbstractDescribableImpl<LibraryProvider>{
-    
-}
+abstract class LibraryProvider extends AbstractDescribableImpl<LibraryProvider>{}

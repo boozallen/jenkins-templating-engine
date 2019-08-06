@@ -16,6 +16,8 @@
 
 package org.boozallen.plugins.jte.config
 
+import org.boozallen.plugins.jte.config.libraries.LibraryProviderDescriptor
+import org.boozallen.plugins.jte.config.libraries.LibraryConfiguration
 import org.boozallen.plugins.jte.utils.RunUtils
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.console.TemplateLogger

@@ -16,7 +16,5 @@
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
-    <f:block>
-        <j:out value="${%Plugin Library Provider}"/>
-    </f:block>
+    <st:include page="config-detail.jelly" optional="true" class="${descriptor.clazz}"/>
 </j:jelly>

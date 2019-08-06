@@ -1,4 +1,4 @@
-package org.boozallen.plugins.jte.config
+package org.boozallen.plugins.jte.config.libraries
 
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.console.TemplateLogger
@@ -17,7 +17,4 @@ import hudson.ExtensionPoint
 import hudson.ExtensionList 
 import jenkins.model.Jenkins 
 
-
-public abstract class LibraryProviderDescriptor extends Descriptor<LibraryProvider> {
-    String getDisplayName(){}
-}
+abstract class LibraryProvidingPlugin extends AbstractDescribableImpl<LibraryProvidingPlugin>{}

@@ -16,5 +16,7 @@
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
-
+    <f:dropdownDescriptorSelector title="Library Provider" 
+                                  field="libraryProvider"
+                                  descriptors="${descriptor.getLibraryProviders()}" /> 
 </j:jelly>

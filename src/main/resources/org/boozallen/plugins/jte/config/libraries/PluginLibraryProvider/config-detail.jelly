@@ -16,7 +16,7 @@
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
-    <f:block>
-        <j:out value="${%SCM Library Provider}"/>
-    </f:block>
+    <f:dropdownDescriptorSelector title="Plugin" 
+                                  field="plugin"
+                                  descriptors="${descriptor.getLibraryProvidingPlugins()}" /> 
 </j:jelly>

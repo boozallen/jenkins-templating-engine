@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.config
+package org.boozallen.plugins.jte.config.libraries
 
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.console.TemplateLogger
@@ -32,6 +32,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.ExtensionPoint
 import hudson.ExtensionList 
 import jenkins.model.Jenkins 
+import hudson.model.DescriptorVisibilityFilter
 
 
 public class LibraryConfiguration extends AbstractDescribableImpl<LibraryConfiguration> {
@@ -45,7 +46,7 @@ public class LibraryConfiguration extends AbstractDescribableImpl<LibraryConfigu
 
     @Extension public static class DescriptorImpl extends Descriptor<LibraryConfiguration> {
         public static List<LibraryProviderDescriptor> getLibraryProviders(){
-            return Jenkins.getActiveInstance().getExtensionList(LibraryProviderDescriptor)
+            return DescriptorVisibilityFilter.apply(null, Jenkins.getActiveInstance().getExtensionList(LibraryProviderDescriptor))
         }
     }
 }
