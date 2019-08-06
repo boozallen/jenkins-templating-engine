@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets
 import hudson.Extension 
 import org.kohsuke.stapler.DataBoundConstructor
 import hudson.model.DescriptorVisibilityFilter
+import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.model.Descriptor
 import jenkins.model.Jenkins
 
@@ -60,7 +61,7 @@ class PluginLibraryProvider extends LibraryProvider{
         return libName in libraries.keySet()
     }
 
-    public List loadLibrary(String libName){
+    public List loadLibrary(CpsScript script, String libName, Map libConfig){
         TemplateLogger.print "Loading jar library ${libName}"
         libraries[libName].each{ stepName, stepContent -> 
             TemplateLogger.print "loading step -> ${stepName}"

@@ -40,15 +40,11 @@ public class ScmLibraryProvider extends LibraryProvider{
     // public LibraryProvider getLibProvider(){ return this.libProvider }
 
 
-    Boolean hasLibrary(String libName){
+    public Boolean hasLibrary(String libName){
         SCMFileSystem fs = createFs()
         if (!fs) return false 
         SCMFile lib = fs.child(prefixBaseDir(libName))
         return lib.isDirectory()
-    }
-
-    public String prefixBaseDir(String s){
-        return [baseDir, s?.trim()].findAll{ it }.join("/")
     }
 
     public List loadLibrary(CpsScript script, String libName, Map libConfig){
@@ -64,8 +60,7 @@ public class ScmLibraryProvider extends LibraryProvider{
         SCMFile libConfigFile = lib.child(CONFIG_FILE)
         ArrayList libConfigErrors = []
         if(libConfigFile.exists() && libConfigFile.isFile()){
-            Map allowedConfig = libAllowedFileToMap(libConfigFile)
-            libConfigErrors = doLibraryConfigValidation(allowedConfig, libConfig)
+            libConfigErrors = doLibraryConfigValidation(libConfigFile.contentAsString(), libConfig)
             if(libConfigErrors){
                 return [ "${libName}:" ] + libConfigErrors.collect{ " - ${it}" }
             }
@@ -85,120 +80,8 @@ public class ScmLibraryProvider extends LibraryProvider{
         return libConfigErrors
     }
 
-    public Map libAllowedFileToMap(SCMFile configFile) {
-        return TemplateConfigDsl.parse(configFile.contentAsString()).getConfig()
-    }
-
-    public List doLibraryConfigValidation(Map allowedConfig, Map libConfig){
-        ArrayList libConfigErrors = [] 
-
-        // define keysets in dot notation 
-        ArrayList keys = getNestedKeys(libConfig).collect{ it.toString() }
-        ArrayList required = getNestedKeys(allowedConfig.fields.required).collect{ it.toString() }
-        ArrayList optional = getNestedKeys(allowedConfig.fields.optional).collect{ it.toString() }
-
-        // validate required keys 
-        required.each{ requiredKey  -> 
-            if(requiredKey in keys){
-                keys -= requiredKey
-                def actual = getProp(libConfig, requiredKey)
-                def expected = getProp(allowedConfig.fields.required, requiredKey)
-                if (!validateType(actual, expected)){
-                    if (expected instanceof java.util.regex.Pattern){
-                        libConfigErrors << "Field ${requiredKey} must be a String matching ${expected} but is [${actual}]"
-                    } else if (expected instanceof ArrayList){
-                        libConfigErrors << "Field '${requiredKey}' must be one of ${expected} but is [${actual}]"
-                    } else {
-                        libConfigErrors << "Field '${requiredKey}' must be a ${expected.getSimpleName()} but is a ${actual.getClass().getSimpleName()}"
-                    }
-                }
-            } else{
-                libConfigErrors << "Missing required field '${requiredKey}'" 
-            }
-        }
-
-        // validate optional keys 
-        optional.each{ optionalKey -> 
-            if(optionalKey in keys){
-                keys -= optionalKey 
-                def actual = getProp(libConfig, optionalKey)
-                def expected = getProp(allowedConfig.fields.optional, optionalKey)
-                if (!validateType(actual, expected)){
-                    if (expected instanceof java.util.regex.Pattern){
-                        libConfigErrors << "Field ${optionalKey} must be a String matching ${expected} but is [${actual}]"
-                    } else if (expected instanceof ArrayList){
-                        libConfigErrors << "Field '${optionalKey}' must be one of ${expected} but is [${actual}]"
-                    } else {
-                        libConfigErrors << "Field '${optionalKey}' must be a ${expected.getSimpleName()} but is a ${actual.getClass().getSimpleName()}"
-                    }
-                }
-            }
-        }
-
-        // validate that there are no extraneous keys 
-        keys.each{ key -> 
-            libConfigErrors << "Field '${key}' is not used." 
-        }
-
-        return libConfigErrors
-    }
-
-    public def getProp(o, p){
-        return p.tokenize('.').inject(o){ obj, prop ->       
-            obj?."$prop"
-        }   
-    }
-
-    public def getNestedKeys(map, result = [], String keyPrefix = '') {
-        map.each { key, value ->
-            if (value instanceof Map) {
-                getNestedKeys(value, result, "${keyPrefix}${key}.")
-            } else {
-                result << "${keyPrefix}${key}"
-            }
-        }
-        return result
-    }
-
-    /*
-        In general here, we're looking to validate intent 
-        over specifics of what class they want.  It's unlikely
-        the difference between boolean or Boolean, or Double 
-        vs BigDecimal vs Float will make a difference for a
-        JTE configuration file and we should strive to avoid 
-        confusion when people specify a validation. 
-    */
-    public Boolean validateType(actual, expected){
-        switch(expected){ 
-            case [ boolean, Boolean ]: 
-                return actual.getClass() in [ boolean, Boolean ]
-                break     
-            case String: 
-                return actual.getClass() in [ String,  org.codehaus.groovy.runtime.GStringImpl ]
-                break
-            case [ Integer, int]: 
-                return actual.getClass() in [ Integer, int ]
-                break        
-            case [ Double, BigDecimal, Float ]: 
-                return actual.getClass() in [ Double, BigDecimal, Float ]
-                break 
-            case Number: 
-                return actual instanceof Number
-                break
-            case { expected instanceof java.util.regex.Pattern }: 
-                if(!(actual.getClass() in [ String,  org.codehaus.groovy.runtime.GStringImpl ])){
-                    return false 
-                }
-                return actual.matches(expected)
-                break
-            case { expected instanceof ArrayList }:
-                return actual in expected
-                break
-            default: 
-                TemplateLogger.printWarning("Library Validator: Not sure how to handle value ${expected} with class ${expected.class}")
-                return true 
-                break
-        } 
+    public String prefixBaseDir(String s){
+        return [baseDir, s?.trim()].findAll{ it }.join("/")
     }
 
     public SCMFileSystem createFs(){
