@@ -20,7 +20,6 @@ import org.boozallen.plugins.jte.binding.*
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.boozallen.plugins.jte.config.TemplateConfigObject
 import org.boozallen.plugins.jte.config.TemplateConfigException
-import org.boozallen.plugins.jte.config.TemplateLibrarySource
 import org.boozallen.plugins.jte.config.GovernanceTier
 import org.boozallen.plugins.jte.config.libraries.LibraryConfiguration
 import org.boozallen.plugins.jte.config.libraries.LibraryProvider

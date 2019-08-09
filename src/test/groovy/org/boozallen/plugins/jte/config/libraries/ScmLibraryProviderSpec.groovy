@@ -11,7 +11,7 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.config
+package org.boozallen.plugins.jte.config.libraries
 
 
 import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
@@ -34,12 +34,12 @@ import org.jvnet.hudson.test.WithoutJenkins
 import org.jvnet.hudson.test.BuildWatcher
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 
-class TemplateLibrarySourceSpec extends Specification{
+class ScmLibraryProviderSpec extends Specification{
 
     @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
     @Shared @ClassRule BuildWatcher bw = new BuildWatcher()
     @Rule GitSampleRepoRule repo = new GitSampleRepoRule()
-    TemplateLibrarySource librarySource = new TemplateLibrarySource()
+    ScmLibraryProvider libraryProvider = new ScmLibraryProvider()
 
     String scmKey = null
 
@@ -75,7 +75,7 @@ class TemplateLibrarySourceSpec extends Specification{
 
         scmKey = scm.key
 
-        librarySource.setScm(scm)
+        libraryProvider.setScm(scm)
     }
 
     @WithoutJenkins
@@ -85,7 +85,7 @@ class TemplateLibrarySourceSpec extends Specification{
             repo.git("add", "*")
             repo.git("commit", "--message=init")
         when:
-            Boolean libExists = librarySource.hasLibrary("test_library")
+            Boolean libExists = libraryProvider.hasLibrary("test_library")
         then:
             libExists
     }
@@ -93,7 +93,7 @@ class TemplateLibrarySourceSpec extends Specification{
     @WithoutJenkins
     def "hasLibrary returns false when library doesn't exist"(){
         when:
-            Boolean libExists = librarySource.hasLibrary("test_library")
+            Boolean libExists = libraryProvider.hasLibrary("test_library")
         then:
             !libExists
     }
@@ -123,7 +123,7 @@ class TemplateLibrarySourceSpec extends Specification{
             LibraryLoader.getPrimitiveClass() >> { return s }
 
         when: 
-            librarySource.loadLibrary(script, "test_library", [:])
+            libraryProvider.loadLibrary(script, "test_library", [:])
         then:
             1 * binding.setVariable("a", _)
             1 * binding.setVariable("b", _)
@@ -140,8 +140,17 @@ class TemplateLibrarySourceSpec extends Specification{
             CpsScript script = GroovyMock(){
                 getBinding() >> binding
             }
+
+            def i = 1
+            def s = GroovyMock(StepWrapper, global: true)
+            s.createDefaultStep(*_) >> s
+            s.getName() >> "step${i++}"
+
+            GroovySpy(LibraryLoader.class, global: true)
+            LibraryLoader.getPrimitiveClass() >> { return s }
+
         when:
-            librarySource.loadLibrary(script, "test_library", [:])
+            libraryProvider.loadLibrary(script, "test_library", [:])
         then:
             0 * binding.setVariable(_, _)
     }
@@ -170,7 +179,7 @@ class TemplateLibrarySourceSpec extends Specification{
             LibraryLoader.getPrimitiveClass() >> { return s }
 
         when: 
-            librarySource.loadLibrary(script, "test_library", [:])
+            libraryProvider.loadLibrary(script, "test_library", [:])
         then:
             1 * binding.setVariable("a", _)
             1 * binding.setVariable("b", _)
@@ -181,7 +190,7 @@ class TemplateLibrarySourceSpec extends Specification{
     @WithoutJenkins
     def "when baseDir='#baseDir' then prefixBaseDir('#arg') is #expected "(){
         setup:
-            TemplateLibrarySource libSource = new TemplateLibrarySource()
+            ScmLibraryProvider libSource = new ScmLibraryProvider()
             libSource.setBaseDir(baseDir)
         expect:
             libSource.prefixBaseDir(arg) == expected
@@ -206,7 +215,7 @@ class TemplateLibrarySourceSpec extends Specification{
     @WithoutJenkins
     def "when config value is '#actual' and expected type/value is #expected then result is #result"(){
         setup:
-            TemplateLibrarySource libSource = new TemplateLibrarySource()
+            ScmLibraryProvider libSource = new ScmLibraryProvider()
         expect:
             libSource.validateType(actual, expected) == result
         where:
@@ -254,8 +263,17 @@ class TemplateLibrarySourceSpec extends Specification{
             TemplateLogger.printWarning(*_) >> { args ->
                 logger.println(args[0])
             }
+
+            def i = 1
+            def s = GroovyMock(StepWrapper, global: true)
+            s.createDefaultStep(*_) >> s
+            s.getName() >> "step${i++}"
+
+            GroovySpy(LibraryLoader.class, global: true)
+            LibraryLoader.getPrimitiveClass() >> { return s }
+
         when:
-            librarySource.loadLibrary(script, "test", [:])
+            libraryProvider.loadLibrary(script, "test", [:])
 
         then:
             1 * logger.println("Library test does not have a configuration file.")
@@ -290,7 +308,7 @@ class TemplateLibrarySourceSpec extends Specification{
             LibraryLoader.getPrimitiveClass() >> { return s }
 
         when:
-            librarySource.loadLibrary(script, "test", [:])
+            libraryProvider.loadLibrary(script, "test", [:])
 
         then:
             1 * binding.setVariable("a", _)
@@ -336,7 +354,7 @@ class TemplateLibrarySourceSpec extends Specification{
 
             ArrayList libConfigErrors = []
         when:
-            libConfigErrors = librarySource.loadLibrary(script, "test", [field1: true])
+            libConfigErrors = libraryProvider.loadLibrary(script, "test", [field1: true])
 
         then:
             libConfigErrors.isEmpty()
@@ -370,7 +388,7 @@ class TemplateLibrarySourceSpec extends Specification{
 
             ArrayList libConfigErrors = []
         when:
-            libConfigErrors = librarySource.loadLibrary(script, "test", [field2: true])
+            libConfigErrors = libraryProvider.loadLibrary(script, "test", [field2: true])
 
         then:
             libConfigErrors[0].trim().equals("test:")
@@ -396,10 +414,18 @@ class TemplateLibrarySourceSpec extends Specification{
             getBinding() >> binding
         }
 
+        def i = 1
+        def s = GroovyMock(StepWrapper, global: true)
+        s.createDefaultStep(*_) >> s
+        s.getName() >> "step${i++}"
+
+        GroovySpy(LibraryLoader.class, global: true)
+        LibraryLoader.getPrimitiveClass() >> { return s }
+
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", [:])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", [:])
 
         then:
         2 == libConfigErrors.size()
@@ -425,10 +451,18 @@ class TemplateLibrarySourceSpec extends Specification{
             getBinding() >> binding
         }
 
+        def i = 1
+        def s = GroovyMock(StepWrapper, global: true)
+        s.createDefaultStep(*_) >> s
+        s.getName() >> "step${i++}"
+
+        GroovySpy(LibraryLoader.class, global: true)
+        LibraryLoader.getPrimitiveClass() >> { return s }
+
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", [:])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", [:])
 
         then:
         0 == libConfigErrors.size()
@@ -450,10 +484,18 @@ class TemplateLibrarySourceSpec extends Specification{
             getBinding() >> binding
         }
 
+        def i = 1
+        def s = GroovyMock(StepWrapper, global: true)
+        s.createDefaultStep(*_) >> s
+        s.getName() >> "step${i++}"
+
+        GroovySpy(LibraryLoader.class, global: true)
+        LibraryLoader.getPrimitiveClass() >> { return s }
+
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", [:])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", [:])
 
         then:
         0 == libConfigErrors.size()
@@ -475,10 +517,18 @@ class TemplateLibrarySourceSpec extends Specification{
             getBinding() >> binding
         }
 
+        def i = 1
+        def s = GroovyMock(StepWrapper, global: true)
+        s.createDefaultStep(*_) >> s
+        s.getName() >> "step${i++}"
+
+        GroovySpy(LibraryLoader.class, global: true)
+        LibraryLoader.getPrimitiveClass() >> { return s }
+
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", [:])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", [:])
 
         then:
         0 == libConfigErrors.size()
@@ -507,7 +557,7 @@ class TemplateLibrarySourceSpec extends Specification{
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", ["${unusedKey}": true])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", ["${unusedKey}": true])
 
         then:
         2 == libConfigErrors.size()
@@ -539,7 +589,7 @@ class TemplateLibrarySourceSpec extends Specification{
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", ["field1": config_value])
 
         then:
         2 == libConfigErrors.size()
@@ -590,7 +640,7 @@ class TemplateLibrarySourceSpec extends Specification{
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", ["field1": config_value])
 
         then:
         0 == libConfigErrors.size()
@@ -648,7 +698,7 @@ class TemplateLibrarySourceSpec extends Specification{
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", ["field1": config_value])
 
         then:
         0 == libConfigErrors.size()
@@ -682,7 +732,7 @@ class TemplateLibrarySourceSpec extends Specification{
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", ["field1": config_value])
 
         then:
         2 == libConfigErrors.size()
@@ -730,7 +780,7 @@ class TemplateLibrarySourceSpec extends Specification{
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": config_value])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", ["field1": config_value])
 
         then:
         0 == libConfigErrors.size()
@@ -780,7 +830,7 @@ class TemplateLibrarySourceSpec extends Specification{
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": actual])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", ["field1": actual])
 
         then:
         0 == libConfigErrors.size()
@@ -825,7 +875,7 @@ class TemplateLibrarySourceSpec extends Specification{
         ArrayList libConfigErrors = []
 
         when:
-        libConfigErrors = librarySource.loadLibrary(script, "test", ["field1": actual])
+        libConfigErrors = libraryProvider.loadLibrary(script, "test", ["field1": actual])
 
         then:
         2 == libConfigErrors.size()
