@@ -16,5 +16,14 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
 import hudson.ExtensionPoint
 import hudson.ExtensionList 
 import jenkins.model.Jenkins 
+import hudson.PluginWrapper
 
-abstract class LibraryProvidingPlugin extends AbstractDescribableImpl<LibraryProvidingPlugin>{}
+abstract class LibraryProvidingPlugin extends AbstractDescribableImpl<LibraryProvidingPlugin>{
+    public static class LibraryProvidingPluginDescriptor extends Descriptor<LibraryProvidingPlugin> {
+        String getDisplayName(){
+            PluginWrapper plugin = Jenkins.get().getPluginManager().whichPlugin(this.getClass())
+            return plugin.getDisplayName()
+        }
+    }
+}
+

@@ -115,13 +115,13 @@ class PluginLibraryProvider extends LibraryProvider{
         return pluginDescriptor?.getDisplayName()
     }
     
-    @Extension public static class DescriptorImpl extends LibraryProviderDescriptor{
+    @Extension public static class DescriptorImpl extends LibraryProvider.LibraryProviderDescriptor{
         public String getDisplayName(){
             return "From a Library Providing Plugin"
         }
 
         public static List<LibraryProvidingPlugin> getLibraryProvidingPlugins(){
-            return Jenkins.getActiveInstance().getExtensionList(LibraryProvidingPluginDescriptor)
+            return Jenkins.get().getExtensionList(LibraryProvidingPlugin.LibraryProvidingPluginDescriptor)
         }
     }
 

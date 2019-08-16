@@ -88,7 +88,7 @@ public class ScmLibraryProvider extends LibraryProvider{
         return FileSystemWrapper.createFromSCM(scm) as SCMFileSystem
     }
 
-    @Extension public static class DescriptorImpl extends LibraryProviderDescriptor{
+    @Extension public static class DescriptorImpl extends LibraryProvider.LibraryProviderDescriptor{
         public String getDisplayName(){
             return "From SCM"
         }

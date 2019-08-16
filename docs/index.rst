@@ -109,7 +109,7 @@ create a more organized code base for your pipelines.
    pages/Library_Development/validate_library_parameters
    pages/Library_Development/lifecycle_hooks
    pages/Library_Development/multimethod_steps
-   pages/Library_Development/library_sources
+   pages/Library_Development/library_sources/library_sources
    
 
 .. toctree::

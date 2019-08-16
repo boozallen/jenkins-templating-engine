@@ -16,7 +16,7 @@
 
 package org.boozallen.plugins.jte.config
 
-import org.boozallen.plugins.jte.config.libraries.LibraryProviderDescriptor
+import org.boozallen.plugins.jte.config.libraries.LibraryProvider
 import org.boozallen.plugins.jte.config.libraries.LibraryConfiguration
 import org.boozallen.plugins.jte.utils.RunUtils
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
@@ -162,8 +162,8 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
             return tier.librarySources?.isEmpty() ? null : tier
         }
 
-        public static List<LibraryProviderDescriptor> getLibraryProviders(){
-            return Jenkins.getActiveInstance().getExtensionList(LibraryProviderDescriptor)
+        public static List<LibraryProvider.LibraryProviderDescriptor> getLibraryProviders(){
+            return Jenkins.getActiveInstance().getExtensionList(LibraryProvider.LibraryProviderDescriptor)
         }
 
     }

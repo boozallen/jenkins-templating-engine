@@ -45,8 +45,8 @@ public class LibraryConfiguration extends AbstractDescribableImpl<LibraryConfigu
     public LibraryProvider getLibraryProvider(){ return libraryProvider }
 
     @Extension public static class DescriptorImpl extends Descriptor<LibraryConfiguration> {
-        public static List<LibraryProviderDescriptor> getLibraryProviders(){
-            return DescriptorVisibilityFilter.apply(null, Jenkins.getActiveInstance().getExtensionList(LibraryProviderDescriptor))
+        public static List<LibraryProvider.LibraryProviderDescriptor> getLibraryProviders(){
+            return DescriptorVisibilityFilter.apply(null, Jenkins.get().getExtensionList(LibraryProvider.LibraryProviderDescriptor))
         }
     }
 }

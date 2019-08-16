@@ -169,4 +169,7 @@ abstract class LibraryProvider extends AbstractDescribableImpl<LibraryProvider>{
         } 
     }
 
+
+    public static class LibraryProviderDescriptor extends Descriptor<LibraryProvider> {}
+
 }
