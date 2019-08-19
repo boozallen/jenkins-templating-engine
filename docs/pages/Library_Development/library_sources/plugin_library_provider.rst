@@ -57,3 +57,16 @@ We have created a sample repository you can use as a launching pad for packaging
 
 Checkout the `jte-libs-as-a-plugin <https://github.com/steven-terrana/jte-libs-as-plugin.git>`_ repository 
 to get started. 
+
+====================
+Development Workflow
+====================
+
+If packaging your libraries via a Jenkins Plugin, we recommend configuring your library source as a 
+:ref:`SCM Library <>` during development.  
+
+If you're following the repository template based off of the sample repository mentioned above, 
+you would configure the SCM Library repository URL and set the base directory to ``src/main/resources/libraries``.
+
+This way, you can continuously push updates to the remote repository for testing, and only once you're satisfied 
+with the changes, increment the version and package the libraries as a plugin. 
