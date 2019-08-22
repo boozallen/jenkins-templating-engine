@@ -44,6 +44,12 @@ class StepWrapper extends TemplatePrimitive implements Serializable{
     private String name
     private String library 
 
+    @NonCPS
+    String getName(){ return name }
+    
+    @NonCPS
+    String getLibrary(){ return library }
+    
     /*
         need a call method defined on method missing so that 
         CpsScript recognizes the StepWrapper as something it 
@@ -62,9 +68,6 @@ class StepWrapper extends TemplatePrimitive implements Serializable{
         return invoke(methodName, args)     
     }
     
-    @NonCPS
-    String getName(){ return name }
-
     /*
         pass method invocations on the wrapper to the underlying
         step implementation script. 

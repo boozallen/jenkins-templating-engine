@@ -29,4 +29,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME
         maybe enhance to also after every Stage? 
 */
 @Retention(RUNTIME)
-public @interface Notify{}
+public @interface Notify{
+    Class value() default { true } 
+}
