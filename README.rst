@@ -16,7 +16,7 @@ Jenkins Templating Engine
    :target: https://gitter.im/jenkinsci/templating-engine-plugin
 
 .. image:: docs/images/jte.png
-   :scale: 75%
+   :scale: 50%
    :align: center
 
 `Full Documentation Can Be Found Here <https://jenkinsci.github.io/templating-engine-plugin>`_
