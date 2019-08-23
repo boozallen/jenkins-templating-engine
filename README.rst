@@ -15,9 +15,9 @@ Jenkins Templating Engine
 .. |Gitter| image:: https://badges.gitter.im/jenkinsci/templating-engine-plugin.svg
    :target: https://gitter.im/jenkinsci/templating-engine-plugin
 
-.. image:: docs/images/jte.png
-   :scale: 25%
-   :align: center
+.. raw:: html 
+   
+   <img src="docs/images/jte.svg" width="192">
 
 `Full Documentation Can Be Found Here <https://jenkinsci.github.io/templating-engine-plugin>`_
 
