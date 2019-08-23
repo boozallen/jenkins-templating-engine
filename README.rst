@@ -17,7 +17,7 @@ Jenkins Templating Engine
 
 .. raw:: html 
    
-   <img src="docs/images/jte.svg" width="192">
+   <img src="docs/images/jte.svg" width="192" style="overflow:visible;">>
 
 `Full Documentation Can Be Found Here <https://jenkinsci.github.io/templating-engine-plugin>`_
 
