@@ -421,13 +421,32 @@ class StepWrapperSpec extends Specification{
             jenkins.assertLogNotContains("hook step executed before test_step2", build)
     }
 
-    def "Exception thrown in hook closure param fails build and prints context"(){
+    // def "Exception thrown in hook closure param fails build and prints context"(){
+    //     setup: 
+    //         createStep("test_step", "def call(){ println 'testing' }")
+    //         createStep("hookStep", """
+    //             @BeforeStep({ 
+    //                 throw new Exception("hook failed")
+    //             })
+    //             def call(context){
+    //                 println "hook step executed"
+    //             }
+    //         """, [shouldExecute: false])
+    //     when: 
+    //         job.setDefinition(createFlowDefinition("test_step()"))
+    //         def build = job.scheduleBuild2(0).get() 
+    //     then: 
+    //         jenkins.assertBuildStatus(Result.FAILURE, build)
+    //         jenkins.assertLogContains("Exception thrown while evaluating @BeforeStep on call in hookStep from test library", build)
+    //         jenkins.assertLogNotContains("hook step executed", build)
+    // }
+
+    def "Hook closure params can't invoke other steps"(){
         setup: 
             createStep("test_step", "def call(){ println 'testing' }")
+            createStep("test_step2", "def call(){ println 'testing 2' }")
             createStep("hookStep", """
-                @BeforeStep({ 
-                    throw new Exception("hook failed")
-                })
+                @BeforeStep({ test_step2() })
                 def call(context){
                     println "hook step executed"
                 }
@@ -437,8 +456,8 @@ class StepWrapperSpec extends Specification{
             def build = job.scheduleBuild2(0).get() 
         then: 
             jenkins.assertBuildStatus(Result.FAILURE, build)
-            jenkins.assertLogContains("Exception thrown while evaluating @BeforeStep on call in hookStep from test library", build)
-            jenkins.assertLogNotContains("hook step executed", build)
+            jenkins.assertLogNotContains("hook step executed", build)    
+            jenkins.assertLogNotContains("testing 2", build)    
     }
 
 }
