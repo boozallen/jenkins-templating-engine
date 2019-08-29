@@ -140,13 +140,22 @@ class StageSpec extends Specification{
             import org.boozallen.plugins.jte.binding.TemplateBinding
             import org.boozallen.plugins.jte.binding.injectors.StageInjector
             import org.boozallen.plugins.jte.config.TemplateConfigObject
+            import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
 
+            def StepWrapper = LibraryLoader.getPrimitiveClass()
+            
             /*
                 initialize
             */
-            setBinding(new TemplateBinding())
-            a = { arg1 -> println "running step A: " + arg1 }
-            b = { println "running step B" }
+            def binding = new TemplateBinding()
+            setBinding(binding)
+          
+          
+            a = StepWrapper.createFromString('''def call() { println "running step A: " + stageContext.args.text }''', 
+                this, 'a', 'test', [:])
+            b = StepWrapper.createFromString('''def call() { println "running step B: " + stageContext.args.text2 }''', 
+                this, 'b', 'test', [:])
+                                           
             TemplateConfigObject config = new TemplateConfigObject(config: [
                 stages: [
                     test_stage: [
@@ -158,13 +167,13 @@ class StageSpec extends Specification{
             StageInjector.doInject(config, this)
 
             // run stage
-            test_stage("Example")
+            test_stage([text: "Example", text2: "Example2"])
 
             """, false))
             def build =  jenkins.buildAndAssertSuccess(job)
             expect:
             jenkins.assertLogContains("running step A: Example", build)
-            jenkins.assertLogContains("running step B", build)
+            jenkins.assertLogContains("running step B: Example2", build)
 
     }
 

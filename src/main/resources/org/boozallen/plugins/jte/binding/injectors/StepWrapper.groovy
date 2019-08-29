@@ -80,8 +80,8 @@ class StepWrapper extends TemplatePrimitive implements Serializable{
             ]
             try{
                 Hooks.invoke(BeforeStep, script.getBinding(), context)
-                TemplateLogger.print "[Step - ${library}/${name}.${methodName}(${args.collect{ it.getClass().simpleName }.join(", ")})]" 
-                result = InvokerHelper.getMetaClass(impl).invokeMethod(impl, methodName, args) 
+                TemplateLogger.print "[Step - ${library}/${name}.${methodName}(${args.collect{ it.getClass().simpleName }.join(", ")})]"
+                result = InvokerHelper.getMetaClass(impl).invokeMethod(impl, methodName, args)
             } catch (Exception x) {
                 script.currentBuild.result = "Failure"
                 throw new InvokerInvocationException(x)
@@ -131,8 +131,8 @@ class StepWrapper extends TemplatePrimitive implements Serializable{
     static StepWrapper createFromString(String stepText, CpsScript script, String name, String library, Map libConfig){
         Script impl = TemplateScriptEngine.parse(stepText, script.getBinding())
         impl.metaClass."get${StepWrapper.libraryConfigVariable.capitalize()}" << { return libConfig }
+        impl.metaClass.getStageContext = {->  [ name: null, args: [:] ]}
         return new StepWrapper(script: script, impl: impl, name: name, library: library) 
     }
 
 }
-

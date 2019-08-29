@@ -29,6 +29,9 @@ import org.codehaus.groovy.runtime.InvokerHelper
     represents a group of library steps to be called. 
 */
 class Stage extends TemplatePrimitive implements Serializable{
+
+    static EMPTY_CONTEXT = [ name: null, args: [:] ]
+
     CpsScript script 
     String name
     ArrayList<String> steps
@@ -41,11 +44,21 @@ class Stage extends TemplatePrimitive implements Serializable{
         this.steps = steps 
     }
 
-    void call(Object... args){
-        TemplateLogger.print "[Stage - ${name}]" 
+    void call(stageConfig){
+        TemplateLogger.print "[Stage - ${name}]"
+
+        def stageContext = [
+            name: name,
+            args: stageConfig
+        ]
+
         for(def i = 0; i < steps.size(); i++){
             String step = steps.get(i)
-            InvokerHelper.getMetaClass(script).invokeMethod(script, step, args)
+            def impl = script.getBinding().getStep(step)?.impl
+            def metaClass = InvokerHelper.getMetaClass(impl)
+            metaClass.getStageContext = {-> stageContext}
+            InvokerHelper.getMetaClass(script).invokeMethod(script, step, null)
+            metaClass.getStageContext = {-> EMPTY_CONTEXT}
         }
     }
 
