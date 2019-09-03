@@ -16,6 +16,7 @@
 
 package org.boozallen.plugins.jte.binding.injectors
 
+import com.cloudbees.groovy.cps.NonCPS
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.boozallen.plugins.jte.binding.*
@@ -54,12 +55,20 @@ class Stage extends TemplatePrimitive implements Serializable{
 
         for(def i = 0; i < steps.size(); i++){
             String step = steps.get(i)
-            def impl = script.getBinding().getStep(step)?.impl
-            def metaClass = InvokerHelper.getMetaClass(impl)
-            metaClass.getStageContext = {-> stageContext}
+            setStageContext(step, stageContext)
             InvokerHelper.getMetaClass(script).invokeMethod(script, step, null)
-            metaClass.getStageContext = {-> EMPTY_CONTEXT}
+            setStageContext(step, EMPTY_CONTEXT)
         }
+    }
+
+    @NonCPS
+    private void setStageContext(String step, stageContext) {
+        if(!script.getBinding().hasStep(step)) {
+            return
+        }
+        def impl = script.getBinding().getStep(step)?.impl
+        def metaClass = InvokerHelper.getMetaClass(impl)
+        metaClass.getStageContext = {-> stageContext}
     }
 
     void throwPreLockException(){
