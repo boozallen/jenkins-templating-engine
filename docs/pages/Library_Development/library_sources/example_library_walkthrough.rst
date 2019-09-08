@@ -1,45 +1,8 @@
-.. _Pipeline Libraries: 
+.. _example library walkthrough: 
 
----------------
-Library Sources
----------------
-
-Pipeline libraries provide a modular way to organize pipeline code. 
-
-With the Jenkins Templating Engine, templates can invoke steps.  These steps are
-typically generically named and are contributed by a pipeline library.  If multiple 
-libraries contribute the same step name, they can be swapped in and out of the template's
-execution by modifying the pipeline configuration. 
-
-************************************
-Library Source Jenkins Configuration 
-************************************
-
-Library Sources get configured as part of a :ref:`Governance Tier<Governance Model>`.  Within ``Manage 
-Jenkins > Configure System`` you'll find the global Jenkins Templating Engine Configuration:
-
-.. image:: ../../images/templating/library_source_configuration.png
-
-Under ``Library Sources`` you'll be able to add as many sources as you choose.  
-
-.. important:: 
-
-    A library source is just a pointer to a source code repository containing library modules. 
-
-************************
-Library Source Structure
-************************
-
-Individual libraries are just directories within the configured library source repository. 
-
-The library is referenceable in your ``pipeline_config.groovy`` file via the directory name. 
-
-Each file within a library directory will be loaded as a step invokable from a pipeline template where
-the step name is equal to the base file name. 
-
-*******
-Example
-*******
+---------------------------
+Example Library Walkthrough
+---------------------------
 
 Let's say you had a simple pipeline template to support teams using maven and ant as their build tools: 
 
@@ -51,7 +14,7 @@ Let's say you had a simple pipeline template to support teams using maven and an
     deploy_to dev 
 
 
-GitHub Repository called ``jte-lib`` located at ``https://github.com/jte-library-example/jte-lib.git`` 
+A GitHub Repository called ``jte-lib`` located at ``https://github.com/jte-library-example/jte-lib.git`` 
 with the following directory structure: 
 
 .. code:: 

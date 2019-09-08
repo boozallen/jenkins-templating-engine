@@ -21,21 +21,23 @@ import org.boozallen.plugins.jte.binding.*
 import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
 import java.lang.annotation.Annotation
 import jenkins.model.Jenkins
+import org.boozallen.plugins.jte.console.TemplateLogger
 
 class Hooks implements Serializable{
 
-    static List<AnnotatedMethod> discover(Class<? extends Annotation> a, TemplateBinding b){
+    static List<AnnotatedMethod> discover(Class<? extends Annotation> hookType, TemplateBinding binding){
         List<AnnotatedMethod> discovered = new ArrayList() 
 
         Class StepWrapper = LibraryLoader.getPrimitiveClass()
-        ArrayList stepWrappers = b.getVariables().collect{ it.value }.findAll{
+        ArrayList stepWrappers = binding.getVariables().collect{ it.value }.findAll{
              StepWrapper.isInstance(it)
         }
 
         stepWrappers.each{ step ->
             step.impl.class.methods.each{ method ->
-                if (method.getAnnotation(a)){
-                    AnnotatedMethod am = new AnnotatedMethod(a.getSimpleName(), method.name, step)
+                def annotation = method.getAnnotation(hookType)
+                if (annotation){
+                    AnnotatedMethod am = new AnnotatedMethod(annotation, hookType.getSimpleName(), method.name, step)
                     discovered.push(am) 
                 }            
             }
@@ -44,8 +46,28 @@ class Hooks implements Serializable{
         return discovered
     }
 
-    static void invoke(Class<? extends Annotation> a, TemplateBinding b, Map context = [:]){
-        discover(a, b).each{ it.invoke(context) }
+    static void invoke(Class<? extends Annotation> annotation, TemplateBinding binding, Map context = [:]){
+        discover(annotation, binding).each{ hook -> 
+            if(shouldInvoke(hook, context)){
+                hook.invoke(context)
+            }
+         }
+    }
+
+    static def shouldInvoke(AnnotatedMethod hook, Map context){
+        def annotation = hook.getAnnotation()
+        def stepWrapper = hook.getStepWrapper() 
+        String configVar = stepWrapper.getClass().libraryConfigVariable
+        Map config = stepWrapper.impl."get${configVar.capitalize()}"()
+        Binding invokeBinding = new Binding([context: context, config: config])
+        def result
+        try{
+            result = annotation.value().newInstance(invokeBinding, invokeBinding).call()
+        }catch(any){
+            TemplateLogger.printWarning "Exception thrown while evaluating @${hook.annotationName} on ${hook.methodName} in ${hook.stepWrapper.getName()} from ${hook.stepWrapper.getLibrary()} library."
+            throw any 
+        }
+        return result
     }
     
 }

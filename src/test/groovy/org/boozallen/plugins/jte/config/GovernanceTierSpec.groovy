@@ -16,6 +16,7 @@ package org.boozallen.plugins.jte.config
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.job.TemplateFlowDefinition
 import org.boozallen.plugins.jte.utils.RunUtils
+import org.boozallen.plugins.jte.config.libraries.ScmLibraryProvider
 import spock.lang.*
 import org.junit.Rule
 import org.junit.ClassRule
@@ -67,11 +68,11 @@ class GovernanceTierSpec extends Specification{
         )
 
         // create tier 1 
-        List<TemplateLibrarySource> librarySources1 = []
+        List<ScmLibraryProvider> librarySources1 = []
         tier1 = new GovernanceTier(scm, "", librarySources1)
 
         // create tier 2 
-        List<TemplateLibrarySource> librarySources2 = [] 
+        List<ScmLibraryProvider> librarySources2 = [] 
         tier2 = new GovernanceTier(scm, baseDir2, librarySources2)
     }
 

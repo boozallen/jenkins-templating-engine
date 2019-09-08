@@ -7,7 +7,8 @@ import org.boozallen.plugins.jte.binding.injectors.StepWrapper
 import org.boozallen.plugins.jte.config.GovernanceTier
 import org.boozallen.plugins.jte.config.TemplateConfigException
 import org.boozallen.plugins.jte.config.TemplateConfigObject
-import org.boozallen.plugins.jte.config.TemplateLibrarySource
+import org.boozallen.plugins.jte.config.libraries.LibraryProvider
+import org.boozallen.plugins.jte.config.libraries.LibraryConfiguration
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.utils.RunUtils
 import org.jenkinsci.plugins.workflow.cps.CpsScript
@@ -34,15 +35,27 @@ class LibraryLoaderSpec extends Specification {
         GroovySpy(TemplateLogger, global:true)
         _ * TemplateLogger.printError(_) >>{ return }
     }
+
+    class MockLibraryProvider extends LibraryProvider{
+        Boolean hasLibrary(String libName){
+            println "should always be mocked" 
+        }
+        List loadLibrary(CpsScript script, String libName, Map libConfig){
+            println "should always be mocked"
+        }
+    }
     
     @WithoutJenkins
     def "when library source has library, loadLibrary is called"(){
         setup: 
-            TemplateLibrarySource s = Mock{
+            MockLibraryProvider s = Mock{
                 hasLibrary("test_library") >> true
             }
+            LibraryConfiguration c = Mock{
+                getLibraryProvider() >> s
+            }
             GovernanceTier tier = GroovyMock(global: true){
-                getLibrarySources() >> [ s ] 
+                getLibraries() >> [ c ] 
             }
             GovernanceTier.getHierarchy() >>  [ tier ]
 
@@ -65,14 +78,23 @@ class LibraryLoaderSpec extends Specification {
     @WithoutJenkins
     def "Libraries can be loaded across library sources in a governance tier"(){
         setup: 
-            TemplateLibrarySource s1 = Mock{
+            MockLibraryProvider s1 = Mock{
                 hasLibrary("libA") >> true 
             }
-            TemplateLibrarySource s2 = Mock{
+            MockLibraryProvider s2 = Mock{
                 hasLibrary("libB") >> true
             }
+
+            LibraryConfiguration c1 = Mock{
+                getLibraryProvider() >> s1
+            }
+
+            LibraryConfiguration c2 = Mock{
+                getLibraryProvider() >> s2
+            }
+            
             GovernanceTier tier = GroovyMock(global: true){
-                getLibrarySources() >> [ s1, s2 ]
+                getLibraries() >> [ c1, c2 ]
             }
             GovernanceTier.getHierarchy() >> [ tier ]
 
@@ -96,17 +118,26 @@ class LibraryLoaderSpec extends Specification {
     @WithoutJenkins
     def "Libraries can be loaded across library sources in different governance tiers"(){
         setup: 
-            TemplateLibrarySource s1 = Mock{
+            MockLibraryProvider s1 = Mock{
                 hasLibrary("libA") >> true 
             }
-            TemplateLibrarySource s2 = Mock{
+            MockLibraryProvider s2 = Mock{
                 hasLibrary("libB") >> true 
             }
+
+            LibraryConfiguration c1 = Mock{
+                getLibraryProvider() >> s1
+            }
+
+            LibraryConfiguration c2 = Mock{
+                getLibraryProvider() >> s2
+            }
+            
             GovernanceTier tier1 = Mock{
-                getLibrarySources() >> [ s1 ]
+                getLibraries() >> [ c1 ]
             }
             GovernanceTier tier2 = GroovyMock(global:true){
-                getLibrarySources() >> [ s2 ]
+                getLibraries() >> [ c2 ]
             }
             GovernanceTier.getHierarchy() >> [ tier1, tier2 ]
 
@@ -129,17 +160,25 @@ class LibraryLoaderSpec extends Specification {
     @WithoutJenkins
     def "library on more granular governance tier gets loaded"(){
         setup: 
-             TemplateLibrarySource s1 = Mock{
+             MockLibraryProvider s1 = Mock{
                 hasLibrary("libA") >> true 
             }
-            TemplateLibrarySource s2 = Mock{
+            MockLibraryProvider s2 = Mock{
                 hasLibrary("libA") >> true 
             }
+
+            LibraryConfiguration c1 = Mock{
+                getLibraryProvider() >> s1 
+            }
+            LibraryConfiguration c2 = Mock{
+                getLibraryProvider() >> s2 
+            }
+
             GovernanceTier tier1 = Mock{
-                getLibrarySources() >> [ s1 ]
+                getLibraries() >> [ c1 ]
             }
             GovernanceTier tier2 = GroovyMock(global:true){
-                getLibrarySources() >> [ s2 ]
+                getLibraries() >> [ c2 ]
             }
             GovernanceTier.getHierarchy() >> [ tier1, tier2 ]
 
@@ -160,12 +199,17 @@ class LibraryLoaderSpec extends Specification {
     @WithoutJenkins
     def "library loader correctly passes step config"(){
         setup: 
-            TemplateLibrarySource libSource = Mock{
+            MockLibraryProvider s = Mock{
                 hasLibrary("libA") >> true 
                 hasLibrary("libB") >> true 
             }
+
+            LibraryConfiguration c = Mock{
+                getLibraryProvider() >> s 
+            }
+
             GovernanceTier tier = GroovyMock(global:true){
-                getLibrarySources() >> [ libSource ]
+                getLibraries() >> [ c ]
             }
             GovernanceTier.getHierarchy() >> [ tier ]
 
@@ -184,8 +228,8 @@ class LibraryLoaderSpec extends Specification {
         when: 
             LibraryLoader.doInject(config, script)
         then: 
-            1 * libSource.loadLibrary(script, "libA", [fieldA: "A"])
-            1 * libSource.loadLibrary(script, "libB", [fieldB: "B"])
+            1 * s.loadLibrary(script, "libA", [fieldA: "A"])
+            1 * s.loadLibrary(script, "libB", [fieldB: "B"])
     }
 
     @WithoutJenkins
@@ -289,13 +333,17 @@ class LibraryLoaderSpec extends Specification {
       // and throw the exception later after validating all the libraries.
       // so this test represents making sure that an exception is thrown if a library does not exist.
         setup:
-        TemplateLibrarySource libSource = Mock{
+        MockLibraryProvider s = Mock{
             hasLibrary("libA") >> true
             hasLibrary("libB") >> false
         }
 
+        LibraryConfiguration c = Mock{
+            getLibraryProvider() >> s
+        }
+
         GovernanceTier tier = GroovyMock(global:true){
-            getLibrarySources() >> [ libSource ]
+            getLibraries() >> [ c ]
         }
 
         GovernanceTier.getHierarchy() >> [ tier ]
@@ -316,8 +364,8 @@ class LibraryLoaderSpec extends Specification {
         LibraryLoader.doInject(config, script)
         then:
         thrown(TemplateConfigException)
-        1 * libSource.loadLibrary(script, "libA", [fieldA: "A"])
-        0 * libSource.loadLibrary(script, "libB", [fieldB: "B"])
+        1 * s.loadLibrary(script, "libA", [fieldA: "A"])
+        0 * s.loadLibrary(script, "libB", [fieldB: "B"])
 
         1 * TemplateLogger.printError("Library libB Not Found.") >> { return }
         4 * TemplateLogger.printError(_) >>{ return }
@@ -329,18 +377,24 @@ class LibraryLoaderSpec extends Specification {
 
         setup:
         String err = "Field 'fieldB' is not used."
-        TemplateLibrarySource libSource = Mock{
+        MockLibraryProvider s1 = Mock{
             hasLibrary("libA") >> true
             hasLibrary("libB") >> false
         }
-
-        TemplateLibrarySource libSource2 = Mock{
+        MockLibraryProvider s2 = Mock{
             hasLibrary("libA") >> false
             hasLibrary("libB") >> true
         }
 
+        LibraryConfiguration c1 = Mock{
+            getLibraryProvider() >> s1 
+        }
+        LibraryConfiguration c2 = Mock{
+            getLibraryProvider() >> s2 
+        }
+
         GovernanceTier tier = GroovyMock(global:true){
-            getLibrarySources() >> [ libSource, libSource2 ]
+            getLibraries() >> [ c1, c2 ]
         }
 
         GovernanceTier.getHierarchy() >> [ tier ]
@@ -361,11 +415,11 @@ class LibraryLoaderSpec extends Specification {
         LibraryLoader.doInject(config, script)
         then:
         thrown(TemplateConfigException)
-        1 * libSource.loadLibrary(script, "libA", [fieldA: "A"])
-        0 * libSource.loadLibrary(script, "libB", [fieldB: "B"])
+        1 * s1.loadLibrary(script, "libA", [fieldA: "A"])
+        0 * s1.loadLibrary(script, "libB", [fieldB: "B"])
 
-        0 * libSource2.loadLibrary(script, "libA", [fieldA: "A"])
-        1 * libSource2.loadLibrary(script, "libB", [fieldB: "B"]) >> { return [err]  }
+        0 * s2.loadLibrary(script, "libA", [fieldA: "A"])
+        1 * s2.loadLibrary(script, "libB", [fieldB: "B"]) >> { return [err]  }
 
         1 * TemplateLogger.printError(err) >> { return }
         4 * TemplateLogger.printError(_) >>{ return }
@@ -377,18 +431,24 @@ class LibraryLoaderSpec extends Specification {
         setup:
         String err = "Field 'fieldA' is not used."
         String err2 = "Field 'fieldB' is not used."
-        TemplateLibrarySource libSource = Mock{
+        MockLibraryProvider s1 = Mock{
             hasLibrary("libA") >> true
             hasLibrary("libB") >> false
         }
-
-        TemplateLibrarySource libSource2 = Mock{
+        MockLibraryProvider s2 = Mock{
             hasLibrary("libA") >> false
             hasLibrary("libB") >> true
         }
 
+        LibraryConfiguration c1 = Mock{
+            getLibraryProvider() >> s1 
+        }
+        LibraryConfiguration c2 = Mock{
+            getLibraryProvider() >> s2 
+        }
+
         GovernanceTier tier = GroovyMock(global:true){
-            getLibrarySources() >> [ libSource, libSource2 ]
+            getLibraries() >> [ c1, c2 ]
         }
 
         GovernanceTier.getHierarchy() >> [ tier ]
@@ -409,11 +469,11 @@ class LibraryLoaderSpec extends Specification {
         LibraryLoader.doInject(config, script)
         then:
         thrown(TemplateConfigException)
-        1 * libSource.loadLibrary(script, "libA", [fieldA: "A"]) >> { return [err]  }
-        0 * libSource.loadLibrary(script, "libB", [fieldB: "B"])
+        1 * s1.loadLibrary(script, "libA", [fieldA: "A"]) >> { return [err]  }
+        0 * s1.loadLibrary(script, "libB", [fieldB: "B"])
 
-        0 * libSource2.loadLibrary(script, "libA", [fieldA: "A"])
-        1 * libSource2.loadLibrary(script, "libB", [fieldB: "B"]) >> { return [err2]  }
+        0 * s2.loadLibrary(script, "libA", [fieldA: "A"])
+        1 * s2.loadLibrary(script, "libB", [fieldB: "B"]) >> { return [err2]  }
 
         1 * TemplateLogger.printError(err) >> { return }
         1 * TemplateLogger.printError(err2) >> { return }

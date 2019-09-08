@@ -16,6 +16,8 @@
 
 package org.boozallen.plugins.jte.config
 
+import org.boozallen.plugins.jte.config.libraries.LibraryProvider
+import org.boozallen.plugins.jte.config.libraries.LibraryConfiguration
 import org.boozallen.plugins.jte.utils.RunUtils
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.console.TemplateLogger
@@ -34,6 +36,7 @@ import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
 import hudson.scm.NullSCM
 import hudson.Util
+import jenkins.model.Jenkins
 
 public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> implements Serializable{
     
@@ -42,21 +45,21 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
 
     String baseDir
     SCM scm 
-    List<TemplateLibrarySource> librarySources = new ArrayList()
+    List<LibraryConfiguration> libraries
     String pipelineConfig 
 
     // added for unit testing
     public GovernanceTier(){}
 
-    @DataBoundConstructor public GovernanceTier(SCM scm, String baseDir, List<TemplateLibrarySource> librarySources){
+    @DataBoundConstructor public GovernanceTier(SCM scm, String baseDir, List<LibraryConfiguration> libraries){
         this.scm = scm
         this.baseDir = Util.fixEmptyAndTrim(baseDir)
-        this.librarySources = librarySources
+        this.libraries = libraries 
     }
 
     public String getBaseDir(){ return baseDir }
     public SCM getScm(){ return scm }
-    public List<TemplateLibrarySource> getLibrarySources(){ return librarySources }
+    public List<LibraryConfiguration> getLibraries(){ return libraries }
     
     public String getPipelineConfig(){
         return pipelineConfig
@@ -157,6 +160,10 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
         @Override public GovernanceTier newInstance(StaplerRequest req, JSONObject formData) throws FormException {
             GovernanceTier tier = (GovernanceTier) super.newInstance(req, formData);
             return tier.librarySources?.isEmpty() ? null : tier
+        }
+
+        public static List<LibraryProvider.LibraryProviderDescriptor> getLibraryProviders(){
+            return Jenkins.getActiveInstance().getExtensionList(LibraryProvider.LibraryProviderDescriptor)
         }
 
     }

@@ -14,9 +14,10 @@
    limitations under the License.
 */
 
-package org.boozallen.plugins.jte.config
+package org.boozallen.plugins.jte.config.libraries
 
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
+import org.boozallen.plugins.jte.config.TemplateConfigDsl
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
 import org.kohsuke.stapler.DataBoundConstructor
@@ -29,75 +30,34 @@ import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
 import hudson.Util
 import org.jenkinsci.plugins.workflow.cps.CpsScript
+import hudson.ExtensionPoint
+import hudson.ExtensionList 
+import jenkins.model.Jenkins 
 
-public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibrarySource> implements Serializable{
 
-    public static String CONFIG_FILE = "library_config.groovy" 
+abstract class LibraryProvider extends AbstractDescribableImpl<LibraryProvider>{
+    public static final String CONFIG_FILE = "library_config.groovy" 
 
-    public SCM scm
-    public String baseDir
+    /*
+        implementing methods return true if library is present 
+        and false if not. 
+    */
+    abstract public Boolean hasLibrary(String libraryName)
 
-    @DataBoundConstructor public TemplateLibrarySource(){}
+    /*
+        implementing methods should check for the existence of 
+        CONFIG_FILE in the library and pass file contents as string to 
+        doLibraryConfigValidation
+    */
+    abstract public List loadLibrary(CpsScript script, String libName, Map libConfig)
 
-    @DataBoundSetter public void setBaseDir(String baseDir) {
-        this.baseDir = Util.fixEmptyAndTrim(baseDir)
+    public Map libConfigToMap(String configFile) {
+        return TemplateConfigDsl.parse(configFile).getConfig()
     }
 
-    public String getBaseDir() { return baseDir }
+    public List doLibraryConfigValidation(String configFile, Map libConfig){
+        Map allowedConfig = libConfigToMap(configFile)
 
-    @DataBoundSetter public void setScm(SCM scm){ this.scm = scm }
-    public SCM getScm(){ return scm }
-
-    Boolean hasLibrary(String libName){
-        SCMFileSystem fs = createFs()
-        if (!fs) return false 
-        SCMFile lib = fs.child(prefixBaseDir(libName))
-        return lib.isDirectory()
-    }
-
-    public String prefixBaseDir(String s){
-        return [baseDir, s?.trim()].findAll{ it }.join("/")
-    }
-
-    public List loadLibrary(CpsScript script, String libName, Map libConfig){
-        SCMFileSystem fs = createFs()
-        if (!fs){ return }
-
-        TemplateLogger.print("""Loading Library ${libName}
-                                -- scm: ${scm.getKey()}""", [initiallyHidden:true])
-
-        SCMFile lib = fs.child(prefixBaseDir(libName))
-
-        // do validation if the library configuration file is present
-        SCMFile libConfigFile = lib.child(CONFIG_FILE)
-        ArrayList libConfigErrors = []
-        if(libConfigFile.exists() && libConfigFile.isFile()){
-            Map allowedConfig = libAllowedFileToMap(libConfigFile)
-            libConfigErrors = doLibraryConfigValidation(allowedConfig, libConfig)
-            if(libConfigErrors){
-                return [ "${libName}:" ] + libConfigErrors.collect{ " - ${it}" }
-            }
-        }else{
-            TemplateLogger.printWarning("Library ${libName} does not have a configuration file.")
-        }
-
-        lib.children().findAll{ 
-            it.getName().endsWith(".groovy") && 
-            !it.getName().endsWith("library_config.groovy") // exclude lib config file 
-        }.each{ stepFile ->
-            def StepWrapper = LibraryLoader.getPrimitiveClass()
-            def s = StepWrapper.createFromFile(stepFile, libName, script, libConfig)
-            script.getBinding().setVariable(s.getName(), s)
-        }
-
-        return libConfigErrors
-    }
-
-    public Map libAllowedFileToMap(SCMFile configFile) {
-        return TemplateConfigDsl.parse(configFile.contentAsString()).getConfig()
-    }
-
-    public List doLibraryConfigValidation(Map allowedConfig, Map libConfig){
         ArrayList libConfigErrors = [] 
 
         // define keysets in dot notation 
@@ -209,9 +169,7 @@ public class TemplateLibrarySource extends AbstractDescribableImpl<TemplateLibra
         } 
     }
 
-    public SCMFileSystem createFs(){
-        return FileSystemWrapper.createFromSCM(scm) as SCMFileSystem
-    }
 
-    @Extension public static class DescriptorImpl extends Descriptor<TemplateLibrarySource> {}
+    public static class LibraryProviderDescriptor extends Descriptor<LibraryProvider> {}
+
 }

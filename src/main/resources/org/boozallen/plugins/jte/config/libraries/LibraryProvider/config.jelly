@@ -1,4 +1,5 @@
-/*
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
    Copyright 2018 Booz Allen Hamilton
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,23 +13,8 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-*/
-
-package org.boozallen.plugins.jte.hooks
-
-import java.lang.annotation.Retention
-import static java.lang.annotation.ElementType.*
-import static java.lang.annotation.RetentionPolicy.RUNTIME
-
-/*
-    Will get triggered after every StepWrapper execution and
-    at the end of the pipeline template execution regardless
-    of build status
-
-    TODO: 
-        maybe enhance to also after every Stage? 
-*/
-@Retention(RUNTIME)
-public @interface Notify{
-    Class value() default { true } 
-}
+-->
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
+    <st:include page="config-detail.jelly" optional="true" class="${descriptor.clazz}"/>
+</j:jelly>
