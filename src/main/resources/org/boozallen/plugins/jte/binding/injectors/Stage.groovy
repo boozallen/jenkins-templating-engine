@@ -16,6 +16,7 @@
 
 package org.boozallen.plugins.jte.binding.injectors
 
+import com.cloudbees.groovy.cps.NonCPS
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
 import org.boozallen.plugins.jte.binding.*
@@ -29,6 +30,9 @@ import org.codehaus.groovy.runtime.InvokerHelper
     represents a group of library steps to be called. 
 */
 class Stage extends TemplatePrimitive implements Serializable{
+
+    static EMPTY_CONTEXT = [ name: null, args: [:] ]
+
     CpsScript script 
     String name
     ArrayList<String> steps
@@ -41,12 +45,30 @@ class Stage extends TemplatePrimitive implements Serializable{
         this.steps = steps 
     }
 
-    void call(){
-        TemplateLogger.print "[Stage - ${name}]" 
+    void call(stageConfig){
+        TemplateLogger.print "[Stage - ${name}]"
+
+        def stageContext = [
+            name: name,
+            args: stageConfig
+        ]
+
         for(def i = 0; i < steps.size(); i++){
             String step = steps.get(i)
+            setStageContext(step, stageContext)
             InvokerHelper.getMetaClass(script).invokeMethod(script, step, null)
+            setStageContext(step, EMPTY_CONTEXT)
         }
+    }
+
+    @NonCPS
+    private void setStageContext(String step, stageContext) {
+        if(!script.getBinding().hasStep(step)) {
+            return
+        }
+        def impl = script.getBinding().getStep(step)?.impl
+        def metaClass = InvokerHelper.getMetaClass(impl)
+        metaClass.getStageContext = {-> stageContext}
     }
 
     void throwPreLockException(){
