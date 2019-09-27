@@ -76,7 +76,7 @@ while an application using Ant and deploying to a GlassFish server would have
 
 .. code:: 
 
-    pplication_environments{
+    application_environments{
         dev{
             long_name = "Development" 
         }
