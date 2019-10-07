@@ -16,8 +16,9 @@
 
 package org.boozallen.plugins.jte.hooks
 
+import com.cloudbees.groovy.cps.NonCPS
 import org.boozallen.plugins.jte.utils.TemplateScriptEngine
-import org.boozallen.plugins.jte.binding.* 
+import org.boozallen.plugins.jte.binding.*
 import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
 import java.lang.annotation.Annotation
 import jenkins.model.Jenkins
@@ -25,6 +26,7 @@ import org.boozallen.plugins.jte.console.TemplateLogger
 
 class Hooks implements Serializable{
 
+    @NonCPS
     static List<AnnotatedMethod> discover(Class<? extends Annotation> hookType, TemplateBinding binding){
         List<AnnotatedMethod> discovered = new ArrayList() 
 
