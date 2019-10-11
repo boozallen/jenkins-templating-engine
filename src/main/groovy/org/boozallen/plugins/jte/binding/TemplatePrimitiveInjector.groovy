@@ -40,7 +40,7 @@ abstract class TemplatePrimitiveInjector implements ExtensionPoint{
 
         // used to get all injectors
         static ExtensionList<TemplatePrimitiveInjector> all(){
-            return Jenkins.getActiveInstance().getExtensionList(TemplatePrimitiveInjector)
+            return Jenkins.get().getExtensionList(TemplatePrimitiveInjector)
         }
     }
 }
