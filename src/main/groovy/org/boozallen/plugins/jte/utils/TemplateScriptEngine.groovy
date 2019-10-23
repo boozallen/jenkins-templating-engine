@@ -65,15 +65,25 @@ class TemplateScriptEngine implements Serializable{
         return script 
     }
 
+
     static Class parseClass(String classText){
-        GroovyShell shell = createShell() 
-        try{
-            Class clazz = shell.getClassLoader().parseClass(classText)
-            shell.getClassLoader().setClassCacheEntry(clazz)
-            return clazz 
-        }catch(LinkageError ex){
-            String className = ex.getMessage().split(" ").last().replaceAll("/",".").replaceAll('"',"")
-            return shell.getClassLoader().loadClass(className)
+        GroovyClassLoader classLoader = createShell().getClassLoader()
+        GroovyClassLoader tempLoader = new GroovyClassLoader(classLoader)
+        /*
+            Creating a new, short-lived class loader that inherits the
+            compiler configuration of the pipeline's is the easiest 
+            way to parse a file and see if the class has been loaded
+            before
+        */
+        Class clazz = tempLoader.parseClass(classText)
+        Class returnClass = clazz 
+        if(classLoader.getClassCacheEntry(clazz.getName())){
+            // class has been loaded before. fetch and return 
+            returnClass = classLoader.loadClass(clazz.getName())
+        } else {
+            // class has not be parsed before, add to the runs class loader
+            classLoader.setClassCacheEntry(returnClass)
         }
+        return returnClass 
     }
 }
