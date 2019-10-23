@@ -16,7 +16,6 @@
 
 package org.boozallen.plugins.jte.utils
 
-import org.boozallen.plugins.jte.console.TemplateLogger
 import java.lang.reflect.Field
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.codehaus.groovy.control.CompilerConfiguration
