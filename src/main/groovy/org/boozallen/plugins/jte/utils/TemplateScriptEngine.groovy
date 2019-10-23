@@ -16,6 +16,7 @@
 
 package org.boozallen.plugins.jte.utils
 
+import org.boozallen.plugins.jte.console.TemplateLogger
 import java.lang.reflect.Field
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -65,15 +66,14 @@ class TemplateScriptEngine implements Serializable{
         return script 
     }
 
+
     static Class parseClass(String classText){
-        GroovyShell shell = createShell() 
-        try{
-            Class clazz = shell.getClassLoader().parseClass(classText)
-            shell.getClassLoader().setClassCacheEntry(clazz)
-            return clazz 
-        }catch(LinkageError ex){
-            String className = ex.getMessage().split(" ").last().replaceAll("/",".").replaceAll('"',"")
-            return shell.getClassLoader().loadClass(className)
+        GroovyClassLoader classLoader = createShell().getClassLoader()
+        GroovyClassLoader tempLoader = new GroovyClassLoader(classLoader)
+        Class clazz = tempLoader.parseClass(classText)
+        if(!classLoader.getClassCacheEntry(clazz.getName())){
+            classLoader.setClassCacheEntry(clazz)
         }
+        return clazz 
     }
 }
