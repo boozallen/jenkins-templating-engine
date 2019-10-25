@@ -110,10 +110,11 @@ class TemplateConfigDsl implements Serializable{
     String tab = "    "
     block.each{ key, value -> 
       if(value instanceof Map){
+        String nodeName = key.contains("-") ? "'${key}'" : key
         if (value == [:]){
-          file += "${tab*depth}${key}"
+          file += "${tab*depth}${nodeName}{}"
         }else{
-          file += "${tab*depth}${key}{"
+          file += "${tab*depth}${nodeName}{"
           depth++
           file = printBlock(file, depth, value)
           depth-- 
