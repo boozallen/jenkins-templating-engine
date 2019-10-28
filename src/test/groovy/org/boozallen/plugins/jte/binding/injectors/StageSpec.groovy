@@ -133,6 +133,51 @@ class StageSpec extends Specification{
     }
 
     @WithoutJenkins
+    def "validate stage arguments are passed through to steps"() {
+        given:
+            WorkflowJob job = jenkins.createProject(WorkflowJob);
+            job.setDefinition(new CpsFlowDefinition("""
+            import org.boozallen.plugins.jte.binding.TemplateBinding
+            import org.boozallen.plugins.jte.binding.injectors.StageInjector
+            import org.boozallen.plugins.jte.config.TemplateConfigObject
+            import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
+
+            def StepWrapper = LibraryLoader.getPrimitiveClass()
+            
+            /*
+                initialize
+            */
+            def binding = new TemplateBinding()
+            setBinding(binding)
+          
+          
+            a = StepWrapper.createFromString('''def call() { println "running step A: " + stageContext.args.text }''', 
+                this, 'a', 'test', [:])
+            b = StepWrapper.createFromString('''def call() { println "running step B: " + stageContext.args.text2 }''', 
+                this, 'b', 'test', [:])
+                                           
+            TemplateConfigObject config = new TemplateConfigObject(config: [
+                stages: [
+                    test_stage: [
+                        a: [:],
+                        b: [:]
+                    ]
+                ]
+            ])
+            StageInjector.doInject(config, this)
+
+            // run stage
+            test_stage([text: "Example", text2: "Example2"])
+
+            """, false))
+            def build =  jenkins.buildAndAssertSuccess(job)
+            expect:
+            jenkins.assertLogContains("running step A: Example", build)
+            jenkins.assertLogContains("running step B: Example2", build)
+
+    }
+
+    @WithoutJenkins
     def "validate override during initialization throws exception"(){
         setup:
         def stepWrapper = GroovyMock(Object)
@@ -161,13 +206,13 @@ class StageSpec extends Specification{
         GroovySpy(LibraryLoader.class, global:true)
         LibraryLoader.getPrimitiveClass() >> { return stepWrapper }
 
-        when: 
-            TemplateBinding binding = new TemplateBinding() 
+        when:
+            TemplateBinding binding = new TemplateBinding()
             binding.setVariable("a", new Stage(name: "a"))
             binding.lock()
             binding.setVariable("a", 1)
-        then: 
-            TemplateException ex = thrown() 
+        then:
+            TemplateException ex = thrown()
             assert ex.message == "The variable a is reserved as a template Stage."
     }
 

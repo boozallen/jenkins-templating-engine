@@ -349,4 +349,115 @@ class StepWrapperSpec extends Specification{
             assert sN < nN 
     }
 
+    @Unroll
+    def "@#annotation({ #condition }) results in #description"(){
+        setup: 
+            createStep("test_step", "def call(){ println 'testing' }")
+            createStep("hookStep", """
+                @${annotation}({ 
+                    ${condition}
+                })
+                def call(context){
+                    println "hook step executed"
+                }
+            """)
+        when: 
+            job.setDefinition(createFlowDefinition("test_step()"))
+
+        then: 
+            if(condition){
+                jenkins.assertLogContains("hook step executed", jenkins.buildAndAssertSuccess(job))
+            }else{
+                jenkins.assertLogNotContains("hook step executed", jenkins.buildAndAssertSuccess(job))
+            }
+
+        where: 
+        annotation   | condition | description
+        "BeforeStep" | true      | "hook executed"
+        "BeforeStep" | false     | "hook not executed"
+        "AfterStep"  | true      | "hook executed"
+        "AfterStep"  | false     | "hook not executed"
+        "Notify"     | true      | "hook executed"
+        "Notify"     | false     | "hook not executed"
+    }
+
+    def "Library config resolvable inside hook closure parameter"(){
+        setup: 
+            createStep("test_step", "def call(){ println 'testing' }")
+            createStep("hookStep", """
+                @BeforeStep({ 
+                    config.shouldExecute
+                })
+                def call(context){
+                    println "hook step executed"
+                }
+            """, [shouldExecute: false])
+        when: 
+            job.setDefinition(createFlowDefinition("test_step()"))
+
+        then: 
+            jenkins.assertLogNotContains("hook step executed", jenkins.buildAndAssertSuccess(job))
+    }
+
+    def "Hook context variable resolvable inside hook closure parameter"(){
+        setup: 
+            createStep("test_step1", "def call(){ println 'test step 1' }")
+            createStep("test_step2", "def call(){ println 'test step 2' }")
+            createStep("hookStep", """
+                @BeforeStep({ 
+                    context.step.equals("test_step1")
+                })
+                def call(context){
+                    println "hook step executed before \${context.step}"
+                }
+            """, [shouldExecute: false])
+        when: 
+            job.setDefinition(createFlowDefinition("test_step1(); test_step2()"))
+            def build = job.scheduleBuild2(0).get() 
+
+        then: 
+            jenkins.assertBuildStatusSuccess(build)
+            jenkins.assertLogContains("hook step executed before test_step1", build)
+            jenkins.assertLogNotContains("hook step executed before test_step2", build)
+    }
+
+    // def "Exception thrown in hook closure param fails build and prints context"(){
+    //     setup: 
+    //         createStep("test_step", "def call(){ println 'testing' }")
+    //         createStep("hookStep", """
+    //             @BeforeStep({ 
+    //                 throw new Exception("hook failed")
+    //             })
+    //             def call(context){
+    //                 println "hook step executed"
+    //             }
+    //         """, [shouldExecute: false])
+    //     when: 
+    //         job.setDefinition(createFlowDefinition("test_step()"))
+    //         def build = job.scheduleBuild2(0).get() 
+    //     then: 
+    //         jenkins.assertBuildStatus(Result.FAILURE, build)
+    //         jenkins.assertLogContains("Exception thrown while evaluating @BeforeStep on call in hookStep from test library", build)
+    //         jenkins.assertLogNotContains("hook step executed", build)
+    // }
+
+    def "Hook closure params can't invoke other steps"(){
+        setup: 
+            createStep("test_step", "def call(){ println 'testing' }")
+            createStep("test_step2", "def call(){ println 'testing 2' }")
+            createStep("hookStep", """
+                @BeforeStep({ test_step2() })
+                def call(context){
+                    println "hook step executed"
+                }
+            """, [shouldExecute: false])
+        when: 
+            job.setDefinition(createFlowDefinition("test_step()"))
+            def build = job.scheduleBuild2(0).get() 
+        then: 
+            jenkins.assertBuildStatus(Result.FAILURE, build)
+            jenkins.assertLogNotContains("hook step executed", build)    
+            jenkins.assertLogNotContains("testing 2", build)    
+    }
+
 }

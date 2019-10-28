@@ -17,17 +17,19 @@
 package org.boozallen.plugins.jte.hooks
 
 import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.binding.* 
+import java.lang.annotation.Annotation
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.InvokerInvocationException
-import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
-import org.boozallen.plugins.jte.binding.* 
 
 class AnnotatedMethod implements Serializable{
-    String annotationName 
+    Annotation annotation
+    String annotationName
     def stepWrapper 
     String methodName
 
-    AnnotatedMethod(String annotationName, String methodName, def stepWrapper){
+    AnnotatedMethod(Annotation annotation, String annotationName, String methodName, def stepWrapper){
+        this.annotation = annotation
         this.annotationName = annotationName
         this.methodName = methodName
         this.stepWrapper = stepWrapper 
@@ -35,7 +37,9 @@ class AnnotatedMethod implements Serializable{
 
     void invoke(Map context){
         try{
-            TemplateLogger.print "[@${annotationName} - ${stepWrapper.library}/${stepWrapper.name}.${methodName}]"
+            String lib = stepWrapper.library
+            String step = stepWrapper.name 
+            TemplateLogger.print "[@${annotationName} - ${lib}/${step}.${methodName}]"
             InvokerHelper.getMetaClass(stepWrapper.impl).invokeMethod(stepWrapper.impl, methodName, context);
         } catch (Exception x) {
             throw new InvokerInvocationException(x);

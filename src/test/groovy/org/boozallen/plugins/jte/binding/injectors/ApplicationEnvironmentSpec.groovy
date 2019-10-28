@@ -17,6 +17,7 @@ package org.boozallen.plugins.jte.binding.injectors
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.binding.TemplateException
 import org.boozallen.plugins.jte.binding.TemplatePrimitiveInjector
+import org.boozallen.plugins.jte.utils.RunUtils
 import spock.lang.*
 import org.junit.*
 import org.jenkinsci.plugins.workflow.cps.CpsScript
@@ -47,8 +48,8 @@ class ApplicationEnvironmentSpec extends Specification{
     def setup(){
         ClassLoader shellClassLoader = new groovy.lang.GroovyClassLoader(classLoader)
 
-        GroovySpy(TemplatePrimitiveInjector.Impl.class, global:true)
-        TemplatePrimitiveInjector.Impl.getClassLoader() >> { return shellClassLoader }
+        GroovySpy(RunUtils.class, global:true)
+        RunUtils.getClassLoader() >> { return shellClassLoader }
 
         GroovyShell shell = Spy(GroovyShell)
         shell.getClassLoader() >> { return shellClassLoader }
@@ -186,6 +187,91 @@ class ApplicationEnvironmentSpec extends Specification{
             TemplateException ex = thrown() 
             assert ex.message == "Variable dev is reserved as an Application Environment." 
     }
+
+    def "first environment's previous is null"(){
+        when: 
+            injectEnvironments([
+                dev: [ long_name: "Development" ],
+                test: [ long_name: "Test" ]
+            ])
+        then: 
+            binding.getVariable("dev").previous == null 
+    }
+    
+    def "second env's previous is correct"(){
+        when: 
+            injectEnvironments([
+                dev: [ long_name: "Development" ],
+                test: [ long_name: "Test" ]
+            ])
+        then: 
+            binding.getVariable("test").previous == binding.getVariable("dev")
+    }
+
+    def "first env's next is correct"(){
+        when: 
+            injectEnvironments([
+                dev: [ long_name: "Development" ],
+                test: [ long_name: "Test" ]
+            ])
+        then: 
+            binding.getVariable("dev").next == binding.getVariable("test")
+    }
+
+    def "when only one environment previous/next are null"(){
+        when: 
+            injectEnvironments([
+                dev: [ long_name: "Development" ]
+            ])
+            def dev = binding.getVariable("dev")
+        then: 
+            dev.previous == null
+            dev.next == null 
+    }
+
+    def "when >= 3 envs, middle envs previous and next are correct"(){
+        when: 
+            injectEnvironments([
+                dev: [ long_name: "Development" ],
+                test: [ long_name: "Test" ],
+                prod: [ long_name: "Production" ]
+            ])
+            def test = binding.getVariable("test")
+        then: 
+            test.previous == binding.getVariable("dev")
+            test.next == binding.getVariable("prod")
+    }
+
+    def "last environment's next is null"(){
+        when: 
+            injectEnvironments([
+                    dev: [ long_name: "Development" ],
+                    test: [ long_name: "Test" ],
+                    prod: [ long_name: "Production" ]
+                ])
+            def prod = binding.getVariable("prod")
+        then: 
+            prod.next == null 
+    }
+
+    def "defining the previous configuration throws exception"(){
+        when:
+            injectEnvironments([
+                dev: [ previous: "_" ]
+            ])
+        then: 
+            thrown(TemplateConfigException)
+    }
+
+    def "defining the next configuration throws exception"(){
+        when:
+            injectEnvironments([
+                dev: [ next: "_" ]
+            ])
+        then: 
+            thrown(TemplateConfigException)
+    }
+
 
     def getApplicationEnvironmentClass(){
         /* ApplicationEnvironmentInjector.primitiveClass */

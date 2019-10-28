@@ -55,6 +55,35 @@ behavior based on what just happened in the pipeline.
     input parameter to the step with the hook annotation ``context``.  In practice, this variable 
     name can be whatever you please 
 
+=====================
+Conditional Execution
+=====================
+
+Sometimes you'll only want to invoke the Hook when certain conditions are met, such as a build failure
+or in relation to another step (like before static code analysis). 
+
+Each annotation accepts a ``Closure`` parameter.  If the return object of this closure is 
+`true <http://www.groovy-lang.org/semantics.html#Groovy-Truth>` then the hook will be executed. 
+
+While executing, the code within the ``Closure`` will be able to resolve the ``context`` variable 
+described above as well as the library configuration variable ``config``. 
+
+Example Syntax: 
+
+.. code:: 
+
+    @BeforeStep({ context.step.equals("build") })
+    void call(context){
+        /*
+            execute something right before the library step called 
+            build is executed. 
+        */
+    }
+
+.. important:: 
+
+    The closure parameter is optional. If omitted, the hook will always be executed. 
+
 ======================
 Example Implementation
 ======================
@@ -108,18 +137,17 @@ a message when the ``build`` step fails.
 
 .. code:: 
 
-    @AfterStep
+    @AfterStep({
+        context.step.equals("build") && context.status.equals("FAILURE")
+    })
     void call(context){
-        if (context.step.equals("build") && context.status.equals("FAILURE")){
-            slackSend color: '#ff0000', message: "Build Failure: ${env.JOB_URL}"
-        }
+        slackSend color: '#ff0000', message: "Build Failure: ${env.JOB_URL}"
     }
 
 .. note:: 
 
     This example assumes you've installed and appropriately configured the 
     `Slack Notification Plugin <https://jenkins.io/doc/pipeline/steps/slack/>`_ 
-
 
 ************************
 Step 3: Load the Library 
