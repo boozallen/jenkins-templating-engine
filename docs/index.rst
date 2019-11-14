@@ -136,3 +136,9 @@ create a more organized code base for your pipelines.
    pages/Governance/conditional_inheritance
    pages/Governance/pipeline_template_selection
    pages/Governance/library_selection
+
+.. toctree:: 
+   :hidden: 
+   :caption: JTE Adoption!
+
+   ADOPTERS
