@@ -30,6 +30,14 @@ pipelines into shareable workflows that define the business logic of
 your software delivery processes while allowing for optimal pipeline code reuse by
 pulling out tool specific implementations into library modules. 
 
+Using the Jenkins Templating Engine? 
+************************************
+
+If you're using the Jenkins Templating Engine we would love to hear about it! 
+
+Please let us know by opening a Pull Request to the `ADOPTERS <https://github.com/jenkinsci/templating-engine-plugin/blob/master/docs/ADOPTERS.rst>`_ file and you'll 
+be featured on the JTE Documentation Site!
+
 How Does It Work? 
 *****************
 
