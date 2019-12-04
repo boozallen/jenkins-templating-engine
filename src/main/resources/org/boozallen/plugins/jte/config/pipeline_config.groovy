@@ -6,7 +6,7 @@
     consolidated pipeline template definitions
 */
 allow_scm_jenkinsfile = true 
-
+skip_default_checkout = false
 keywords{
     master  =  /^[Mm]aster$/
     develop =  /^[Dd]evelop(ment|er|)$/ 

@@ -30,7 +30,8 @@ An example configuration file would be:
 
     // restrict individual repository Jenkinsfiles 
     allow_scm_jenkinsfile = false 
-
+    // skip the default JTE checkout and do it explicitly
+    skip_default_checkout = true
     // define application environment objects 
     application_environments{
         dev{

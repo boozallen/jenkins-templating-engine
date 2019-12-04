@@ -32,7 +32,7 @@ def call(CpsClosure body = null){
         template = TemplateEntryPointVariable.getTemplate(pipelineConfig)
     }
     // checkout SCM and stash "workspace"
-    createWorkspaceStash()
+    if (!pipelineConfig.skip_default_checkout) createWorkspaceStash()
 
     // archive the current configuration
     archiveConfig()
