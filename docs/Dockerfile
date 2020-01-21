@@ -13,6 +13,6 @@ RUN pip install sphinx==1.6.7               \
 RUN git config --global user.email "fake" && \
     git config --global user.name "Docs Deployer"
 
-# expectation is the container gets run with 
+# expectation is the container gets run with
 # docker run -v $(path to repo):/app
 WORKDIR /app
