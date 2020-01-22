@@ -15,11 +15,11 @@ version = '1.5.1'
 description = 'Allows users to create tool-agnostic, templated pipelines to be shared by multiple teams'
 
 jenkinsPlugin {
-    coreVersion = '2.121.3'
+    coreVersion = '2.138.1'
     shortName = 'templating-engine'
     displayName = 'Templating Engine'
     url = 'https://wiki.jenkins.io/display/JENKINS/Templating+Engine+Plugin'
-    disabledTestInjection = true
+    disabledTestInjection = false
     localizerOutputDir = "${project.buildDir}/generated-src/localizer"
     configureRepositories = false
     configurePublishing = true
@@ -62,7 +62,9 @@ dependencies {
         exclude(module: 'httpclient')
         exclude(module: 'annotation-indexer')
     }
+    jenkinsTest 'org.jenkins-ci.plugins:token-macro:1.12.1'
     jenkinsTest 'org.jenkins-ci.plugins.workflow:workflow-aggregator:2.6'
+    jenkinsTest 'org.jenkins-ci.plugins.workflow:workflow-step-api:2.19'
 }
 
 jacocoTestReport {
