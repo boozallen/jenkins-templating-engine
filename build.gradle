@@ -46,19 +46,19 @@ dependencies {
     jenkinsPlugins 'org.jenkins-ci.plugins:junit:1.24'
     jenkinsPlugins 'org.jenkins-ci.plugins:github-branch-source:2.5.1'
 
-    // unit test deps
-    testCompile 'org.spockframework:spock-core:1.2-groovy-2.4'
-    testCompile 'junit:junit:4.12'
-    testCompile 'cglib:cglib-nodep:3.2.5'       // used by Spock
-    testCompile 'org.objenesis:objenesis:2.5.1' // used by Spock
+    // unit test dependencies
+    testImplementation 'org.spockframework:spock-core:1.2-groovy-2.4'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'cglib:cglib-nodep:3.2.5'       // used by Spock
+    testImplementation 'org.objenesis:objenesis:2.5.1' // used by Spock
+    testImplementation(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3', classifier:'tests') {
+        exclude(module: 'httpclient')
+        exclude(module: 'annotation-indexer')
+    }
 
     // test plugins
     jenkinsTest(group: "org.jenkins-ci.plugins", name: "scm-api", version: "2.3.0", classifier: "tests")
     jenkinsTest(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3') {
-        exclude(module: 'httpclient')
-        exclude(module: 'annotation-indexer')
-    }
-    testCompile(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3', classifier:'tests') {
         exclude(module: 'httpclient')
         exclude(module: 'annotation-indexer')
     }
