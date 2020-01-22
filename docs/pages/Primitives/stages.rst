@@ -5,12 +5,12 @@ Stages
 ------
 
 Stages are a primitive that allow you to group together steps to be called at once
-in order to avoid repetition in the pipeline template. 
+in order to avoid repetition in the pipeline template.
 
-Stages are defined by through the ``stages`` key, with subkeys becoming available 
+Stages are defined by through the ``stages`` key, with subkeys becoming available
 as steps within your pipeline template.
 
-A common example would be creating a continuous integration stage: 
+A common example would be creating a continuous integration stage:
 
 .. code::
 
@@ -23,9 +23,9 @@ A common example would be creating a continuous integration stage:
         }
     }
 
-and then in your template: 
+and then in your template:
 
 .. code::
 
     continuous_integration()
-    deploy_to dev 
+    deploy_to dev

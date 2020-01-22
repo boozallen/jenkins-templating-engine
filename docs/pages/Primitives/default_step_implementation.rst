@@ -1,26 +1,26 @@
-.. _default step implementation: 
+.. _default step implementation:
 
 ---------------------------
 Default Step Implementation
 ---------------------------
 
 The JTE default step implementation allows you to generically define pipeline steps
-in a ``steps`` block in your configuration file. 
+in a ``steps`` block in your configuration file.
 
-This can be used for simple step implementations that can run from a container image 
-by executing a shell command or script. Optionally, artifacts generated during the 
-step execution can be stashed for later retrieval. 
+This can be used for simple step implementations that can run from a container image
+by executing a shell command or script. Optionally, artifacts generated during the
+step execution can be stashed for later retrieval.
 
-.. note:: 
+.. note::
 
-    If the default step implementation is called for a step but that step has not 
-    been defined in the ``steps`` block then nothing will happen. 
+    If the default step implementation is called for a step but that step has not
+    been defined in the ``steps`` block then nothing will happen.
 
 *************
 Configuration
 *************
 
-.. csv-table:: Configuration Options 
+.. csv-table:: Configuration Options
    :header:  "Field", "Description", "Default Value", "Required?"
 
    "stage", "Display name for this step.", "step_name", "false"
@@ -34,10 +34,10 @@ Configuration
    "stash.allowEmpty", "Whether or not the stash may contain no files", "false", "false"
 
 **********************
-Example Implementation 
+Example Implementation
 **********************
 
-Below is an example of configuring the default step implementation to act as a ``unit_test`` 
+Below is an example of configuring the default step implementation to act as a ``unit_test``
 step to run a test suite through maven.
 
 .. code:: groovy

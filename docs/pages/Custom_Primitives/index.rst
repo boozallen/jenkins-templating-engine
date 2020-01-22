@@ -1,11 +1,11 @@
-.. _Adding a Custom Primitive: 
+.. _Adding a Custom Primitive:
 
 -------------------------
 Adding a Custom Primitive
 -------------------------
 
 
-.. note:: 
+.. note::
 
-    Coming Soon 
+    Coming Soon
 
