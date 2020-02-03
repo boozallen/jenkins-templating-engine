@@ -300,4 +300,32 @@ class TemplateConfigDslSpec extends Specification {
             reparsedConfig.getConfig() == expectedConfig
     }
 
+    def "Single Quote String block keys with / are appropriately serialized"(){
+        setup:
+            String config = "'some/block'{}"
+            Map expectedConfig = [ "some/block": [:] ]
+            def originalConfig, reparsedConfig
+        when:
+            originalConfig = TemplateConfigDsl.parse(config)
+            reparsedConfig = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(originalConfig))
+            println TemplateConfigDsl.serialize(originalConfig)
+        then:
+            originalConfig.getConfig() == expectedConfig
+            reparsedConfig.getConfig() == expectedConfig
+    }
+
+    def "Double Quote String block keys with / are appropriately serialized"(){
+        setup:
+            String config = "\"some/block\"{}"
+            Map expectedConfig = [ "some/block": [:] ]
+            def originalConfig, reparsedConfig
+        when:
+            originalConfig = TemplateConfigDsl.parse(config)
+            reparsedConfig = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(originalConfig))
+            println TemplateConfigDsl.serialize(originalConfig)
+        then:
+            originalConfig.getConfig() == expectedConfig
+            reparsedConfig.getConfig() == expectedConfig
+    }
+
 }
