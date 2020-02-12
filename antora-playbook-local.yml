@@ -6,7 +6,7 @@ content:
   sources:
   - url: .
     branches: HEAD
-    start_path: docs-antora
+    start_path: docs
 ui: 
   bundle: 
     url: https://github.com/boozallen/sdp-docs-skin/releases/download/1.0/ui-bundle.zip
