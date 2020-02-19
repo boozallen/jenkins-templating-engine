@@ -33,10 +33,10 @@ Libraries can come from different sources.  The current two storage mechanisms f
 |===
 | Type | Description
 
-| xref:scm_library_provider.adoc[SCM Library Provider]
+| xref:library_sources/scm_library_provider.adoc[SCM Library Provider]
 | Find libraries in a Source Code Repository
 
-| xref:plugin_library_provider.adoc[Library Providing Plugin]
+| xref:library_sources/plugin_library_provider.adoc[Library Providing Plugin]
 | Package libraries into a Jenkins Plugin
 
 |===

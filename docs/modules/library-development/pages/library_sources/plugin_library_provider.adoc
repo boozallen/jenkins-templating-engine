@@ -39,7 +39,7 @@ Checkout the https://github.com/steven-terrana/jte-libs-as-plugin[jte-libs-as-a-
 
 == Development Workflow
 
-If packaging your libraries via a Jenkins Plugin, we recommend configuring your library source as a xref:scm_library_provider.adoc[SCM Library] during development.
+If packaging your libraries via a Jenkins Plugin, we recommend configuring your library source as a xref:library_sources/scm_library_provider.adoc[SCM Library] during development.
 
 If you're following the repository template based off of the sample repository mentioned above, you would configure the SCM Library repository URL and set the base directory to `src/main/resources/libraries`.
 
