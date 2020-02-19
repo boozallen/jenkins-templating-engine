@@ -1,5 +1,5 @@
 .Library Development
-* xref:getting_start.adoc[Getting Started]
+* xref:getting_started.adoc[Getting Started]
 * xref:externalizing_config.adoc[Exernalizing Library Configuration]
 * xref:validate_library_parameters.adoc[Validate Library Parameters]
 * xref:lifecycle_hooks.adoc[Leverage Lifecycle Hooks]
