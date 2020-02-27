@@ -17,7 +17,7 @@ Jenkins Templating Engine
 
 .. raw:: html
 
-   <img src="docs/images/jte.png" width="192">
+   <img src="docs/modules/ROOT/images/jte.png" width="192">
 
 `Full Documentation Can Be Found Here <https://jenkinsci.github.io/templating-engine-plugin>`_
 
