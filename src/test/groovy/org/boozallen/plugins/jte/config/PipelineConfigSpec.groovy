@@ -22,6 +22,7 @@ import org.junit.ClassRule
 import org.jvnet.hudson.test.GroovyJenkinsRule
 import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.IgnoreRest
 
 class PipelineConfigSpec extends Specification {
     @Shared
@@ -29,11 +30,13 @@ class PipelineConfigSpec extends Specification {
     @SuppressWarnings('JUnitPublicField')
     public GroovyJenkinsRule groovyJenkinsRule = new GroovyJenkinsRule()
 
-    @Shared
-    public String basePipelineConfig = null
+    @Shared public String basePipelineConfig = null
+    @Shared public def basePipelineConfigMap = null
 
-    @Shared
-    public def basePipelineConfigMap = null
+    public PrintStream logger = Mock()
+    public logs = [] 
+
+    
 
     def setupSpec(){
         basePipelineConfig = PipelineConfig.baseConfigContentsFromLoader(groovyJenkinsRule.jenkins.getPluginManager()
@@ -43,10 +46,10 @@ class PipelineConfigSpec extends Specification {
     }
 
     def setup(){
-        // this caused other test classes to fail
-        templateLoggerSetup()
-    }
+        GroovyMock(TemplateLogger, global:true)
 
+        _ * TemplateLogger.print(_, _) >> { s, c -> logs.push(s) }
+    }
 
     def 'Join empty TemplateConfigObjects to PipelineConfig'(){
         setup:
@@ -78,16 +81,16 @@ class PipelineConfigSpec extends Specification {
             a = 3
             b = "hi" 
             c = true 
-            """
+        """
 
         when:
         TemplateConfigObject configObject = combine(c1)
 
         then:
         configObject.config == (basePipelineConfigMap + [
-                a: 3,
-                b: "hi",
-                c: true
+            a: 3,
+            b: "hi",
+            c: true
         ])
         configObject.merge.isEmpty()
         configObject.override.isEmpty()
@@ -100,19 +103,19 @@ class PipelineConfigSpec extends Specification {
             a = 3
             b = "hi" 
             c = true 
-            """
+        """
 
         String c2 = """
             a = 4
-            """
+        """
         when:
         TemplateConfigObject configObject = combine(c1, c2)
 
         then:
         configObject.config.equals(basePipelineConfigMap + [
-                a: 3,
-                b: "hi",
-                c: true
+            a: 3,
+            b: "hi",
+            c: true
         ])
         configObject.merge.isEmpty()
         configObject.override.isEmpty()
@@ -123,35 +126,37 @@ class PipelineConfigSpec extends Specification {
 
         String c1 = """
             application_environments{ 
-            dev {
-              override = true
-              long_name = 'Dev'
-            }
+                dev {
+                    override = true 
+                    long_name = 'Dev'
+                }
             }
             a = 3
             b = "hi" 
             c = true 
-            """
+        """
 
         String c2 = """
             a = 4
             application_environments{ 
-            dev {
-              long_name = 'Develop'
+                dev {
+                    long_name = 'Develop'
+                }
             }
-            }
-            """
+        """
         when:
         TemplateConfigObject configObject = combine(c1, c2)
 
         then:// while the override occurs, the final result has not overrides
         configObject.config == (basePipelineConfigMap + [
-                application_environments:[
-                dev:[long_name:'Develop']
-                ],
-                a: 3,
-                b: "hi",
-                c: true
+            application_environments:[
+                dev:[
+                    long_name:'Develop'
+                ]
+            ],
+            a: 3,
+            b: "hi",
+            c: true
         ])
         configObject.merge.isEmpty()
         configObject.override.isEmpty()
@@ -162,31 +167,31 @@ class PipelineConfigSpec extends Specification {
 
         String c1 = """
             application_environments{ 
-            dev {
-              override = true
-              long_name = 'Dev'
-            }
+                dev {
+                    override = true 
+                    long_name = 'Dev'
+                }
             }
             a = 3
             b = "hi" 
             c = true 
-            """
+        """
 
         String c2 = """
             a = 4
             application_environments{ 
-            dev {
-              long_name = 'Develop'
+                dev {
+                    long_name = 'Develop'
+                }
             }
-            }
-            """
+        """
 
         String c3 = """
             a = 5
             application_environments{ 
-            dev {
-              long_name = 'Development'
-            }
+                dev {
+                    long_name = 'Development'
+                }
             }
             """
         when:
@@ -194,12 +199,14 @@ class PipelineConfigSpec extends Specification {
 
         then:// override and merge only apply to the next level
         configObject.config == (basePipelineConfigMap + ([
-                application_environments:[
-                        dev:[long_name:'Develop']
-                ],
-                a: 3,
-                b: "hi",
-                c: true
+            application_environments:[
+                dev:[
+                    long_name:'Develop'
+                ]
+            ],
+            a: 3,
+            b: "hi",
+            c: true
         ] as LinkedHashMap))
         configObject.merge.isEmpty()
         configObject.override.isEmpty()
@@ -210,32 +217,32 @@ class PipelineConfigSpec extends Specification {
 
         String c1 = """
             application_environments{ 
-            dev {
-              override = true
-              names {
-                Develop
-                Development
-                Dev
-                dev
-                devel
-                develop
-                development
-              }
-              long_name = 'Dev'
-            }
+                dev {
+                    override = true
+                    names {
+                        Develop
+                        Development
+                        Dev
+                        dev
+                        devel
+                        develop
+                        development
+                    }
+                    long_name = 'Dev'
+                }
             }
             a = 3
             b = "hi" 
             c = true 
-            """
+        """
 
         String c2 = """
             a = 4
             application_environments{ 
-            dev {
-              long_name = 'Develop'
-              names
-            }
+                dev {
+                    long_name = 'Develop'
+                    names
+                }
             }
             """
         when:
@@ -243,12 +250,15 @@ class PipelineConfigSpec extends Specification {
 
         then:// while the override occurs, the final result has not overrides
         configObject.config == (basePipelineConfigMap + [
-                application_environments:[
-                        dev:[long_name:'Develop', names:[:]]
-                ],
-                a: 3,
-                b: "hi",
-                c: true
+            application_environments:[
+                dev:[
+                    long_name:'Develop', 
+                    names:[:]
+                ]
+            ],
+            a: 3,
+            b: "hi",
+            c: true
         ])
         configObject.merge.isEmpty()
         configObject.override.isEmpty()
@@ -259,49 +269,61 @@ class PipelineConfigSpec extends Specification {
 
         String c1 = """
             application_environments{ 
-            dev {
-              override = true
-              names 
-              long_name = 'Dev'
-            }
+                dev {
+                    override = true 
+                    names 
+                    long_name = 'Dev'
+                }
             }
             a = 3
             b = "hi" 
             c = true 
-            """
+        """
 
         String c2 = """
             a = 4
             application_environments{ 
-            dev {
-              long_name = 'Develop'
-              names {
-                Develop {
-                  merge = true
-                  name = 'Develop'
+                dev {
+                    long_name = 'Develop'
+                    names {
+                        Develop {
+                            merge = true 
+                            name = 'Develop'
+                        }
+                        Development
+                        Dev
+                        dev
+                        devel
+                        develop
+                        development
+                    }
                 }
-                Development
-                Dev
-                dev
-                devel
-                develop
-                development
-              }
             }
-            }
-            """
+        """
         when:
         TemplateConfigObject configObject = combine(c1, c2)
 
         then:// while the override occurs, the final result has not overrides
         configObject.config == (basePipelineConfigMap + [
-                application_environments:[
-                        dev:[long_name:'Develop', names:[Develop: [name:'Develop'],Development:[:],
-                        Dev:[:],dev:[:],devel:[:],develop:[:],development:[:]]]
-                ],
-                a: 3,
-                b: "hi",
-                c: true
+            application_environments:[
+                dev:[
+                    long_name:'Develop',
+                    names:[
+                        Develop: [
+                            name:'Develop'
+                        ],
+                        Development:[:],
+                        Dev:[:],
+                        dev:[:],
+                        devel:[:],
+                        develop:[:],
+                        development:[:]
+                    ]
+                ]
+            ],
+            a: 3,
+            b: "hi",
+            c: true
         ])
         !configObject.merge.isEmpty()
         (['application_environments.dev.names.Develop'] as Set).equals(configObject.merge)
@@ -317,19 +339,21 @@ class PipelineConfigSpec extends Specification {
         p.join(new TemplateConfigObject(config:[b:0, a:1]))
 
         then:
-        1 * TemplateLogger.print({it.contains("Configurations Added:\n- a set to 1") &&
-                it.contains("Configurations Changed: None") &&
-                it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored: None") &&
-                it.contains("Subsequent may merge: None")
-        }, _) >> { s, c -> return System.out.print(s + "\n") }
-        1 * TemplateLogger.print({it.contains("Configurations Added:\n- b set to 0") &&
-                it.contains("Configurations Changed: None") &&
-                it.contains("Configurations Duplicated:\n- a duplicated with 1") &&
-                it.contains("Configurations Ignored: None") &&
-                it.contains("Subsequent may merge: None")
-        }, _) >> { s, c -> return System.out.print(s + "\n") }
+        assert logs[0].contains("Configurations Added:\n- a set to 1")
+        assert logs[0].contains("Configurations Deleted: None")
+        assert logs[0].contains("Configurations Changed: None")
+        assert logs[0].contains("Configurations Duplicated: None")
+        assert logs[0].contains("Configurations Ignored: None")
+        assert logs[0].contains("Subsequent May Merge: None")
+        assert logs[0].contains("Subsequent May Override: None")
 
+        assert logs[1].contains("Configurations Added:\n- b set to 0")
+        assert logs[1].contains("Configurations Deleted: None")
+        assert logs[1].contains("Configurations Changed: None")
+        assert logs[1].contains("Configurations Duplicated:\n- a")
+        assert logs[1].contains("Configurations Ignored: None")
+        assert logs[1].contains("Subsequent May Merge: None")
+        assert logs[1].contains("Subsequent May Override: None")
     }
 
     def 'printJoin add'(){
@@ -339,26 +363,18 @@ class PipelineConfigSpec extends Specification {
         when:
         p.join(new TemplateConfigObject(config:[a:1]))
         p.join(new TemplateConfigObject(config:[b:0]))
-
-        then:
-        1 * TemplateLogger.print({it.contains("Configurations Added:\n- a set to 1") &&
-                it.contains("Configurations Changed: None") &&
-                it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored: None") &&
-                it.contains("Subsequent may merge: None")
-        }, _) >> { s, c -> return System.out.print(s + "\n") }
-        1 * TemplateLogger.print({it.contains("Configurations Added:\n- b set to 0") &&
-                it.contains("Configurations Changed: None") &&
-                it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored: None") &&
-                it.contains("Subsequent may merge: None")
-        }, _) >> { s, c -> return System.out.print(s + "\n") }
-
+        
+        then: 
+        assert logs[0].contains("Configurations Added:\n- a set to 1")
+        assert logs[1].contains("Configurations Added:\n- b set to 0")
+        assert logs.findAll{ it.contains('Configurations Duplicated: None') }.size() == 2
+        assert logs.findAll{ it.contains('Configurations Ignored: None') }.size() == 2
+        assert logs.findAll{ it.contains('Subsequent May Merge: None') }.size() == 2
+        assert logs.findAll{ it.contains('Subsequent May Override: None') }.size() == 2
     }
 
     def 'printJoin failed change'(){
         setup:
-
         PipelineConfig p = new PipelineConfig(TemplateConfigDsl.parse(basePipelineConfig))
         TemplateConfigObject t = new TemplateConfigObject(config:[a:[b:1]])
 
@@ -367,69 +383,112 @@ class PipelineConfigSpec extends Specification {
         p.join(new TemplateConfigObject(config:[a:[b:2]]))
 
         then:
-        1 * TemplateLogger.print({it.contains("Configurations Added:\n- a.b set to 1") &&
-                it.contains("Configurations Changed: None") &&
-                it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored: None") &&
-                it.contains("Subsequent may merge: None")
-        }, _) >> { s, c -> return System.out.print(s + "\n") }
-        1 * TemplateLogger.print({it.contains("Configurations Added: None") &&
-                it.contains("Configurations Changed: None") &&
-                it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored:\n" +
-                        "- a.b ignored change from 1 to 2") &&
-                it.contains("Subsequent may merge: None")
-        }, _) >> { s, c -> return System.out.print(s + "\n") }
+        assert logs[0].contains('Configurations Added:\n- a.b set to 1')
+        assert logs[0].contains("Configurations Deleted: None")
+        assert logs[0].contains('Configurations Changed: None')
+        assert logs[0].contains('Configurations Duplicated: None')
+        assert logs[0].contains('Configurations Ignored: None') 
+        assert logs[0].contains('Subsequent May Merge: None') 
+        assert logs[0].contains('Subsequent May Override: None') 
+
+        assert logs[1].contains('Configurations Added: None') 
+        assert logs[1].contains("Configurations Deleted: None")
+        assert logs[1].contains('Configurations Changed: None')
+        assert logs[1].contains('Configurations Duplicated: None')
+        assert logs[1].contains('Configurations Ignored:\n- a.b')        
+        assert logs[1].contains('Subsequent May Merge: None') 
+        assert logs[1].contains('Subsequent May Override: None') 
+
 
     }
 
     def 'printJoin change'(){
         setup:
-
-
         PipelineConfig p = new PipelineConfig(TemplateConfigDsl.parse(basePipelineConfig))
         TemplateConfigObject t = new TemplateConfigObject(config:[a:1])
 
         when:
         TemplateConfigObject configObject = combine("""
-a{
-  b = 1
-  override = true
-}
-""", """
-a{
-  b = 2
-  override = true
-}
-""")
+        a{
+            override = true 
+            b = 1
+        }
+        """, """
+        a{
+            b = 2
+        }
+        """)
 
         then:
-        1 * TemplateLogger.print({it.contains("Configurations Added:\n- a.b set to 1") &&
-                it.contains("Configurations Changed: None") &&
-                it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored: None") &&
-                it.contains("Subsequent may merge: None") &&
-                it.contains("Subsequent may override:\n- a")
-        }, _) >> { s, c -> return System.out.print(s + "\n") }
-        1 * TemplateLogger.print({it.contains("Configurations Added: None") &&
-                it.contains("Configurations Changed:\n" +
-                        "- a.b changed from 1 to 2") &&
-                it.contains("Configurations Duplicated: None") &&
-                it.contains("Configurations Ignored: None") &&
-                it.contains("Subsequent may merge: None") &&
-                it.contains("Subsequent may override:\n- a")
-        }, _) >> { s, c -> return System.out.print(s + "\n") }
+        assert logs[0].contains("Configurations Added:\n- a.b set to 1")
+        assert logs[0].contains("Configurations Deleted: None")
+        assert logs[0].contains('Configurations Duplicated: None')
+        assert logs[0].contains('Configurations Ignored: None') 
+        assert logs[0].contains('Subsequent May Merge: None') 
+        assert logs[0].contains('Subsequent May Override:\n- a') 
 
+        assert logs[1].contains('Configurations Added: None') 
+        assert logs[0].contains("Configurations Deleted: None")
+        assert logs[1].contains("Configurations Changed:\n- a.b changed from 1 to 2")
     }
+
+    def 'printJoin configuration Deleted'(){
+        setup: 
+        PipelineConfig p = new PipelineConfig(TemplateConfigDsl.parse(basePipelineConfig))
+        
+        when: 
+        p.join(TemplateConfigDsl.parse("""
+            a{ 
+                override = true
+                y = true
+                x = true 
+            }
+        """))
+        p.join(TemplateConfigDsl.parse("""
+            a{ 
+                y = false 
+            }
+        """))
+
+        then: 
+        assert p.config.config.a == [ y: false ]
+        assert logs[1].contains("Configurations Deleted:\n- a.x")
+    }
+
+    def 'ref: https://github.com/jenkinsci/templating-engine-plugin/issues/48'(){
+        setup: 
+        PipelineConfig p = new PipelineConfig(TemplateConfigDsl.parse(basePipelineConfig))
+        p.join(TemplateConfigDsl.parse("""
+            stages {
+                stage_one {
+                    override = true
+                }
+            }
+        """))
+        p.join(TemplateConfigDsl.parse("""
+            stages {
+                stage_two {
+                    merge = true
+                }
+                stage_three {
+                    override = true
+                }
+            }
+        """))
+
+        when: 
+        TemplateConfigDsl.serialize(p.getConfig())
+
+        then: 
+        noExceptionThrown()
+        
+    }
+
 
     /*
     helpers
      */
 
-    void templateLoggerSetup(){
-        GroovySpy(TemplateLogger, global: true)
-        TemplateLogger.print(_, _) >> { s, c -> return System.out.print(s) }
-    }
 
     // helper
     TemplateConfigObject combine(String ... configs){
