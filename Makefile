@@ -1,47 +1,24 @@
-# Minimal makefile for Sphinx documentation
-#
-
-# You can set these variables from the command line.
-SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = JenkinsTemplatingEngine
-SOURCEDIR     = .
-BUILDDIR      = _build
-DOCSDIR       = docs
-
-.PHONY: help Makefile docs build live deploy 
+# Minimal makefile to build Antora documentation
+BUILDDIR = docs/html
+PLAYBOOK = antora-playbook-local.yml 
 
 # Put it first so that "make" without argument is like "make help".
 help: ## Show target options
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-clean: ## removes compiled documentation and jpi 
-	rm -rf $(DOCSDIR)/$(BUILDDIR) build bin 
+clean: ## removes remote documentation and compiled documentation
+	rm -rf $(BUILDDIR)/**
 
-image: ## builds container image for building the documentation
-	docker build $(DOCSDIR) -t sdp-docs
+.ONESHELL:
+install:  ## installs the project's npm dependencies
+	[ ! -d node_modules ] && npm i || true
 
-docs: ## builds documentation in _build/html 
-      ## run make docs live for hot reloading of edits during development
-	make clean
-	make image 
-	$(eval goal := $(filter-out $@,$(MAKECMDGOALS)))
-	@if [ "$(goal)" = "live" ]; then\
-		cd $(DOCSDIR);\
-		docker run -p 8000:8000 -v $(shell pwd)/$(DOCSDIR):/app sdp-docs sphinx-autobuild -b html $(ALLSPHINXOPTS) . $(BUILDDIR)/html -H 0.0.0.0;\
-		cd - ;\
-	elif [ "$(goal)" = "deploy" ]; then\
-		$(eval old_remote := $(shell git remote get-url origin)) \
-		git remote set-url origin https://$(user):$(token)@github.com/jenkinsci/templating-engine-plugin.git ;\
-		docker run -v $(shell pwd):/app sdp-docs sphinx-versioning --local-conf ./docs/conf.py push --show-banner docs gh-pages . ;\
-		echo git remote set-url origin $(old_remote) ;\
-		git remote set-url origin $(old_remote) ;\
-	else\
-		docker run -v $(shell pwd)/$(DOCSDIR):/app sdp-docs $(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) ;\
-	fi
+.PHONY: docs
+docs: clean install ## builds the antora documentation 
+	$(shell npm bin)/antora generate --fetch --to-dir $(BUILDDIR) $(PLAYBOOK)
 
-deploy: ; 
-live: ;
+preview: clean install ## runs a local preview server to view changes to the documentation
+	$(shell npm bin)/gulp preview 
 
 jpi: ## builds the jpi via gradle
 	gradle clean jpi 

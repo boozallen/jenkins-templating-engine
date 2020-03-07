@@ -60,23 +60,15 @@ import javax.annotation.Nonnull
         if (script.getBinding().hasVariable(getName())) {
             template = script.getBinding().getVariable(getName())
         } else {
-            Binding binding = newTemplateBinding()
-            // override script binding with JTE implementation 
-            script.setBinding(binding)
-
-            // set pipelineConfig object 
+            // aggregate the pipeline configurations
             PipelineConfig pipelineConfig = newPipelineConfig()
-
-            // aggregate pipeline configs
             aggregateTemplateConfigurations(pipelineConfig)
-
-            // make accessible to libs if they need to access
-            // more than just their own library config block 
             binding.setVariable("pipelineConfig", pipelineConfig.getConfig().getConfig())
-
             binding.setVariable("templateConfigObject", pipelineConfig.getConfig())
 
-            // populate the template
+            // prepare the template environment by populating the binding
+            Binding binding = newTemplateBinding()
+            script.setBinding(binding)
             initializeBinding(pipelineConfig, script)
 
             // parse entrypoint and return 
