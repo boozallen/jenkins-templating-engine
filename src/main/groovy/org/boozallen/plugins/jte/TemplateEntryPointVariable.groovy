@@ -63,12 +63,12 @@ import javax.annotation.Nonnull
             // aggregate the pipeline configurations
             PipelineConfig pipelineConfig = newPipelineConfig()
             aggregateTemplateConfigurations(pipelineConfig)
-            binding.setVariable("pipelineConfig", pipelineConfig.getConfig().getConfig())
-            binding.setVariable("templateConfigObject", pipelineConfig.getConfig())
 
             // prepare the template environment by populating the binding
             Binding binding = newTemplateBinding()
             script.setBinding(binding)
+            binding.setVariable("pipelineConfig", pipelineConfig.getConfig().getConfig())
+            binding.setVariable("templateConfigObject", pipelineConfig.getConfig())
             initializeBinding(pipelineConfig, script)
 
             // parse entrypoint and return 

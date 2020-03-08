@@ -22,6 +22,7 @@ import org.junit.Rule
 import org.junit.ClassRule
 import org.jvnet.hudson.test.JenkinsRule
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl
 import com.cloudbees.hudson.plugins.folder.Folder
 import jenkins.plugins.git.GitSampleRepoRule
 import hudson.plugins.git.GitSCM
@@ -74,6 +75,10 @@ class GovernanceTierSpec extends Specification{
         // create tier 2 
         List<ScmLibraryProvider> librarySources2 = [] 
         tier2 = new GovernanceTier(scm, baseDir2, librarySources2)
+
+        // mock run
+        GroovySpy(TemplateConfigDsl, global:true)
+        _ * TemplateConfigDsl.getEnvironment() >> GroovyMock(EnvActionImpl)
     }
 
     // test baseDir is root of repository 

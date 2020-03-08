@@ -23,6 +23,7 @@ import org.jvnet.hudson.test.GroovyJenkinsRule
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.IgnoreRest
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl 
 
 class PipelineConfigSpec extends Specification {
     @Shared
@@ -36,18 +37,17 @@ class PipelineConfigSpec extends Specification {
     public PrintStream logger = Mock()
     public logs = [] 
 
-    
+    def setup(){
 
-    def setupSpec(){
-        basePipelineConfig = PipelineConfig.baseConfigContentsFromLoader(groovyJenkinsRule.jenkins.getPluginManager()
-                .uberClassLoader)
+        basePipelineConfig = PipelineConfig.baseConfigContentsFromLoader(groovyJenkinsRule.jenkins.getPluginManager().uberClassLoader)
+
+        // mock run
+        GroovySpy(TemplateConfigDsl, global:true)
+        _ * TemplateConfigDsl.getEnvironment() >> GroovyMock(EnvActionImpl)
 
         basePipelineConfigMap = TemplateConfigDsl.parse(basePipelineConfig).config
-    }
 
-    def setup(){
         GroovyMock(TemplateLogger, global:true)
-
         _ * TemplateLogger.print(_, _) >> { s, c -> logs.push(s) }
     }
 
