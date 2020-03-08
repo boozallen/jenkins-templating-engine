@@ -18,6 +18,7 @@ package org.boozallen.plugins.jte.config
 
 import org.kohsuke.groovy.sandbox.GroovyInterceptor
 import org.kohsuke.groovy.sandbox.GroovyInterceptor.Invoker
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl 
 
 /*
   our sandbox.  just block all the things except the creation of
@@ -27,9 +28,18 @@ import org.kohsuke.groovy.sandbox.GroovyInterceptor.Invoker
   so backed off to checking if it's a Script object. 
 */
 class TemplateConfigDslSandbox extends GroovyInterceptor {
+
+  Script script 
+  EnvActionImpl env
+
+  TemplateConfigDslSandbox(Script script, EnvActionImpl env){
+    this.script = script 
+    this.env = env 
+  }
+
   @Override
   Object onMethodCall(Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
-    if (!(receiver in TemplateConfigBuilder)){
+    if (!(receiver == script)){
       throw new SecurityException("""
         onMethodCall:
         invoker -> ${invoker}
@@ -54,7 +64,7 @@ class TemplateConfigDslSandbox extends GroovyInterceptor {
   
   @Override
   public Object onNewInstance(Invoker invoker, Class receiver, Object... args) throws Throwable {
-    if (!(receiver in TemplateConfigBuilder)){
+    if (!(receiver == script)){
       throw new SecurityException("""
         onNewInstance:
         invoker -> ${invoker}
@@ -66,7 +76,7 @@ class TemplateConfigDslSandbox extends GroovyInterceptor {
 
   @Override
   public void onSuperConstructor(Invoker invoker, Class receiver, Object... args) throws Throwable {
-    if (!(receiver in TemplateConfigBuilder)){
+    if (!(receiver == script)){
       throw new SecurityException("""
         onSuperConstructor:
         invoker -> ${invoker}
@@ -90,7 +100,7 @@ class TemplateConfigDslSandbox extends GroovyInterceptor {
 
   @Override
   public Object onGetProperty(Invoker invoker, Object receiver, String property) throws Throwable {
-    if (!(receiver in TemplateConfigBuilder)){
+    if (!(receiver == script || receiver == env)){
       throw new SecurityException("""
         onGetProperty:
         invoker -> ${invoker}
@@ -103,7 +113,7 @@ class TemplateConfigDslSandbox extends GroovyInterceptor {
 
   @Override
   public Object onSetProperty(Invoker invoker, Object receiver, String property, Object value) throws Throwable {
-    if (!(receiver in TemplateConfigBuilder)){
+    if (!(receiver == script)){
       throw new SecurityException("""
         onSetProperty:
         invoker -> ${invoker}

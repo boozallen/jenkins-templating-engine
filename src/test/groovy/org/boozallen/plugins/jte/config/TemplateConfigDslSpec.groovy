@@ -17,18 +17,42 @@
 package org.boozallen.plugins.jte.config
 
 import spock.lang.*
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl 
 
 class TemplateConfigDslSpec extends Specification {
 
+    def setup(){
+        EnvActionImpl env = Mock() 
+        env.getProperty("someField") >> "envProperty" 
+
+        GroovySpy(TemplateConfigDsl, global:true)
+        TemplateConfigDsl.getEnvironment() >> env 
+    }
+
+    def "include Jenkins env var in configuration"(){
+        setup: 
+        String config = "a = env.someField" 
+        
+        when: 
+        TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+
+        then: 
+        configObject.config == [ a: "envProperty" ]
+        configObject.merge.isEmpty()
+        configObject.override.isEmpty()
+    }
+
     def 'Empty Config File'(){
         setup: 
-            String config = "" 
+        String config = "" 
+
         when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+        TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+        
         then: 
-            configObject.config == [:]
-            configObject.merge.isEmpty()
-            configObject.override.isEmpty()
+        configObject.config == [:]
+        configObject.merge.isEmpty()
+        configObject.override.isEmpty()
     }
 
     def 'Flat Keys Configuration'(){

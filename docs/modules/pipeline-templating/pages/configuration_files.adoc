@@ -86,3 +86,23 @@ template_methods{
     functional_test
 }
 ----
+
+== Environment Substitutions 
+
+In Jenkins, environment variables are made accessible via the ``env`` global variable.  This variable is resolvable within your pipeline configuration file. 
+
+This also means that Build Parameters can be access within the pipeline configuration file as they are stored on the ``env`` variable. 
+
+For example, in the following configuration:  
+
+.pipeline_config.groovy
+[source, groovy]
+---- 
+libraries{
+    someLibrary{
+        someField = env.buildParam ?: "default if not set" 
+    }
+}
+----
+
+``libraries.someLibrary.someField`` would resolve to the Build Parameter named ``buildParam`` and would default to ``default if not set`` if ``buildParam`` was not truthy. 

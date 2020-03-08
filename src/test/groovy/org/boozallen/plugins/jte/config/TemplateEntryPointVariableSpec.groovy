@@ -27,6 +27,7 @@ import org.jvnet.hudson.test.GroovyJenkinsRule
 import org.jvnet.hudson.test.WithoutJenkins
 import spock.lang.Shared
 import spock.lang.Specification
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl 
 
 
 class TemplateEntryPointVariableSpec extends Specification {
@@ -35,12 +36,10 @@ class TemplateEntryPointVariableSpec extends Specification {
     @SuppressWarnings('JUnitPublicField')
     public GroovyJenkinsRule groovyJenkinsRule = new GroovyJenkinsRule()
 
-    def setupSpec(){
-
-    }
-
     def setup(){
         templateLoggerSetup()
+        GroovySpy(TemplateConfigDsl, global:true)
+        _ * TemplateConfigDsl.getEnvironment() >> GroovyMock(EnvActionImpl)
     }
 
     @WithoutJenkins

@@ -19,6 +19,7 @@ import org.boozallen.plugins.jte.binding.injectors.StepWrapper
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.utils.RunUtils
+import org.boozallen.plugins.jte.config.TemplateConfigDsl
 
 import spock.lang.*
 import org.junit.Rule
@@ -33,6 +34,7 @@ import org.jvnet.hudson.test.JenkinsRule
 import org.jvnet.hudson.test.WithoutJenkins
 import org.jvnet.hudson.test.BuildWatcher
 import org.jenkinsci.plugins.workflow.cps.CpsScript
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl 
 
 class ScmLibraryProviderSpec extends Specification{
 
@@ -59,6 +61,9 @@ class ScmLibraryProviderSpec extends Specification{
         _ * RunUtils.getJob() >> job
         GroovyMock(TemplateLogger, global:true)
         _ * TemplateLogger.print(_,_)
+
+        GroovySpy(TemplateConfigDsl, global:true)
+        _ * TemplateConfigDsl.getEnvironment() >> GroovyMock(EnvActionImpl)
 
 
         repo.init()
