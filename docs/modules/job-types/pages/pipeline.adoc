@@ -4,15 +4,11 @@ The most straight forward way test out a pipeline template is to create a Pipeli
 
 == Select the Jenkins Templating Engine Pipeline Definition Option
 
-A `Jenkins Templating Engine` pipeline definition is available when the plugin is installed:
-
-image::pipeline_flow_definition.png[]
+A `Jenkins Templating Engine` pipeline definition is made available once the plugin is installed. 
 
 == Configure the Pipeline
 
-After selecting the `Jenkins Templating Engine` definition, you'll be able to configure your *Pipeline Template* and *Pipeline Configuration*
-
-image::pipeline_configuration.png[]
+After selecting the `Jenkins Templating Engine` definition, you'll be able to configure your *Pipeline Template* and *Pipeline Configuration*. 
 
 == The Example
 
