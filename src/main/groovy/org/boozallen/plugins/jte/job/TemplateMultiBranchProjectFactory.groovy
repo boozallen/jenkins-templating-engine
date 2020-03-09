@@ -23,6 +23,7 @@ import hudson.model.Action
 import jenkins.branch.MultiBranchProjectFactory
 import jenkins.branch.MultiBranchProjectFactoryDescriptor
 import org.kohsuke.stapler.DataBoundConstructor
+import org.kohsuke.stapler.DataBoundSetter
 import org.jenkinsci.plugins.workflow.multibranch.AbstractWorkflowBranchProjectFactory
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 import jenkins.branch.MultiBranchProject
@@ -34,12 +35,31 @@ import org.jenkinsci.plugins.workflow.cps.Snippetizer
 
 public class TemplateMultiBranchProjectFactory extends MultiBranchProjectFactory.BySCMSourceCriteria {
 
+    Boolean filterBranches
+
     @DataBoundConstructor public TemplateMultiBranchProjectFactory() { }
 
-    public Object readResolve() { return this }
+    public Object readResolve() {
+        if (this.filterBranches == null) {
+            this.filterBranches = false;
+        }
+        return this;
+    }
+
+    @DataBoundSetter
+    public void setFilterBranches(Boolean filterBranches){
+        this.filterBranches = filterBranches
+    }
+
+    public Boolean getFilterBranches(){
+        return filterBranches
+    }
+
 
     private AbstractWorkflowBranchProjectFactory newProjectFactory() {
-        return new TemplateBranchProjectFactory()
+        TemplateBranchProjectFactory factory = new TemplateBranchProjectFactory()
+        factory.setFilterBranches(this.filterBranches)
+        return factory
     }
 
     protected void customize(WorkflowMultiBranchProject project){
@@ -59,14 +79,7 @@ public class TemplateMultiBranchProjectFactory extends MultiBranchProjectFactory
     }
 
     @Override protected SCMSourceCriteria getSCMSourceCriteria(SCMSource source) {
-        return new SCMSourceCriteria() {
-            private static final long serialVersionUID = 1L
-
-			@Override
-            public boolean isHead(Probe probe, TaskListener listener) throws IOException {
-                return true
-            }
-        }
+        return newProjectFactory().getSCMSourceCriteria(source)
     }
 
     @Extension public static class PerFolderAdder extends TransientActionFactory<OrganizationFolder> {
