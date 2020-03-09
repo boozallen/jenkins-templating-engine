@@ -54,7 +54,7 @@ class TemplateConfigDsl implements Serializable{
     cc.addCompilationCustomizers(new SandboxTransformer())
     cc.scriptBaseClass = TemplateConfigBuilder.class.name
     
-    GroovyShell sh = new GroovyShell(our_binding, cc);
+    GroovyShell sh = new GroovyShell(RunUtils.getClassLoader(), our_binding, cc);
     Script script = sh.parse(script_text)
 
     TemplateConfigDslSandbox sandbox = new TemplateConfigDslSandbox(script, env)

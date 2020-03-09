@@ -17,16 +17,27 @@
 package org.boozallen.plugins.jte.config
 
 import spock.lang.*
+import org.junit.*
+import org.boozallen.plugins.jte.utils.RunUtils
 import org.jenkinsci.plugins.workflow.cps.EnvActionImpl 
+import org.jvnet.hudson.test.GroovyJenkinsRule
 
 class TemplateConfigDslSpec extends Specification {
+
+    @Shared
+    @ClassRule
+    @SuppressWarnings('JUnitPublicField')
+    public GroovyJenkinsRule groovyJenkinsRule = new GroovyJenkinsRule()
 
     def setup(){
         EnvActionImpl env = Mock() 
         env.getProperty("someField") >> "envProperty" 
 
         GroovySpy(TemplateConfigDsl, global:true)
-        TemplateConfigDsl.getEnvironment() >> env 
+        TemplateConfigDsl.getEnvironment() >> env
+        
+        GroovySpy(RunUtils, global:true)
+        RunUtils.getClassLoader() >> groovyJenkinsRule.jenkins.getPluginManager().uberClassLoader 
     }
 
     def "include Jenkins env var in configuration"(){
