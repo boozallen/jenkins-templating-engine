@@ -24,14 +24,25 @@
   -->
 
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler" xmlns:wfe="/org/jenkinsci/plugins/workflow/editor">
-  <f:entry title="${%Pipeline Template}" field="template">
-    <wfe:workflow-editor>
-      <div class="samples"/>
-    </wfe:workflow-editor>
-  </f:entry>
-  <f:entry title="${%Pipeline Configuration}" field="pipelineConfig">
-    <wfe:workflow-editor>
-      <div class="samples"/>
-    </wfe:workflow-editor>
-  </f:entry>
+  <f:block>
+        <table>
+            <f:optionalBlock title="Provide a pipeline template (Jenkinsfile)"
+                             field="providePipelineTemplate"
+                             inline="true"
+                             checked="${instance.providePipelineTemplate}">
+                <f:entry title="${%Pipeline Template}" field="template">
+                    <f:textarea codemirror-mode="clike" codemirror-config="mode: 'text/x-groovy', lineNumbers: true, matchBrackets: true, onBlur: function(editor){editor.save()}"/>
+                </f:entry>    
+            </f:optionalBlock>
+
+            <f:optionalBlock title="Provide a pipeline configuration"
+                             field="providePipelineConfig"
+                             inline="true"
+                             checked="${instance.providePipelineConfig}">
+                <f:entry title="${%Pipeline Configuration}" field="pipelineConfig">
+                    <f:textarea codemirror-mode="clike" codemirror-config="mode: 'text/x-groovy', lineNumbers: true, matchBrackets: true, onBlur: function(editor){editor.save()}"/>
+                </f:entry>    
+            </f:optionalBlock>
+        </table>
+    </f:block>
 </j:jelly>

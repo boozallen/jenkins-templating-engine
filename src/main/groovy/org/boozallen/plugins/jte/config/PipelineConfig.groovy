@@ -32,7 +32,7 @@ class PipelineConfig implements Serializable{
     PipelineConfig(){
       String defaultTemplateConfig = RunUtils.classLoader
                                   .loadClass("org.boozallen.plugins.jte.config.PipelineConfig")
-                                  .getResource(GovernanceTier.CONFIG_FILE).text
+                                  .getResource(ScmPipelineConfigurationProvider.CONFIG_FILE).text
       
       currentConfigObject = TemplateConfigDsl.parse(defaultTemplateConfig)
     }
@@ -46,7 +46,7 @@ class PipelineConfig implements Serializable{
     // for testing using the base pipeline config file contents
     static String baseConfigContentsFromLoader(ClassLoader ldr){
         ldr.loadClass("org.boozallen.plugins.jte.config.PipelineConfig")
-                .getResource(GovernanceTier.CONFIG_FILE).text
+                .getResource(ScmPipelineConfigurationProvider.CONFIG_FILE).text
     }
 
     TemplateConfigObject getConfig(){

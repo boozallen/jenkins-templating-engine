@@ -6,8 +6,6 @@ image::hierarchy.png[]
 
 A Jenkins wide Governance Tier can be configured in `Manage Jenkins > Configure System` under the `Jenkins Templating Engine` section header.  This Governance Tier will apply to all jobs in Jenkins.
 
-image::configure_system_validation.png[]
-
 A Governance Tier can then be configured on any folder within Jenkins, including multibranch jobs or GitHub Organization Jobs.
 
 [IMPORTANT]

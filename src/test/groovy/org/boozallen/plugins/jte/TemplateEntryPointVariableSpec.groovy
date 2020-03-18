@@ -31,9 +31,11 @@ class TemplateEntryPointVariableSpec extends Specification {
   @Shared
   public ClassLoader classLoader;
 
+  WorkflowJob job
+
   TemplateEntryPointVariable templateEntryPointVariable = new TemplateEntryPointVariable()
 
-  def setupSpec(){
+  def setup(){
     classLoader = groovyJenkinsRule.jenkins.getPluginManager().uberClassLoader
   }
 
@@ -116,77 +118,6 @@ class TemplateEntryPointVariableSpec extends Specification {
 
   }
 
-  def "aggregateTemplateConfigurations 1 tier, no local config"(){
-    setup:
-    PipelineConfig pipelineConfigMain =  Mock(PipelineConfig)
-
-    TemplateConfigObject templateConfigObject = Mock(TemplateConfigObject)
-    //1 * templateConfigObject.asBoolean() >> { return true }
-
-    1 * pipelineConfigMain.join(templateConfigObject) >> { return }
-
-    GovernanceTier tier = GroovyMock(GovernanceTier, global: true)
-    tier.getConfig() >> { return templateConfigObject }
-
-    1 * GovernanceTier.getHierarchy() >> { return [ tier ] }
-    1 * GovernanceTier.getCONFIG_FILE() >> { return "pipeline_config.groovy" } // mocks GovernanceTier.CONFIG_FILE
-
-    FileSystemWrapper fsw = GroovyMock(FileSystemWrapper, global: true)
-    1 * FileSystemWrapper.createFromJob() >> { return fsw }
-    1 * fsw.getFileContents(_, _, _) >> { return null }
-
-
-    when:
-    templateEntryPointVariable.aggregateTemplateConfigurations(pipelineConfigMain)
-
-    then:
-    notThrown(Exception)
-  }
-
-  def "aggregateTemplateConfigurations #tier_count tier, with local config"(){
-    setup:
-    PipelineConfig pipelineConfigMain =  Mock(PipelineConfig)
-
-    TemplateConfigObject templateConfigObject = Mock(TemplateConfigObject)
-    //1 * templateConfigObject.asBoolean() >> { return true }
-
-    tier_count * pipelineConfigMain.join(templateConfigObject) >> { return }
-
-    def tiers = []
-
-    for( int t = 0; t < tier_count; t++ ) {
-      GovernanceTier tier = GroovyMock(GovernanceTier)
-      1 * tier.getConfig() >> { return templateConfigObject }
-      tiers << tier
-    }
-
-    GroovyMock(GovernanceTier, global: true)
-    1 * GovernanceTier.getHierarchy() >> { return tiers }
-    1 * GovernanceTier.getCONFIG_FILE() >> { return "pipeline_config.groovy" }
-
-    FileSystemWrapper fsw = GroovyMock(FileSystemWrapper, global: true)
-    1 * FileSystemWrapper.createFromJob() >> { return fsw }
-
-    TemplateConfigObject appTemplate = Mock(TemplateConfigObject)
-    String appTemplateContent = "_"
-    1 * fsw.getFileContents("pipeline_config.groovy", _, _) >> { return appTemplateContent }
-
-    GroovyMock(TemplateConfigDsl, global: true)
-    1 * TemplateConfigDsl.parse(appTemplateContent) >> { return appTemplate }
-    1 * pipelineConfigMain.join(appTemplate) >> { return }
-
-
-    when:
-    templateEntryPointVariable.aggregateTemplateConfigurations(pipelineConfigMain)
-
-    then:
-    notThrown(Exception)
-
-    where:
-    tier_count << [0, 1, 5]
-
-  }
-
   @Extension
   public static class TemplatePrimitiveInjectorLocal extends TemplatePrimitiveInjector {
     static final public String DO_INJECT = "TemplatePrimitiveInjectorLocal-doInject"
@@ -228,42 +159,28 @@ class TemplateEntryPointVariableSpec extends Specification {
   }
 
   def "getTemplate from TemplateFlowDefinition" (){
-
     setup:
     String templateVar;
     String templateString = "the template";
+
     Map config = Mock(HashMap)
 
-    TemplateFlowDefinition templateFlowDefinition = Mock(TemplateFlowDefinition)
-    1 * templateFlowDefinition.getTemplate() >> { return templateString }
-    FlowDefinition flowDefinition = templateFlowDefinition
+    TemplateFlowDefinition templateFlowDefinition = GroovyMock(TemplateFlowDefinition)
+    templateFlowDefinition.getTemplate() >> { return templateString }
 
     WorkflowJob job = GroovyMock(WorkflowJob)
-    1 * job.getDefinition() >> {return flowDefinition }
+    job.getDefinition() >> { return templateFlowDefinition }
 
     GroovyMock(RunUtils, global: true)
-    1 * RunUtils.getJob() >> { return job}
+    RunUtils.getJob() >> { return job}
 
     GroovyMock(TemplateLogger, global: true)
-    1 * TemplateLogger.print("Obtained Pipeline Template from job configuration") >> {return }
-
-    GroovyMock(FileSystemWrapper, global: true)
-    0 * FileSystemWrapper.createFromJob()
-
-    FileSystemWrapper fs = GroovyMock(FileSystemWrapper)
-    0 * fs.getFileContents(_, _, _)
-
-    GroovyMock(GovernanceTier, global: true)
-    0 * GovernanceTier.getHierarchy()
-
-    0 * config.get("pipeline_template")
-    0 * config.get("allow_scm_jenkinsfile")
-
+    
     when:
     templateVar = TemplateEntryPointVariable.getTemplate(config)
 
     then:
-    notThrown(Exception)
+    1 * TemplateLogger.print("Obtained Pipeline Template from job configuration")
     templateVar == templateString
 
   }
@@ -434,7 +351,7 @@ class TemplateEntryPointVariableSpec extends Specification {
     String fileString = "{ template }";
     Map config = helperGetTemplateNoRepoJenkinsFile()
     // config.pipeline_template
-    1 * config.get("pipeline_template") >> { return null }
+    config.get("pipeline_template") >> { return null }
 
     GroovyMock(GovernanceTier, global: true)
     GovernanceTier tier = GroovyMock(GovernanceTier)
@@ -478,46 +395,4 @@ class TemplateEntryPointVariableSpec extends Specification {
     return config
   }
 
-  def "whitelist permitsMethod for #receiver" (){
-    setup:
-    TemplateEntryPointVariable.MiscWhitelist whitelist = new TemplateEntryPointVariable.MiscWhitelist()
-
-    expect:
-    whitelist.permitsMethod(null, receiver, [])
-
-    where:
-    receiver << [new Stage(), new TemplateBinding(), new TemplatePrimitiveInjector(){} ]
-  }
-
-  def "whitelist !permitsMethod for #receiver" (){
-    setup:
-    TemplateEntryPointVariable.MiscWhitelist whitelist = new TemplateEntryPointVariable.MiscWhitelist()
-
-    expect:
-    !whitelist.permitsMethod(null, receiver, [])
-
-    where:
-    receiver << [new Object(){}, [], "", new GovernanceTier() ]
-  }
-
-// could not test
-//  def "whitelist permitsMethod for TemplateConfigBuilder" (){
-//    setup:
-//    TemplateEntryPointVariable.MiscWhitelist whitelist = new TemplateEntryPointVariable.MiscWhitelist()
-//    TemplateConfigBuilder configBuilder = new LocalTemplateConfigBuilder()
-//
-//    expect:
-//    whitelist.permitsMethod(null, configBuilder, [])
-//  }
-
-  def "whitelist !permitsConstructor for #receiver" (){
-    setup:
-    TemplateEntryPointVariable.MiscWhitelist whitelist = new TemplateEntryPointVariable.MiscWhitelist()
-
-    expect:
-    !whitelist.permitsConstructor(constructor, [])
-
-    where:
-    constructor << [TemplateBinding.constructors[0]]
-  }
 }
