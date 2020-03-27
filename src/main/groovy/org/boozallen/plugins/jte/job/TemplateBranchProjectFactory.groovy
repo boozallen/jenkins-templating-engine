@@ -68,20 +68,20 @@ public class TemplateBranchProjectFactory extends WorkflowBranchProjectFactory {
                 }
 
                 // if user chose to filter branches, check for pipeline config file 
-                SCMProbeStat stat = probe.stat(GovernanceTier.CONFIG_FILE);
+                SCMProbeStat stat = probe.stat(ScmPipelineConfigurationProvider.CONFIG_FILE);
                 switch (stat.getType()) {
                     case SCMFile.Type.NONEXISTENT:
                         if (stat.getAlternativePath() != null) {
-                            listener.getLogger().format("      ‘%s’ not found (but found ‘%s’, search is case sensitive)%n", GovernanceTier.CONFIG_FILE, stat.getAlternativePath());
+                            listener.getLogger().format("      ‘%s’ not found (but found ‘%s’, search is case sensitive)%n", ScmPipelineConfigurationProvider.CONFIG_FILE, stat.getAlternativePath());
                         } else {
-                            listener.getLogger().format("      ‘%s’ not found%n", GovernanceTier.CONFIG_FILE);
+                            listener.getLogger().format("      ‘%s’ not found%n", ScmPipelineConfigurationProvider.CONFIG_FILE);
                         }
                         return false;
                     case SCMFile.Type.DIRECTORY:
-                        listener.getLogger().format("      ‘%s’ found but is a directory not a file%n", GovernanceTier.CONFIG_FILE);
+                        listener.getLogger().format("      ‘%s’ found but is a directory not a file%n", ScmPipelineConfigurationProvider.CONFIG_FILE);
                         return false;
                     default:
-                        listener.getLogger().format("      ‘%s’ found%n", GovernanceTier.CONFIG_FILE);
+                        listener.getLogger().format("      ‘%s’ found%n", ScmPipelineConfigurationProvider.CONFIG_FILE);
                         return true;
                 }
             }

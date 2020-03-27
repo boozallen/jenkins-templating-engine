@@ -16,14 +16,10 @@
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler">
-    <f:dropdownDescriptorSelector field="configurationProvider" title="Pipeline Configuration" default="${descriptor.defaultConfigurationProvider}"/>
-    <f:entry title="${%Library Sources}">
-        <f:repeatableProperty field="libraries" header="${%Library Source}">
-            <f:entry title="">
-                <div align="right">
-                    <f:repeatableDeleteButton/>
-                </div>
-            </f:entry>
-        </f:repeatableProperty>
-    </f:entry>
+    <f:entry field="name" title="${%Template Name}">
+        <f:textbox/>
+    </f:entry>    
+    <f:entry field="template" title="${%Template}">
+        <f:textarea codemirror-mode="clike" codemirror-config="mode: 'text/x-groovy', lineNumbers: true, matchBrackets: true, onBlur: function(editor){editor.save()}"/>
+    </f:entry>    
 </j:jelly>

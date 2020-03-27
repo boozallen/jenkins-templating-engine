@@ -16,7 +16,6 @@
 
 package org.boozallen.plugins.jte
 
-import org.boozallen.plugins.jte.config.TemplateConfigBuilder
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.binding.* 
 import org.boozallen.plugins.jte.config.* 
@@ -31,9 +30,11 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AbstractWhitelist
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.Whitelisted 
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
+import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import java.lang.reflect.Method
 import java.lang.reflect.Constructor
 import javax.annotation.Nonnull
+import org.apache.commons.io.FileUtils
 
 @Extension public class TemplateEntryPointVariable extends GlobalVariable {
     final static public String NAME = "template"
@@ -49,7 +50,7 @@ import javax.annotation.Nonnull
     @Nonnull
     @Override
     public String getName() {
-        return "template"
+        return NAME
     }
 
     @Nonnull
@@ -97,15 +98,42 @@ import javax.annotation.Nonnull
             }
         }
 
-        // get job config if present 
-        FileSystemWrapper fsw = FileSystemWrapper.createFromJob()
-
-        String repoConfigFile = fsw.getFileContents(GovernanceTier.CONFIG_FILE, "Template Configuration File", false)
-        if (repoConfigFile){
-            TemplateConfigObject repoConfig = TemplateConfigDsl.parse(repoConfigFile)
-            pipelineConfig.join(repoConfig)
+        // get job level configuration 
+        TemplateConfigObject jobConfig = getJobPipelineConfiguration()
+        if(jobConfig){
+            pipelineConfig.join(jobConfig)
         }
-        
+      
+    }
+
+    TemplateConfigObject getJobPipelineConfiguration(){
+        TemplateConfigObject jobConfig = null 
+        WorkflowJob job = RunUtils.getJob()
+        def flowDefinition = job.getDefinition() 
+        if(flowDefinition instanceof TemplateFlowDefinition){
+            String jobConfigString = flowDefinition.getPipelineConfig()
+            if(jobConfigString){
+                try{
+                    jobConfig = TemplateConfigDsl.parse(jobConfigString)
+                }catch(any){
+                    TemplateLogger.printError("Error parsing ${job.getName()}'s configuration file.")
+                    throw any 
+                }
+            }
+        } else { 
+            // get job config if present 
+            FileSystemWrapper fsw = FileSystemWrapper.createFromJob()
+            String repoConfigFile = fsw.getFileContents(ScmPipelineConfigurationProvider.CONFIG_FILE, "Template Configuration File", false)
+            if (repoConfigFile){
+                try{
+                    jobConfig = TemplateConfigDsl.parse(repoConfigFile)
+                }catch(any){
+                    TemplateLogger.printError("Error parsing ${job.getName()}'s configuration file in SCM.")
+                    throw any 
+                }                
+            }
+        }
+        return jobConfig 
     }
 
     void initializeBinding(PipelineConfig pipelineConfig, CpsScript script){
@@ -141,22 +169,24 @@ import javax.annotation.Nonnull
     @Whitelisted
     static String getTemplate(Map config){
 
+        // job-level Jenkinsfile
         WorkflowJob currentJob = RunUtils.getJob() 
         def flowDefinition = currentJob.getDefinition()
         if (flowDefinition instanceof TemplateFlowDefinition){
-            TemplateLogger.print "Obtained Pipeline Template from job configuration"
             String template = flowDefinition.getTemplate()
-            return template
-        }
-
-        // tenant Jenkinsfile if allowed 
-        FileSystemWrapper fs = FileSystemWrapper.createFromJob()
-        String repoJenkinsfile = fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false)
-        if (repoJenkinsfile){
-            if (config.allow_scm_jenkinsfile){
-                return repoJenkinsfile
-            }else{
-                TemplateLogger.printWarning "Repository provided Jenkinsfile that will not be used, per organizational policy."
+            if(template){
+                TemplateLogger.print "Obtained Pipeline Template from job configuration"
+                return template
+            }
+        } else { 
+            FileSystemWrapper fs = FileSystemWrapper.createFromJob()
+            String repoJenkinsfile = fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false)
+            if (repoJenkinsfile){
+                if (config.allow_scm_jenkinsfile){
+                    return repoJenkinsfile
+                }else{
+                    TemplateLogger.printWarning "Repository provided Jenkinsfile that will not be used, per organizational policy."
+                }
             }
         }
 

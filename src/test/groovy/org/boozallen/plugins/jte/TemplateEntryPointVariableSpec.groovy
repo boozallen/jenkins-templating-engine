@@ -1,523 +1,582 @@
+/*
+   Copyright 2018 Booz Allen Hamilton
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 package org.boozallen.plugins.jte
 
-import hudson.Extension
 import org.boozallen.plugins.jte.binding.TemplateBinding
 import org.boozallen.plugins.jte.binding.TemplatePrimitiveInjector
-import org.boozallen.plugins.jte.binding.injectors.Stage
+import org.boozallen.plugins.jte.binding.injectors.*
 import org.boozallen.plugins.jte.config.GovernanceTier
-import org.boozallen.plugins.jte.config.PipelineConfig
-import org.boozallen.plugins.jte.config.TemplateConfigBuilder
-import org.boozallen.plugins.jte.config.TemplateConfigDsl
-import org.boozallen.plugins.jte.config.TemplateConfigException
 import org.boozallen.plugins.jte.config.TemplateConfigObject
+import org.boozallen.plugins.jte.config.TemplateConfigDsl
+import org.boozallen.plugins.jte.config.PipelineConfig
+import org.boozallen.plugins.jte.config.ScmPipelineConfigurationProvider
+import org.boozallen.plugins.jte.config.TemplateConfigException
 import org.boozallen.plugins.jte.console.TemplateLogger
-import org.boozallen.plugins.jte.job.TemplateFlowDefinition
 import org.boozallen.plugins.jte.utils.FileSystemWrapper
 import org.boozallen.plugins.jte.utils.RunUtils
-import org.boozallen.plugins.jte.utils.TemplateScriptEngine
-import org.jenkinsci.plugins.workflow.cps.CpsScript
-import org.jenkinsci.plugins.workflow.flow.FlowDefinition
+import org.boozallen.plugins.jte.job.TemplateFlowDefinition
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
+import hudson.ExtensionList
+import hudson.Extension
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
-import spock.lang.*
-import org.junit.*;
-import org.jvnet.hudson.test.*;
+import org.jenkinsci.plugins.workflow.cps.CpsScript
+import org.junit.Rule
+import org.jvnet.hudson.test.GroovyJenkinsRule
+import org.jvnet.hudson.test.WithoutJenkins
+import spock.lang.Shared
+import spock.lang.Specification
+import spock.util.mop.ConfineMetaClassChanges
+
 
 class TemplateEntryPointVariableSpec extends Specification {
-  @Shared
-  @ClassRule
-  @SuppressWarnings('JUnitPublicField')
-  public GroovyJenkinsRule groovyJenkinsRule = new GroovyJenkinsRule()
 
-  @Shared
-  public ClassLoader classLoader;
+    @Rule GroovyJenkinsRule jenkins = new GroovyJenkinsRule()
 
-  TemplateEntryPointVariable templateEntryPointVariable = new TemplateEntryPointVariable()
+    /***********************************
+     Pipeline Configuration Aggregation 
+    ***********************************/
+    @WithoutJenkins
+    @ConfineMetaClassChanges([TemplateEntryPointVariable])
+    def "configs on folders aggregated in reverse order"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+        tepv.metaClass.getJobPipelineConfiguration = { null }
+        
+        TemplateConfigObject c1 = Mock()
+        GovernanceTier t1 = Stub{ getConfig() >> c1 }
+        TemplateConfigObject c2 = Mock()
+        GovernanceTier t2 = Stub{ getConfig() >> c2 }
 
-  def setupSpec(){
-    classLoader = groovyJenkinsRule.jenkins.getPluginManager().uberClassLoader
-  }
+        GroovySpy(GovernanceTier, global: true)
+        GovernanceTier.getHierarchy() >> [ t2, t1 ]
 
-  def "getName returns 'template'"(){
-    setup:
-    String name = null
+        PipelineConfig pipelineConfig = Mock() 
 
-    when:
-    name = templateEntryPointVariable.getName()
+        when: 
+        tepv.aggregateTemplateConfigurations(pipelineConfig)
 
-    then:
-    name == TemplateEntryPointVariable.NAME
-    notThrown(Exception)
-  }
+        then: 
+        1 * pipelineConfig.join(c1) 
 
-  def "getValue returns the existing value from script.binding" (){
-    setup:
-    CpsScript script = Mock(CpsScript)
-    TemplateBinding binding = Mock(TemplateBinding)
-    Script template = Mock(Script)
-
-    2 * script.getBinding() >> { return binding }
-    1 * binding.getVariable(TemplateEntryPointVariable.NAME) >> { return template }
-    1 * binding.hasVariable(TemplateEntryPointVariable.NAME) >> { return true }
-
-    Object value;
-    when:
-    value = templateEntryPointVariable.getValue(script)
-
-    then:
-    value == template
-    notThrown(Exception)
-
-  }
-
-  def "getValue returns template and sets in binding; all subroutines mocked" (){
-    setup:
-    CpsScript script = Mock(CpsScript)
-    groovy.lang.Binding bindingStart = Mock(groovy.lang.Binding)
-    TemplateBinding binding = Mock(TemplateBinding)
-
-    1 * script.getBinding() >> { return bindingStart }
-    0 * bindingStart.getVariable(TemplateEntryPointVariable.NAME)
-    1 * bindingStart.hasVariable(TemplateEntryPointVariable.NAME) >> { return false }
-
-    TemplateEntryPointVariable t = templateEntryPointVariable = Spy(TemplateEntryPointVariable)
-    1 * t.newTemplateBinding() >> { return binding }
-    1 * script.setBinding(binding)
-
-    PipelineConfig pipelineConfig = Mock(PipelineConfig)
-    1 * t.newPipelineConfig() >> { return pipelineConfig }
-    1 * t.aggregateTemplateConfigurations(_) >> { return }
-
-    TemplateConfigObject templateConfigObject = Mock(TemplateConfigObject)
-    2 * pipelineConfig.getConfig() >> { return templateConfigObject }
-
-    LinkedHashMap configMap = [:] as LinkedHashMap
-    1 * templateConfigObject.getConfig() >> { return configMap }
-
-    1 * binding.setVariable("pipelineConfig", configMap)
-    1 * binding.setVariable("templateConfigObject", templateConfigObject)
-
-    1 * t.initializeBinding( pipelineConfig, script) >> { return }
-    GroovySpy(RunUtils, global:true)
-    RunUtils.getClassLoader() >> {return classLoader }
-
-    GroovySpy(TemplateScriptEngine, global: true)
-    Script parseResult = Mock(Script)
-
-    1 * TemplateScriptEngine.parse(_, binding) >> {return parseResult}
-    1 * binding.setVariable(t.getName(), parseResult)
-
-    Object value;
-    when:
-    value = templateEntryPointVariable.getValue(script)
-
-    then:
-    value == parseResult
-    notThrown(Exception)
-
-  }
-
-  def "aggregateTemplateConfigurations 1 tier, no local config"(){
-    setup:
-    PipelineConfig pipelineConfigMain =  Mock(PipelineConfig)
-
-    TemplateConfigObject templateConfigObject = Mock(TemplateConfigObject)
-    //1 * templateConfigObject.asBoolean() >> { return true }
-
-    1 * pipelineConfigMain.join(templateConfigObject) >> { return }
-
-    GovernanceTier tier = GroovyMock(GovernanceTier, global: true)
-    tier.getConfig() >> { return templateConfigObject }
-
-    1 * GovernanceTier.getHierarchy() >> { return [ tier ] }
-    1 * GovernanceTier.getCONFIG_FILE() >> { return "pipeline_config.groovy" } // mocks GovernanceTier.CONFIG_FILE
-
-    FileSystemWrapper fsw = GroovyMock(FileSystemWrapper, global: true)
-    1 * FileSystemWrapper.createFromJob() >> { return fsw }
-    1 * fsw.getFileContents(_, _, _) >> { return null }
-
-
-    when:
-    templateEntryPointVariable.aggregateTemplateConfigurations(pipelineConfigMain)
-
-    then:
-    notThrown(Exception)
-  }
-
-  def "aggregateTemplateConfigurations #tier_count tier, with local config"(){
-    setup:
-    PipelineConfig pipelineConfigMain =  Mock(PipelineConfig)
-
-    TemplateConfigObject templateConfigObject = Mock(TemplateConfigObject)
-    //1 * templateConfigObject.asBoolean() >> { return true }
-
-    tier_count * pipelineConfigMain.join(templateConfigObject) >> { return }
-
-    def tiers = []
-
-    for( int t = 0; t < tier_count; t++ ) {
-      GovernanceTier tier = GroovyMock(GovernanceTier)
-      1 * tier.getConfig() >> { return templateConfigObject }
-      tiers << tier
+        then: 
+        1 * pipelineConfig.join(c2) 
     }
 
-    GroovyMock(GovernanceTier, global: true)
-    1 * GovernanceTier.getHierarchy() >> { return tiers }
-    1 * GovernanceTier.getCONFIG_FILE() >> { return "pipeline_config.groovy" }
+    @WithoutJenkins
+    @ConfineMetaClassChanges([TemplateEntryPointVariable])
+    def "configs on folders aggregated prior to job configuration"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+        TemplateConfigObject jobConfig = Mock()
+        tepv.metaClass.getJobPipelineConfiguration = { jobConfig }
+        
+        TemplateConfigObject c1 = Mock()
+        GovernanceTier t1 = Mock()
+        t1.getConfig() >> c1 
+        TemplateConfigObject c2 = Mock()
+        GovernanceTier t2 = Mock()
+        t2.getConfig() >> c2 
 
-    FileSystemWrapper fsw = GroovyMock(FileSystemWrapper, global: true)
-    1 * FileSystemWrapper.createFromJob() >> { return fsw }
+        GroovySpy(GovernanceTier, global: true)
+        GovernanceTier.getHierarchy() >> [ t2, t1 ]
 
-    TemplateConfigObject appTemplate = Mock(TemplateConfigObject)
-    String appTemplateContent = "_"
-    1 * fsw.getFileContents("pipeline_config.groovy", _, _) >> { return appTemplateContent }
+        PipelineConfig pipelineConfig = Mock() 
 
-    GroovyMock(TemplateConfigDsl, global: true)
-    1 * TemplateConfigDsl.parse(appTemplateContent) >> { return appTemplate }
-    1 * pipelineConfigMain.join(appTemplate) >> { return }
+        when: 
+        tepv.aggregateTemplateConfigurations(pipelineConfig)
 
+        then: 
+        1 * pipelineConfig.join(c1) 
 
-    when:
-    templateEntryPointVariable.aggregateTemplateConfigurations(pipelineConfigMain)
-
-    then:
-    notThrown(Exception)
-
-    where:
-    tier_count << [0, 1, 5]
-
-  }
-
-  @Extension
-  public static class TemplatePrimitiveInjectorLocal extends TemplatePrimitiveInjector {
-    static final public String DO_INJECT = "TemplatePrimitiveInjectorLocal-doInject"
-    static final public String DO_POST_INJECT = "TemplatePrimitiveInjectorLocal-doPostInject"
-    // Optional. delegate injecting template primitives into the binding to the specific
-    // implementations of TemplatePrimitive
-    static void doInject(TemplateConfigObject config, CpsScript script){
-      script.getBinding().setVariable(DO_INJECT, TemplatePrimitiveInjectorLocal.newInstance())
+        then: 
+        1 * pipelineConfig.join(c2) 
+        
+        then: 
+        1 * pipelineConfig.join(jobConfig)
     }
 
-    // Optional. do post processing of the config and binding.
-    static void doPostInject(TemplateConfigObject config, CpsScript script){
-      script.getBinding().setVariable(DO_POST_INJECT, TemplatePrimitiveInjectorLocal.newInstance())
+    @WithoutJenkins
+    @ConfineMetaClassChanges([TemplateEntryPointVariable])
+    def "job configuration not joined when null"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+        tepv.metaClass.getJobPipelineConfiguration = { null }
+        GroovySpy(GovernanceTier, global: true)
+        GovernanceTier.getHierarchy() >> []
+        PipelineConfig pipelineConfig = Mock() 
+
+        when: 
+        tepv.aggregateTemplateConfigurations(pipelineConfig)
+
+        then: 
+        0 * pipelineConfig.join(_)
     }
-  }
 
-  def "initializeBinding" (){
-    TemplateConfigObject templateConfigObject = Mock(TemplateConfigObject)
-    PipelineConfig pipelineConfigMain = Mock(PipelineConfig)
-    1 * pipelineConfigMain.getConfig() >> { return templateConfigObject }
-
-    CpsScript script = Mock(CpsScript)
-    TemplateBinding templateBinding = Mock(TemplateBinding)
-
-    3 * script.getBinding() >> { return templateBinding} //
-    1 * templateBinding.lock() >> { return }
-    1 * templateBinding.setVariable(TemplatePrimitiveInjectorLocal.DO_INJECT, _) >> { return }
-    1 * templateBinding.setVariable(TemplatePrimitiveInjectorLocal.DO_POST_INJECT, _) >> { return }
-
-    GroovySpy(TemplatePrimitiveInjector.Impl.class, global:true)
-    1 * TemplatePrimitiveInjector.Impl.all() >> { return groovyJenkinsRule.jenkins.getExtensionList(TemplateEntryPointVariableSpec.TemplatePrimitiveInjectorLocal.class) }
-
-    when:
-    templateEntryPointVariable.initializeBinding(pipelineConfigMain, script)
-
-    then:
-    notThrown(Exception)
-
-  }
-
-  def "getTemplate from TemplateFlowDefinition" (){
-
-    setup:
-    String templateVar;
-    String templateString = "the template";
-    Map config = Mock(HashMap)
-
-    TemplateFlowDefinition templateFlowDefinition = Mock(TemplateFlowDefinition)
-    1 * templateFlowDefinition.getTemplate() >> { return templateString }
-    FlowDefinition flowDefinition = templateFlowDefinition
-
-    WorkflowJob job = GroovyMock(WorkflowJob)
-    1 * job.getDefinition() >> {return flowDefinition }
-
-    GroovyMock(RunUtils, global: true)
-    1 * RunUtils.getJob() >> { return job}
-
-    GroovyMock(TemplateLogger, global: true)
-    1 * TemplateLogger.print("Obtained Pipeline Template from job configuration") >> {return }
-
-    GroovyMock(FileSystemWrapper, global: true)
-    0 * FileSystemWrapper.createFromJob()
-
-    FileSystemWrapper fs = GroovyMock(FileSystemWrapper)
-    0 * fs.getFileContents(_, _, _)
-
-    GroovyMock(GovernanceTier, global: true)
-    0 * GovernanceTier.getHierarchy()
-
-    0 * config.get("pipeline_template")
-    0 * config.get("allow_scm_jenkinsfile")
-
-    when:
-    templateVar = TemplateEntryPointVariable.getTemplate(config)
-
-    then:
-    notThrown(Exception)
-    templateVar == templateString
-
-  }
-
-  def "getTemplate from app JenkinsFile" (){
-
-    setup:
-    String templateVar;
-    String fileString = "the fileString";
-    Map config = Mock(HashMap)//new HashMap()
-    //config.allow_scm_jenkinsfile = true
-    1 * config.get("allow_scm_jenkinsfile") >> {return true }
-    FlowDefinition flowDefinition = Mock(FlowDefinition)
-
-    WorkflowJob job = GroovyMock(WorkflowJob)
-    1 * job.getDefinition() >> {return flowDefinition }
-
-    GroovyMock(RunUtils, global: true)
-    1 * RunUtils.getJob() >> { return job}
-
-    GroovyMock(TemplateLogger, global: true)
-    0 * TemplateLogger.print(_, _)
-    0 * TemplateLogger.printWarning(_)
-
-    GroovyMock(FileSystemWrapper, global: true)
-    FileSystemWrapper fs = GroovyMock(FileSystemWrapper)
-    1 * fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false) >> {return fileString}
-
-    1 * FileSystemWrapper.createFromJob() >> { return fs }
-
-    GroovyMock(GovernanceTier, global: true)
-    0 * GovernanceTier.getHierarchy()
-
-    // config.pipeline_template
-    0 * config.get("pipeline_template")
-
-
-    when:
-    templateVar = TemplateEntryPointVariable.getTemplate(config)
-
-    then:
-    notThrown(Exception)
-    templateVar == fileString
-  }
-
-  def "getTemplate warns and throws template tier exception when app JenkinsFile but !allow_scm_jenkinsfile and config.pipeline_template and no tier config data" (){
-
-    setup:
-    String templateVar;
-    String fileString = "the fileString";
-    Map config = Mock(HashMap)//new HashMap()
-    //config.allow_scm_jenkinsfile = false
-    1 * config.get("allow_scm_jenkinsfile") >> {return false }
-    FlowDefinition flowDefinition = Mock(FlowDefinition)
-
-    WorkflowJob job = GroovyMock(WorkflowJob)
-    1 * job.getDefinition() >> {return flowDefinition }
-
-    GroovyMock(RunUtils, global: true)
-    1 * RunUtils.getJob() >> { return job}
-
-    GroovyMock(TemplateLogger, global: true)
-    0 * TemplateLogger.print(_, _)
-
-    GroovyMock(FileSystemWrapper, global: true)
-    FileSystemWrapper fs = GroovyMock(FileSystemWrapper)
-    1 * FileSystemWrapper.createFromJob() >> { return fs }
-
-    1 * fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false) >> {return fileString}
-    1 * TemplateLogger.printWarning("Repository provided Jenkinsfile that will not be used, per organizational policy.")
-
-    GroovyMock(GovernanceTier, global: true)
-    GovernanceTier tier = GroovyMock(GovernanceTier)
-    1 * tier.getTemplate("pipeline-template") >> { return null }
-    0 * tier.getJenkinsfile() >> { return null }
-    1 * GovernanceTier.getHierarchy() >> { return [tier] as ArrayList }
-
-    // config.pipeline_template
-    3 * config.get("pipeline_template") >> { return "pipeline-template" }
-
-
-    when:
-    templateVar = TemplateEntryPointVariable.getTemplate(config)
-
-    then:
-    def e = thrown(TemplateConfigException)
-    e.getMessage() == "Pipeline Template pipeline-template could not be found in hierarchy."
-
-  }
-
-  def "getTemplate throws template tier exception when config.pipeline_template and no tier pipeline_template" (){
-
-    setup:
-    String templateVar;
-    String fileString = null;
-    Map config = helperGetTemplateNoRepoJenkinsFile()
-    GroovyMock(GovernanceTier, global: true)
-    GovernanceTier tier = GroovyMock(GovernanceTier)
-    1 * tier.getTemplate("pipeline-template") >> { return null }
-    0 * tier.getJenkinsfile() >> { return null }
-    1 * GovernanceTier.getHierarchy() >> { return [tier] as ArrayList }
-
-    // config.pipeline_template
-    3 * config.get("pipeline_template") >> { return "pipeline-template" }
-
-    when:
-    templateVar = TemplateEntryPointVariable.getTemplate(config)
-
-    then:
-    def e = thrown(TemplateConfigException)
-    e.getMessage() == "Pipeline Template pipeline-template could not be found in hierarchy."
-
-  }
-
-  def "getTemplate returns a tier template" (){
-
-    setup:
-    String templateVar;
-    String fileString = "the fileString";
-    Map config = helperGetTemplateNoRepoJenkinsFile()
-    GroovyMock(GovernanceTier, global: true)
-    GovernanceTier tier = GroovyMock(GovernanceTier)
-    1 * tier.getTemplate("pipeline-template") >> { return fileString }
-    0 * tier.getJenkinsfile() >> { return null }
-    1 * GovernanceTier.getHierarchy() >> { return [tier] as ArrayList }
-
-    // config.pipeline_template
-    2 * config.get("pipeline_template") >> { return "pipeline-template" }
-
-
-    when:
-    templateVar = TemplateEntryPointVariable.getTemplate(config)
-
-    then:
-    notThrown(Exception)
-    templateVar == fileString
-
-  }
-
-  def "getTemplate throws last 'no template' exception when no prior data and no tier jenkinsfile or template" (){
-
-    setup:
-    String templateVar;
-    String fileString = "the fileString";
-    Map config = helperGetTemplateNoRepoJenkinsFile()
-    // config.pipeline_template
-    1 * config.get("pipeline_template") >> { return null }
-
-    GroovyMock(GovernanceTier, global: true)
-    GovernanceTier tier = GroovyMock(GovernanceTier)
-    0 * tier.getTemplate(_)
-    1 * tier.getJenkinsfile() >> { return null }
-    1 * GovernanceTier.getHierarchy() >> { return [tier] as ArrayList }
-
-    when:
-    templateVar = TemplateEntryPointVariable.getTemplate(config)
-
-    then:
-    def e = thrown(TemplateConfigException)
-    e.getMessage() == "Could not determine pipeline template."
-
-  }
-
-  def "getTemplate returns tier Jenkinsfile" (){
-
-    setup:
-    String templateVar;
-    String fileString = "{ template }";
-    Map config = helperGetTemplateNoRepoJenkinsFile()
-    // config.pipeline_template
-    1 * config.get("pipeline_template") >> { return null }
-
-    GroovyMock(GovernanceTier, global: true)
-    GovernanceTier tier = GroovyMock(GovernanceTier)
-    0 * tier.getTemplate(_)
-    1 * tier.getJenkinsfile() >> { return fileString }
-    1 * GovernanceTier.getHierarchy() >> { return [tier] as ArrayList }
-
-    when:
-    templateVar = TemplateEntryPointVariable.getTemplate(config)
-
-    then:
-    notThrown(Exception)
-    templateVar == fileString
-
-  }
-
-  Map helperGetTemplateNoRepoJenkinsFile(){
-    Map config = Mock(HashMap)//new HashMap()
-    //config.allow_scm_jenkinsfile = false
-    0 * config.get("allow_scm_jenkinsfile") >> {return false }
-
-
-    FlowDefinition flowDefinition = Mock(FlowDefinition)
-
-    WorkflowJob job = GroovyMock(WorkflowJob)
-    1 * job.getDefinition() >> {return flowDefinition }
-
-    GroovyMock(RunUtils, global: true)
-    1 * RunUtils.getJob() >> { return job}
-
-    GroovyMock(TemplateLogger, global: true)
-    0 * TemplateLogger.print(_, _)
-
-    GroovyMock(FileSystemWrapper, global: true)
-    FileSystemWrapper fs = GroovyMock(FileSystemWrapper)
-    1 * fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false) >> {return null}
-
-    1 * FileSystemWrapper.createFromJob() >> { return fs }
-    0 * TemplateLogger.printWarning("Repository provided Jenkinsfile that will not be used, per organizational policy.")
-
-    return config
-  }
-
-  def "whitelist permitsMethod for #receiver" (){
-    setup:
-    TemplateEntryPointVariable.MiscWhitelist whitelist = new TemplateEntryPointVariable.MiscWhitelist()
-
-    expect:
-    whitelist.permitsMethod(null, receiver, [])
-
-    where:
-    receiver << [new Stage(), new TemplateBinding(), new TemplatePrimitiveInjector(){} ]
-  }
-
-  def "whitelist !permitsMethod for #receiver" (){
-    setup:
-    TemplateEntryPointVariable.MiscWhitelist whitelist = new TemplateEntryPointVariable.MiscWhitelist()
-
-    expect:
-    !whitelist.permitsMethod(null, receiver, [])
-
-    where:
-    receiver << [new Object(){}, [], "", new GovernanceTier() ]
-  }
-
-// could not test
-//  def "whitelist permitsMethod for TemplateConfigBuilder" (){
-//    setup:
-//    TemplateEntryPointVariable.MiscWhitelist whitelist = new TemplateEntryPointVariable.MiscWhitelist()
-//    TemplateConfigBuilder configBuilder = new LocalTemplateConfigBuilder()
-//
-//    expect:
-//    whitelist.permitsMethod(null, configBuilder, [])
-//  }
-
-  def "whitelist !permitsConstructor for #receiver" (){
-    setup:
-    TemplateEntryPointVariable.MiscWhitelist whitelist = new TemplateEntryPointVariable.MiscWhitelist()
-
-    expect:
-    !whitelist.permitsConstructor(constructor, [])
-
-    where:
-    constructor << [TemplateBinding.constructors[0]]
-  }
+    @WithoutJenkins
+    def "getJobPipelineConfiguration - TemplateFlowDefinition - is present"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+        TemplateFlowDefinition flowDef = Stub{ getPipelineConfig() >> "_" }        
+        WorkflowJob job = GroovyStub{ getDefinition() >> flowDef }
+        GroovyMock(RunUtils, global: true) 
+        RunUtils.getJob() >> job
+        
+        TemplateConfigObject jobConfig = Mock() 
+        GroovyMock(TemplateConfigDsl, global: true)
+        TemplateConfigDsl.parse(_) >> jobConfig         
+
+        expect: 
+        tepv.getJobPipelineConfiguration() == jobConfig
+    }
+
+    @WithoutJenkins
+    def "getJobPipelineConfiguration - TemplateFlowDefinition - is not present"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+        TemplateFlowDefinition flowDef = Stub{ getPipelineConfig() >> null }        
+        WorkflowJob job = GroovyStub{ getDefinition() >> flowDef }
+        GroovyMock(RunUtils, global: true) 
+        RunUtils.getJob() >> job
+        
+        GroovyMock(TemplateConfigDsl, global: true)
+        TemplateConfigDsl.parse(_) >> null         
+
+        expect: 
+        tepv.getJobPipelineConfiguration() == null
+    }
+
+    @WithoutJenkins
+    def "getJobPipelineConfiguration - not TemplateFlowDefinition - is present in SCM"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+
+        WorkflowJob job = GroovyMock()
+        GroovyMock(RunUtils, global: true)
+        RunUtils.getJob() >> job
+
+        FileSystemWrapper fsw = Stub{
+            getFileContents(ScmPipelineConfigurationProvider.CONFIG_FILE, _, _) >> "_"
+        }
+        GroovyMock(FileSystemWrapper, global: true)
+        FileSystemWrapper.createFromJob() >> fsw
+        
+        TemplateConfigObject jobConfig = Mock()
+        GroovyMock(TemplateConfigDsl, global: true)
+        TemplateConfigDsl.parse(_) >> jobConfig
+
+        expect: 
+        tepv.getJobPipelineConfiguration() == jobConfig
+    }
+
+    @WithoutJenkins
+    def "getJobPipelineConfiguration - not TemplateFlowDefinition - is not present in SCM"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+
+        WorkflowJob job = GroovyMock()
+        GroovyMock(RunUtils, global: true)
+        RunUtils.getJob() >> job
+
+        FileSystemWrapper fsw = Stub{
+            getFileContents(ScmPipelineConfigurationProvider.CONFIG_FILE, _, _) >> "_"
+        }
+        GroovyMock(FileSystemWrapper, global: true)
+        FileSystemWrapper.createFromJob() >> fsw
+        
+        GroovyMock(TemplateConfigDsl, global: true)
+        TemplateConfigDsl.parse(_) >> null
+
+        expect: 
+        tepv.getJobPipelineConfiguration() == null
+    }
+
+    /***********************
+     Binding Initialization 
+    ***********************/
+    @Extension static class Injector extends TemplatePrimitiveInjector{}    
+
+    @ConfineMetaClassChanges([TemplatePrimitiveInjector])
+    def "Aggregated pipeline configuration passed to doInject, then doPostInject, then binding locked"(){
+        setup:
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+        TemplateConfigObject configObj = Mock()
+        PipelineConfig pipelineConfig = Stub{ getConfig() >> configObj }
+        TemplateBinding binding = Mock() 
+        CpsScript script = GroovyMock{ getBinding() >> binding }
+
+        def injector = GroovyMock(Injector, global:true) 
+
+        TemplatePrimitiveInjector.metaClass.static.all = {
+            return jenkins.jenkins.getExtensionList(Injector)
+        }
+
+        when: 
+        tepv.initializeBinding(pipelineConfig, script)
+
+        then: 
+        1 * injector.doInject(configObj, _)
+
+        then: 
+        1 * injector.doPostInject(configObj, _)
+
+        then: 
+        1 * binding.lock() 
+    }
+
+    def "All injectors are found in real job"(){
+        setup: 
+        ExtensionList<TemplatePrimitiveInjector> injectors
+
+        when: 
+        injectors = TemplatePrimitiveInjector.all() 
+
+        then: 
+        injectors.get(ApplicationEnvironmentInjector) != null 
+        injectors.get(KeywordInjector) != null 
+        injectors.get(LibraryLoader) != null 
+        injectors.get(StageInjector) != null         
+    }
+
+    /*******************
+     Template Selection 
+    *******************/
+    @WithoutJenkins
+    def "Pipeline Job: template used if provided"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+        String template = "job template" 
+        GroovySpy(RunUtils, global:true)
+        RunUtils.getJob() >> GroovyMock(WorkflowJob){
+            getDefinition() >> Mock(TemplateFlowDefinition){
+                getTemplate() >> template 
+            }
+        }
+
+        GroovySpy(TemplateLogger, global:true) 
+        PrintStream logger = Mock() 
+        TemplateLogger.print(*_) >> { args -> 
+            logger.println(args[0])
+        }
+
+        String result 
+
+        Map config = [:]
+
+        when: 
+        result = tepv.getTemplate(config) 
+
+        then: 
+        result == template 
+        1 * logger.println("Obtained Pipeline Template from job configuration")
+        
+    }
+    
+    @WithoutJenkins
+    def "Pipeline Job: inherit default pipeline template"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+
+        GroovySpy(RunUtils, global:true)
+        RunUtils.getJob() >> GroovyMock(WorkflowJob){
+            getDefinition() >> Mock(TemplateFlowDefinition){
+                getTemplate() >> null 
+            }
+        }
+
+        GroovyMock(GovernanceTier, global: true) 
+        String template = "job template" 
+        GovernanceTier.getHierarchy() >> [ 
+            Mock(GovernanceTier){
+                getJenkinsfile() >> template 
+            }
+        ]
+
+        Map config = [:]
+
+        String result 
+        
+        when: 
+        result = tepv.getTemplate(config) 
+
+        then: 
+        result == template 
+    }
+
+    @WithoutJenkins
+    def "use scm Jenkinsfile if allowed"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+
+        GroovySpy(RunUtils, global:true)
+        RunUtils.getJob() >> GroovyMock(WorkflowJob){
+            getDefinition() >> Mock(CpsFlowDefinition)
+        }
+
+        String template = "job template" 
+        GroovySpy(FileSystemWrapper, global: true)
+        FileSystemWrapper.createFromJob() >> Mock(FileSystemWrapper){
+            getFileContents("Jenkinsfile", _, _) >> template 
+        }
+
+        Map config = [ allow_scm_jenkinsfile: true ]
+
+        String result 
+        
+        when: 
+        result = tepv.getTemplate(config) 
+
+        then: 
+        result == template
+    }
+
+    @WithoutJenkins
+    def "warn about Jenkinsfile if present and not allowed"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+
+        GroovySpy(RunUtils, global:true)
+        RunUtils.getJob() >> GroovyMock(WorkflowJob){
+            getDefinition() >> Mock(CpsFlowDefinition)
+        }
+
+        String jobTemplate = "job template" 
+        GroovySpy(FileSystemWrapper, global: true)
+        FileSystemWrapper.createFromJob() >> Mock(FileSystemWrapper){
+            getFileContents("Jenkinsfile", _, _) >> jobTemplate 
+        }
+
+        GroovyMock(GovernanceTier, global: true) 
+        String tierTemplate = "job template" 
+        GovernanceTier.getHierarchy() >> [ 
+            Mock(GovernanceTier){
+                getJenkinsfile() >> tierTemplate 
+            }
+        ]
+
+        PrintStream logger = Mock()
+        GroovyMock(TemplateLogger, global: true)
+        TemplateLogger.printWarning(*_) >> { args -> 
+            logger.println(args[0]) 
+        }
+
+        Map config = [:]
+
+        String result 
+        
+        when: 
+        result = tepv.getTemplate(config) 
+
+        then: 
+        result == tierTemplate
+        1 * logger.println("Repository provided Jenkinsfile that will not be used, per organizational policy.")
+
+    }
+
+    @WithoutJenkins
+    def "able to select named template"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+
+        GroovySpy(RunUtils, global:true)
+        RunUtils.getJob() >> GroovyMock(WorkflowJob){
+            getDefinition() >> Mock(CpsFlowDefinition)
+        }
+
+        GroovySpy(FileSystemWrapper, global: true)
+        FileSystemWrapper.createFromJob() >> Mock(FileSystemWrapper){
+            getFileContents(*_) >> null 
+        }
+
+        String templateName = "example"
+        String template = "tier 1 template"
+        GroovySpy(GovernanceTier, global:true)
+        GovernanceTier.getHierarchy() >> [ 
+            Mock(GovernanceTier){
+                getTemplate(templateName) >> template 
+            }
+        ] 
+
+        Map config = [ 
+            pipeline_template: templateName
+        ]
+
+        String result 
+
+        when: 
+        result = tepv.getTemplate(config)
+
+        then: 
+        result == template
+    }
+    
+    @WithoutJenkins
+    def "missing named template throws exception"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+
+        GroovySpy(RunUtils, global:true)
+        RunUtils.getJob() >> GroovyMock(WorkflowJob){
+            getDefinition() >> Mock(CpsFlowDefinition)
+        }
+
+        GroovySpy(FileSystemWrapper, global: true)
+        FileSystemWrapper.createFromJob() >> Mock(FileSystemWrapper){
+            getFileContents(*_) >> null 
+        }
+
+        String templateName = "example"
+        GroovySpy(GovernanceTier, global:true)
+        GovernanceTier.getHierarchy() >> [ 
+            Mock(GovernanceTier){
+                getTemplate(templateName) >> null 
+            }
+        ] 
+
+        Map config = [ 
+            pipeline_template: templateName
+        ]
+
+        String result 
+
+        when: 
+        tepv.getTemplate(config)
+
+        then: 
+        def ex = thrown(TemplateConfigException) 
+        ex.getMessage() == "Pipeline Template ${config.pipeline_template} could not be found in hierarchy."
+    }
+
+    @WithoutJenkins
+    def "named template selected from more specific governance tier"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+
+        GroovySpy(RunUtils, global:true)
+        RunUtils.getJob() >> GroovyMock(WorkflowJob){
+            getDefinition() >> Mock(CpsFlowDefinition)
+        }
+
+        GroovySpy(FileSystemWrapper, global: true)
+        FileSystemWrapper.createFromJob() >> Mock(FileSystemWrapper){
+            getFileContents(*_) >> null 
+        }
+
+        String templateName = "example"
+
+        String tier1Template = "tier 1 template"
+        GovernanceTier tier1 = Mock{ 
+            getTemplate(templateName) >> tier1Template
+        }
+
+        GovernanceTier tier2 = Mock{
+            getTemplate(templateName) >> "tier 2 template" 
+        }
+
+        GroovySpy(GovernanceTier, global:true)
+        GovernanceTier.getHierarchy() >> [ tier1, tier2 ] 
+
+        Map config = [
+            pipeline_template: templateName 
+        ]
+
+        String result 
+
+        when: 
+        result = tepv.getTemplate(config)
+
+        then: 
+        result == tier1Template
+    }
+    
+    @WithoutJenkins
+    def "default pipeline template selected from more specific governance tier"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+
+        GroovySpy(RunUtils, global:true)
+        RunUtils.getJob() >> GroovyMock(WorkflowJob){
+            getDefinition() >> Mock(CpsFlowDefinition)
+        }
+
+        GroovySpy(FileSystemWrapper, global: true)
+        FileSystemWrapper.createFromJob() >> Mock(FileSystemWrapper){
+            getFileContents(*_) >> null 
+        }
+
+        String tier1Template = "tier 1 jenkinsfile"
+        GovernanceTier tier1 = Mock{ 
+            getJenkinsfile() >> tier1Template
+        }
+
+        GovernanceTier tier2 = Mock{
+            getJenkinsfile() >> "tier 2 jenkinsfile" 
+        }
+
+        GroovySpy(GovernanceTier, global:true)
+        GovernanceTier.getHierarchy() >> [ tier1, tier2 ] 
+
+        Map config = [:]
+
+        String result 
+
+        when: 
+        result = tepv.getTemplate(config)
+
+        then: 
+        result == tier1Template
+    }
+
+    @WithoutJenkins
+    def "no template throws exception"(){
+        setup: 
+        TemplateEntryPointVariable tepv = new TemplateEntryPointVariable()
+
+        GroovySpy(RunUtils, global:true)
+        RunUtils.getJob() >> GroovyMock(WorkflowJob){
+            getDefinition() >> Mock(CpsFlowDefinition)
+        }
+
+        GroovySpy(FileSystemWrapper, global: true)
+        FileSystemWrapper.createFromJob() >> Mock(FileSystemWrapper){
+            getFileContents(*_) >> null 
+        }
+
+        GovernanceTier tier1 = Mock{ 
+            getTemplate(_) >> null 
+            getJenkinsfile() >> null
+        }
+
+        GovernanceTier tier2 = Mock{
+            getTemplate(_) >> null 
+            getJenkinsfile() >> null 
+        }
+
+        GroovySpy(GovernanceTier, global:true)
+        GovernanceTier.getHierarchy() >> [ ] 
+
+        Map config = [:]
+
+        String result 
+
+        when: 
+        tepv.getTemplate(config)
+
+        then: 
+        def ex = thrown(TemplateConfigException)
+        ex.getMessage() == "Could not determine pipeline template."
+    }
 }
