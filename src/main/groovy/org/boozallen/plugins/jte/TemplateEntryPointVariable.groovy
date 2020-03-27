@@ -16,7 +16,6 @@
 
 package org.boozallen.plugins.jte
 
-import org.boozallen.plugins.jte.config.TemplateConfigBuilder
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.boozallen.plugins.jte.binding.* 
 import org.boozallen.plugins.jte.config.* 
@@ -51,7 +50,7 @@ import org.apache.commons.io.FileUtils
     @Nonnull
     @Override
     public String getName() {
-        return "template"
+        return NAME
     }
 
     @Nonnull
@@ -100,6 +99,14 @@ import org.apache.commons.io.FileUtils
         }
 
         // get job level configuration 
+        TemplateConfigObject jobConfig = getJobPipelineConfiguration()
+        if(jobConfig){
+            pipelineConfig.join(jobConfig)
+        }
+      
+    }
+
+    TemplateConfigObject getJobPipelineConfiguration(){
         TemplateConfigObject jobConfig = null 
         WorkflowJob job = RunUtils.getJob()
         def flowDefinition = job.getDefinition() 
@@ -126,10 +133,7 @@ import org.apache.commons.io.FileUtils
                 }                
             }
         }
-        if(jobConfig){
-            pipelineConfig.join(jobConfig)
-        }
-      
+        return jobConfig 
     }
 
     void initializeBinding(PipelineConfig pipelineConfig, CpsScript script){
