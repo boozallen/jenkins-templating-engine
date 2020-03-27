@@ -573,7 +573,7 @@ class TemplateEntryPointVariableSpec extends Specification {
         String result 
 
         when: 
-        result = tepv.getTemplate(config)
+        tepv.getTemplate(config)
 
         then: 
         def ex = thrown(TemplateConfigException)
