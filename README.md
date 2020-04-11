@@ -18,12 +18,12 @@
 
 ## Overview
 
-The Jenkins Templating Engine (JTE) is a plugin developed by Booz Allen Hamilton enabling pipeline templating and governance. JTE  allows you to consolidate pipelines into shareable workflows that define the business logic of your software delivery processes while allowing for optimal pipeline code reuse by pulling out tool specific implementations into library modules.
+The Jenkins Templating Engine (JTE) is a plugin originally created by [Booz Allen Hamilton](https://www.boozallen.com/) enabling pipeline templating and governance. JTE  allows you to consolidate pipelines into shareable workflows that define the business logic of your software delivery processes while allowing for optimal pipeline code reuse by pulling out tool specific implementations into library modules.
 
 ## How Does It Work?
 
 <div align="center">
-   <img src="docs/modules/ROOT/images/jte.gif" width="384">
+   <img src="docs/modules/ROOT/images/jte.gif">
 </div>
 
 JTE allows you to separate the business logic of your pipeline (what should happen, and when) from the technical implementation by creating pipeline templates and separating the implementation of the pipeline actions defined in the template out into pipeline libraries.
