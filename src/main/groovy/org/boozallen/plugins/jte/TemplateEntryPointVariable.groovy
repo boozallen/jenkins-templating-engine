@@ -39,10 +39,7 @@ import org.apache.commons.io.FileUtils
 @Extension public class TemplateEntryPointVariable extends GlobalVariable {
     final static public String NAME = "template"
 
-    public PipelineConfig newPipelineConfig(){
-        return new PipelineConfig()
-    }
-
+    // here for unit tests
     public TemplateBinding newTemplateBinding(){
         return new TemplateBinding()
     }
@@ -62,14 +59,12 @@ import org.apache.commons.io.FileUtils
             template = script.getBinding().getVariable(getName())
         } else {
             // aggregate the pipeline configurations
-            PipelineConfig pipelineConfig = newPipelineConfig()
-            aggregateTemplateConfigurations(pipelineConfig)
+            PipelineConfig pipelineConfig = aggregateTemplateConfigurations()
 
             // prepare the template environment by populating the binding
             Binding binding = newTemplateBinding()
             script.setBinding(binding)
             binding.setVariable("pipelineConfig", pipelineConfig.getConfig().getConfig())
-            binding.setVariable("templateConfigObject", pipelineConfig.getConfig())
             initializeBinding(pipelineConfig, script)
 
             // parse entrypoint and return 
@@ -84,9 +79,8 @@ import org.apache.commons.io.FileUtils
         return template
     }
 
-
-    void aggregateTemplateConfigurations(PipelineConfig pipelineConfig){
-
+    PipelineConfig aggregateTemplateConfigurations(){
+        PipelineConfig pipelineConfig = new PipelineConfig() 
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy()
        
         //  we get the configs in ascending order of governance
@@ -103,7 +97,8 @@ import org.apache.commons.io.FileUtils
         if(jobConfig){
             pipelineConfig.join(jobConfig)
         }
-      
+
+        return pipelineConfig
     }
 
     TemplateConfigObject getJobPipelineConfiguration(){
@@ -182,7 +177,8 @@ import org.apache.commons.io.FileUtils
             FileSystemWrapper fs = FileSystemWrapper.createFromJob()
             String repoJenkinsfile = fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false)
             if (repoJenkinsfile){
-                if (config.allow_scm_jenkinsfile){
+                Boolean allowScmJenkinsfile = config.containsKey("allow_scm_jenkinsfile") ? config.allow_scm_jenkinsfile : true 
+                if (allowScmJenkinsfile){
                     return repoJenkinsfile
                 }else{
                     TemplateLogger.printWarning "Repository provided Jenkinsfile that will not be used, per organizational policy."
@@ -235,15 +231,6 @@ import org.apache.commons.io.FileUtils
         @Override public boolean permitsConstructor(Constructor<?> constructor, Object[] args){
             return constructor.getDeclaringClass().equals(TemplateConfigBuilder) 
         }
-
-        /*
-        @Override public boolean permitsStaticMethod(Method method, Object[] args){
-            return (
-                method.getDeclaringClass().equals(Hooks)
-            )
-        }
-        */
-
     }
 
 }
