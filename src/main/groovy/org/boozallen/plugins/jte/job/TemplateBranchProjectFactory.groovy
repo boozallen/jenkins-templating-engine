@@ -19,6 +19,7 @@ package org.boozallen.plugins.jte.job
 import org.boozallen.plugins.jte.config.GovernanceTier
 import hudson.Extension
 import jenkins.branch.MultiBranchProject
+import org.boozallen.plugins.jte.config.ScmPipelineConfigurationProvider
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.DataBoundSetter
