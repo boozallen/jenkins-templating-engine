@@ -1,6 +1,9 @@
 plugins {
+  id 'groovy'
   id 'org.jenkins-ci.jpi' version '0.39.0'
   id 'jacoco'
+  id 'codenarc'
+
 }
 
 repositories {

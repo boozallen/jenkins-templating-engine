@@ -18,16 +18,17 @@ package org.boozallen.plugins.jte.config
 
 
 import org.boozallen.plugins.jte.console.TemplateLogger
-import org.boozallen.plugins.jte.utils.RunUtils
 import org.codehaus.groovy.runtime.InvokerHelper
 import jenkins.model.Jenkins
 
 /*
   stores the aggregated & immutable pipeline configuration. 
 */
-class PipelineConfig implements Serializable{
-    TemplateConfigObject configObject = null
+class PipelineConfig {
 
+    TemplateLogger logger 
+
+    TemplateConfigObject configObject = null
     TemplateConfigObject getConfig(){
       return configObject ?: new TemplateConfigObject() 
     }
@@ -256,7 +257,7 @@ class PipelineConfig implements Serializable{
           output << "Subsequent May Override: None" 
         }
 
-        TemplateLogger.print( output.join("\n"), [ initiallyHidden: true, trimLines: false ])
+        logger.print(output.join("\n"))
     }
 
 }

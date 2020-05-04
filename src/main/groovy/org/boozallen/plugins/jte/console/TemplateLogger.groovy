@@ -17,99 +17,77 @@ enum LogLevel{
     String tag
 }
 
-public class TemplateLogger extends ConsoleNote<WorkflowRun> {
+public class TemplateLogger {
 
     private static final String CONSOLE_NOTE_PREFIX = "[JTE] "
-    String messageID 
-    LogLevel logType 
-    Boolean firstLine
-    Boolean multiLine
-    Boolean initiallyHidden
+    TaskListener listener
+    PrintStream logger
 
-    @Override
-    ConsoleAnnotator<?> annotate(WorkflowRun context, MarkupText text, int charPos) {
-        def tags = [
-            "class='jte-${logType.tag}'",
-            "jte-id='${messageID}'",
-        ]
-        if(multiLine){
-            tags.push("first-line='${firstLine}''")
-            tags.push("multi-line='${multiLine}'")
-        }
-        if(initiallyHidden){
-            tags.push("initially-hidden='${initiallyHidden}'")
-        }
-        text.wrapBy("<span ${tags.join(" ")}>", '</span>')
-        return null
+    TemplateLogger(TaskListener listener){
+        this.listener = listener
+        this.logger = listener.getLogger()
     }
 
-    static void print(String message, Map config = [:]){
-        def argTypes = [
-                "initiallyHidden": Boolean,
-                "logType": LogLevel,
-                "trimLines": Boolean
-        ]
-
-        Boolean throwError = false
-        String errorMsg = "Improper TemplateLogger Configuration: \n"
-
-        def improperConfigNames = config.keySet() - argTypes.keySet()
-        if(improperConfigNames){
-            throwError = true
-            errorMsg +=  "The following keys are not identified: ${improperConfigNames} \n"
-            improperConfigNames.each{ config.remove(it) }
-        }
-        config.each{ key, value ->
-            Class expectedType = argTypes[key]
-            if(!(value.getClass() == expectedType)){
-                throwError = true
-                errorMsg += "key ${key} should be of type ${argTypes[key]} \n"
-            }
-        }
-
-        if (throwError){
-            throw new JTEException(errorMsg)
-        }
-
-        // apply defaults if not set.
-        config = [ initiallyHidden: false, trimLines: true, logType: LogLevel.INFO ] + config
-
-
-        // do rest of the things..
-
-        def alphabet = (["a".."z"] + [0..9]).flatten()
-        String messageID = (1..10).collect{ alphabet[ new Random().nextInt(alphabet.size()) ] }.join()
-        TaskListener listener = RunUtils.getListener()
-        PrintStream logger = RunUtils.getLogger()
-        String trimmedMsg = message.trim() 
-        Boolean firstLine = true 
-        Boolean multiLine = (trimmedMsg.split("\n").size() > 1)
-        trimmedMsg.trim().eachLine{ line ->
+    void print(String message, LogLevel logType = LogLevel.INFO){
+        message = message.trim()
+        Boolean isMultiline = message.contains("\n")
+        String messageId = generateMessageId()
+        message.eachLine{ line, i ->
             synchronized (logger) {
-                if( config.trimLines ) {
-                    line = line.trim()
-                }
-                listener.annotate(new TemplateLogger(
-                        logType: config.logType,
-                        messageID: messageID,
-                        firstLine: firstLine,
-                        multiLine: multiLine,
-                        initiallyHidden: config.initiallyHidden
+                listener.annotate(new Annotator(
+                    logType: logType,
+                    messageId: messageId,
+                    firstLine: !i,
+                    multiLine: isMultiline
                 ))
-                if (firstLine) firstLine = false
                 logger.println(CONSOLE_NOTE_PREFIX + line)
             }
         }
     }
 
-    static void printWarning(String message, Boolean initiallyHidden = false) {
-        print(message, [initiallyHidden: initiallyHidden, logType:  LogLevel.WARN])
+    void printWarning(String message) {
+        print(message, LogLevel.WARN)
     }
 
-    static void printError(String message, Boolean initiallyHidden = false ) {
-        print(message, [initiallyHidden: initiallyHidden, logType:  LogLevel.ERROR])
+    void printError(String message) {
+        print(message, LogLevel.ERROR)
     }
 
-    @Extension public static final class DescriptorImpl extends ConsoleAnnotationDescriptor {}
+    private String generateMessageId(){
+        def alphabet = (["a".."z"] + [0..9]).flatten()
+        String messageId = (1..10).collect{ alphabet[ new Random().nextInt(alphabet.size()) ] }.join()
+        return messageId
+    }
 
+    static class Annotator extends ConsoleNote<WorkflowRun>{
+        String messageId
+        LogLevel logType
+        Boolean firstLine
+        Boolean multiLine
+        /*
+            TODO: 
+            * see if we're actually using this configuration option anywhere
+            * remove it if we arent
+        */
+        Boolean initiallyHidden = true 
+
+        @Override
+        ConsoleAnnotator<?> annotate(WorkflowRun context, MarkupText text, int charPos) {
+            def tags = [
+                "class='jte-${logType.tag}'",
+                "jte-id='${messageId}'",
+            ]
+            if(multiLine){
+                tags << "first-line='${firstLine}''"
+                tags << "multi-line='${multiLine}'"
+            }
+            if(initiallyHidden){
+                tags << "initially-hidden='${initiallyHidden}'"
+            }
+            text.wrapBy("<span ${tags.join(" ")}>", '</span>')
+            return null
+        }
+
+        @Extension public static final class DescriptorImpl extends ConsoleAnnotationDescriptor {}
+    }
 }

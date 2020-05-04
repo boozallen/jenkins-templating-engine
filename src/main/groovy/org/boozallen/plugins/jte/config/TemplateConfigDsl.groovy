@@ -24,6 +24,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 import org.jenkinsci.plugins.workflow.cps.EnvActionImpl 
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 /*
   Parses an Template Config File and returns a TemplateConfigObject
@@ -38,16 +39,17 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun
       }
     """)
 */
-class TemplateConfigDsl implements Serializable{
+class TemplateConfigDsl {
+
+  // needed to resolve EnvActionImpl ('env' var)
+  WorkflowRun run 
   
-  static TemplateConfigObject parse(String script_text){
-
+  TemplateConfigObject parse(String script_text){
     TemplateConfigObject templateConfig = new TemplateConfigObject()
-    EnvActionImpl env = getEnvironment()
-
+    EnvActionImpl env = EnvActionImpl.forRun(run)
     Binding our_binding = new Binding(
       templateConfig: templateConfig,
-      env: env 
+      env: env
     )
     
     CompilerConfiguration cc = new CompilerConfiguration()
@@ -67,8 +69,9 @@ class TemplateConfigDsl implements Serializable{
     
     return templateConfig
   }
+  
 
-  static String serialize(TemplateConfigObject configObj){
+  String serialize(TemplateConfigObject configObj){
     Map config = new JsonSlurper().parseText(JsonOutput.toJson(configObj.getConfig()))
 
     // inserts merge keys into config Map for printing 
@@ -143,10 +146,4 @@ class TemplateConfigDsl implements Serializable{
     }
     return file 
   }
-
-  // for unit testing
-  private static EnvActionImpl getEnvironment(){
-    return EnvActionImpl.forRun(RunUtils.getRun())
-  }
-
 }

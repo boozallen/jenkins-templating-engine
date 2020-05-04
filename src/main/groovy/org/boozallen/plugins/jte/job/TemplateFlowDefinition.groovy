@@ -56,19 +56,32 @@ class TemplateFlowDefinition extends FlowDefinition {
     public String getPipelineConfig(){ return pipelineConfig }
 
     @Override
-    public FlowExecution create(FlowExecutionOwner handle, TaskListener listener, List<? extends Action> actions) throws Exception {
+    public FlowExecution create(FlowExecutionOwner owner, TaskListener listener, List<? extends Action> actions) throws Exception {
+        FlowDurabilityHint hint = getFlowDurabilityHint(owner)
+
+        PipelineDecorator decorator = new PipelineDecorator(owner)
+        decorator.initialize() // runs the initialization process for JTE 
+        String template = decorator.getTemplate() 
+        owner.run().with{
+            addAction(decorator)
+            save() // persist action
+        }
+
+        return new CpsFlowExecution(template, true, owner, hint);
+    }
+
+    private FlowDurabilityHint getFlowDurabilityHint(FlowExecutionOwner owner){
         Jenkins jenkins = Jenkins.getInstance()
         if (jenkins == null) {
             throw new IllegalStateException("inappropriate context")
         }
-        Queue.Executable exec = handle.getExecutable()
+        Queue.Executable exec = owner.getExecutable()
         if (!(exec instanceof WorkflowRun)) {
             throw new IllegalStateException("inappropriate context")
         }
         FlowDurabilityHint hint = (exec instanceof Item) ? DurabilityHintProvider.suggestedFor((Item)exec) : GlobalDefaultFlowDurabilityLevel.getDefaultDurabilityHint()
-
-        return new CpsFlowExecution("template()", true, handle, hint);
     }
+
 
     @Extension
     public static class DescriptorImpl extends FlowDefinitionDescriptor {
