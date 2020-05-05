@@ -7,14 +7,15 @@ import hudson.scm.SCM
 import hudson.scm.NullSCM
 import hudson.Util
 import hudson.Extension
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 public class NullPipelineConfigurationProvider extends PipelineConfigurationProvider{
 
     @DataBoundConstructor public NullPipelineConfigurationProvider(){}
 
-    public TemplateConfigObject getConfig(){ return null }
-    public String getJenkinsfile(){ return null }
-    public String getTemplate(String template){ return null }
+    public TemplateConfigObject getConfig(FlowExecutionOwner owner){ return null }
+    public String getJenkinsfile(FlowExecutionOwner owner){ return null }
+    public String getTemplate(FlowExecutionOwner owner, String template){ return null }
 
     @Extension public static class DescriptorImpl extends PipelineConfigurationProvider.PipelineConfigurationProviderDescriptor{
         public String getDisplayName(){

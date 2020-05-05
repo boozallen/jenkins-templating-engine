@@ -26,19 +26,6 @@ import org.jenkinsci.plugins.workflow.cps.EnvActionImpl
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
-/*
-  Parses an Template Config File and returns a TemplateConfigObject
-
-  example usage:
-
-    TemplateConfigObject my_config = TemplateConfigDsl.parse("""
-      libraries{
-        owasp_zap{
-          target = "example.com"
-        }
-      }
-    """)
-*/
 class TemplateConfigDsl {
 
   // needed to resolve EnvActionImpl ('env' var)
@@ -117,7 +104,7 @@ class TemplateConfigDsl {
     return printBlock(file, depth, config).join("\n")
   }
 
-  static ArrayList printBlock(ArrayList file, depth, Map block){
+  ArrayList printBlock(ArrayList file, depth, Map block){
     String tab = "    "
     block.each{ key, value -> 
       if(value instanceof Map){

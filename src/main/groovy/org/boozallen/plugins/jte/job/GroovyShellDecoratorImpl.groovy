@@ -16,14 +16,31 @@
 
 package org.boozallen.plugins.jte.job
 
-// import org.boozallen.plugins.jte.binding.TemplateBinding
-// import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution
+import org.boozallen.plugins.jte.binding.TemplateBinding
+import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import hudson.Extension
 import org.jenkinsci.plugins.workflow.cps.GroovyShellDecorator
+import javax.annotation.CheckForNull
+import groovy.lang.GroovyShell
+import org.jenkinsci.plugins.workflow.job.WorkflowRun
+import java.lang.reflect.Field
 
 
 @Extension
 public class GroovyShellDecoratorImpl extends GroovyShellDecorator {
 
+    @Override
+    void configureShell(@CheckForNull CpsFlowExecution context, GroovyShell shell) {
+        FlowExecutionOwner owner = context.getOwner()
+        WorkflowRun run = owner.run() 
+        PipelineDecorator pipelineDecorator = run.getAction(PipelineDecorator)
+        if(pipelineDecorator){
+            TemplateBinding binding = pipelineDecorator.getBinding()
+            Field shellBinding = GroovyShell.class.getDeclaredField("context")
+            shellBinding.setAccessible(true)
+            shellBinding.set(shell, binding)
+        }
+    }
 
 }

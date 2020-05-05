@@ -16,7 +16,7 @@
 
 package org.boozallen.plugins.jte.binding
 
-import org.jenkinsci.plugins.workflow.cps.CpsThread
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
 import org.jenkinsci.plugins.workflow.cps.DSL
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -26,11 +26,10 @@ class TemplateBinding extends Binding implements Serializable{
     public Set<String> registry = new ArrayList() 
     private Boolean locked = false 
 
-    TemplateBinding(){
-        CpsThread c = CpsThread.current()
-        if (c) setVariable(STEPS_VAR, new DSL(c.getExecution().getOwner()))
+    TemplateBinding(FlowExecutionOwner owner){
+        setVariable(STEPS_VAR, new DSL(owner))
     }
-    
+
     public void lock(){ locked = true }
 
     @Override
@@ -40,7 +39,10 @@ class TemplateBinding extends Binding implements Serializable{
             a variable called "config".  as such, reject 
             attempts to override this in the binding. 
         */
-        String reservedConfigVar = LibraryLoader.getPrimitiveClass().libraryConfigVariable 
+        /*
+          TODO: get this value from class
+        */
+        String reservedConfigVar = "config"
         if (name.equals(reservedConfigVar)){
             throw new TemplateException("Cannot set ${reservedConfigVar}. Reserved for use by library steps.")
         }

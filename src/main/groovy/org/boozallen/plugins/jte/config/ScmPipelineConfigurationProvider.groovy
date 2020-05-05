@@ -8,6 +8,7 @@ import hudson.scm.SCM
 import hudson.scm.NullSCM
 import hudson.Util
 import hudson.Extension
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 public class ScmPipelineConfigurationProvider extends PipelineConfigurationProvider{
 
@@ -28,26 +29,25 @@ public class ScmPipelineConfigurationProvider extends PipelineConfigurationProvi
     public setScm(SCM scm){ this.scm = scm }
     public SCM getScm(){ return scm }
 
-    public TemplateConfigObject getConfig(){
+    public TemplateConfigObject getConfig(FlowExecutionOwner owner){
         TemplateConfigObject configObject 
         if (scm && !(scm instanceof NullSCM)){
-            FileSystemWrapper fsw = FileSystemWrapper.createFromSCM(scm)
+            FileSystemWrapper fsw = FileSystemWrapper.createFromSCM(owner, scm)
             String filePath = "${baseDir ? "${baseDir}/" : ""}${CONFIG_FILE}"
-            String configFile = fsw.getFileContents(filePath, "Template Configuration File")
+            String configFile = fsw.getFileContents(filePath, "Pipeline Configuration File")
             if (configFile){
                 try{
-                    configObject = TemplateConfigDsl.parse(configFile)
+                    configObject = new TemplateConfigDsl(run: owner.run()).parse(configFile)
                 }catch(any){
-                    TemplateLogger.printError("Error parsing scm provided pipeline configuration")
+                    new TemplateLogger(owner.getListener()).printError("Error parsing scm provided pipeline configuration")
                     throw any
                 }
-            }
-     
+            }     
         }
         return configObject
     }
 
-    public String getJenkinsfile(){
+    public String getJenkinsfile(FlowExecutionOwner owner){
         String jenkinsfile 
         if(scm && !(scm instanceof NullSCM)){
             FileSystemWrapper fsw = FileSystemWrapper.createFromSCM(scm)
@@ -57,7 +57,7 @@ public class ScmPipelineConfigurationProvider extends PipelineConfigurationProvi
         return jenkinsfile 
     }
 
-    public String getTemplate(String template){
+    public String getTemplate(FlowExecutionOwner owner, String template){
         String pipelineTemplate 
         if(scm && !(scm instanceof NullSCM)){
             FileSystemWrapper fsw = FileSystemWrapper.createFromSCM(scm)

@@ -91,7 +91,8 @@ import com.cloudbees.groovy.cps.NonCPS
 
     static getPrimitiveClass(){
         String self = "org.boozallen.plugins.jte.binding.injectors.LibraryLoader"
-        String classText = RunUtils.classLoader
+        String classText = Jenkins.get().pluginManager
+                                    .uberClassLoader
                                     .loadClass(self)
                                     .getResource("StepWrapper.groovy")
                                     .text

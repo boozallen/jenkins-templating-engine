@@ -40,29 +40,28 @@ import groovy.lang.Lazy
 */
 class PipelineDecorator extends InvisibleAction { 
 
-    FlowExecutionOwner owner
+    FlowExecutionOwner flowOwner
+    TemplateBinding binding 
     String template
 
-    PipelineDecorator(FlowExecutionOwner owner){
-        this.owner = owner
+    PipelineDecorator(FlowExecutionOwner flowOwner){
+        this.flowOwner = flowOwner
     }
 
     void initialize(){
         PipelineConfig pipelineConfig = aggregatePipelineConfigurations()
-
-        getLogger().print "config -> ${pipelineConfig.getConfig().getConfig()}"
-
+        binding = new TemplateBinding(flowOwner)
+        injectPrimitives()
     }
 
     PipelineConfig aggregatePipelineConfigurations(){
-        PipelineConfig pipelineConfig = new PipelineConfig(logger: getLogger()) 
-
+        PipelineConfig pipelineConfig = new PipelineConfig(flowOwner) 
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy(getJob())
        
         //  we get the configs in ascending order of governance
         //  so reverse the list to get the highest precedence first
         tiers.reverse().each{ tier ->
-            TemplateConfigObject config = tier.getConfig()
+            TemplateConfigObject config = tier.getConfig(flowOwner)
             if (config){
                 pipelineConfig.join(config) 
             }
@@ -84,7 +83,7 @@ class PipelineDecorator extends InvisibleAction {
             String jobConfigString = flowDefinition.getPipelineConfig()
             if(jobConfigString){
                 try{
-                    jobConfig = new TemplateConfigDsl(run: owner.run()).parse(jobConfigString)
+                    jobConfig = new TemplateConfigDsl(run: flowOwner.run()).parse(jobConfigString)
                 }catch(any){
                     getLogger().printError("Error parsing ${job.getName()}'s configuration file.")
                     throw any 
@@ -96,7 +95,7 @@ class PipelineDecorator extends InvisibleAction {
             String repoConfigFile = fsw.getFileContents(ScmPipelineConfigurationProvider.CONFIG_FILE, "Template Configuration File", false)
             if (repoConfigFile){
                 try{
-                    jobConfig = TemplateConfigDsl.parse(repoConfigFile)
+                    jobConfig = new TemplateConfigDsl(run: flowOwner.run()).parse(repoConfigFile)
                 }catch(any){
                     getLogger().printError("Error parsing ${job.getName()}'s configuration file in SCM.")
                     throw any 
@@ -106,18 +105,24 @@ class PipelineDecorator extends InvisibleAction {
         return jobConfig 
     }
 
-    void initializeBinding(){}
+    void injectPrimitives(){
+        binding.setVariable("somePipelineVar", 11)
+    }
+
     String determinePipelineTemplate(){}
     String getTemplate(){
-        return "println 'template'"
+        return """
+        println "template"
+        println "somePipelineVar -> \${somePipelineVar}"
+        """
     }
 
     TemplateLogger getLogger(){
-        return new TemplateLogger(owner.getListener())
+        return new TemplateLogger(flowOwner.getListener())
     }
 
     WorkflowJob getJob(){
-        return owner.run().getParent()
+        return flowOwner.run().getParent()
     }
 
 }

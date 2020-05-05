@@ -7,6 +7,7 @@ import hudson.util.FormValidation
 import org.kohsuke.stapler.QueryParameter
 import hudson.RelativePath
 import hudson.Util
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 public class ConsolePipelineConfigurationProvider extends PipelineConfigurationProvider{
 
@@ -33,15 +34,15 @@ public class ConsolePipelineConfigurationProvider extends PipelineConfigurationP
     public String getDefaultTemplate(){ return defaultTemplate }
     public List<ConsolePipelineTemplate> getPipelineCatalog(){ return pipelineCatalog }
 
-    public TemplateConfigObject getConfig(){
-        return pipelineConfig ? TemplateConfigDsl.parse(pipelineConfig) : null 
+    public TemplateConfigObject getConfig(FlowExecutionOwner owner){
+        return pipelineConfig ? new TemplateConfigDsl(run: owner.run()).parse(pipelineConfig) : null 
     }
 
-    public String getJenkinsfile(){
+    public String getJenkinsfile(FlowExecutionOwner owner){
         return defaultTemplate
     }
 
-    public String getTemplate(String templateName){
+    public String getTemplate(FlowExecutionOwner owner, String templateName){
         ConsolePipelineTemplate template = pipelineCatalog.find{ it.getName() == templateName }
         return template ? template.getTemplate() : null 
     }

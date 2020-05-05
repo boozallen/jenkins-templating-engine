@@ -18,9 +18,7 @@ package org.boozallen.plugins.jte.utils
 
 
 import org.boozallen.plugins.jte.console.TemplateLogger
-
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
-
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 import org.jenkinsci.plugins.workflow.multibranch.BranchJobProperty
 import jenkins.branch.Branch
@@ -31,27 +29,29 @@ import jenkins.scm.api.SCMFileSystem
 import jenkins.scm.api.SCMSource
 import jenkins.scm.api.SCMFile
 import hudson.scm.SCM
-
 import hudson.model.TaskListener
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 
 class FileSystemWrapper {
     SCM scm 
     SCMFileSystem fs
     String scmKey
+    FlowExecutionOwner owner
 
     FileSystemWrapper(){}
 
-    static FileSystemWrapper createFromSCM(SCM scm){
-        FileSystemWrapper fsw = new FileSystemWrapper()
+    static FileSystemWrapper createFromSCM(FlowExecutionOwner owner, SCM scm){
+        FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fsFromSCM(scm)
         return fsw
     }
 
-    static FileSystemWrapper createFromJob(WorkflowJob job = RunUtils.getJob()){
-        FileSystemWrapper fsw = new FileSystemWrapper()
+    static FileSystemWrapper createFromJob(FlowExecutionOwner owner){
+        FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
+        WorkflowJob job = owner.run().getParent()
         fsw.fsFrom(job)
         return fsw
     }
@@ -65,32 +65,44 @@ class FileSystemWrapper {
         if (!fs) {
             return null
         }
-
+        TemplateLogger logger = new TemplateLogger(owner.getListener())
         try {
             SCMFile f = fs.child(filePath)
             if (!f.exists()) {
                 if (logMissingFile) {
-                    TemplateLogger.printWarning("""${filePath} does not exist.
-                                                -- scm: ${scmKey}""", true)
+                    ArrayList msg = [
+                        "${filePath} does not exist.",
+                        "-- scm: ${scmKey}"
+                    ]
+                    logger.printWarning(msg.join("\n"))
                 }
                 return null
             }
             if (!f.isFile()) {
-                TemplateLogger.printWarning("""${filePath} exists but is not a file.
-                                            -- scm: ${scmKey}""", true)
+                ArrayList msg = [
+                    "${filePath} exists but is not a file.",
+                    "-- scm: ${scmKey}"
+                ]
+                logger.printWarning(msg.join("\n"))
                 return null
             }
             if (loggingDescription){
-                TemplateLogger.print("""Obtained ${loggingDescription}
-                                        -- scm: ${scmKey}
-                                        -- file path: ${filePath}""", [initiallyHidden:true])
+                ArrayList msg = [
+                    "Obtained ${loggingDescription}",
+                    "-- scm: ${scmKey}",
+                    "-- file path: ${filePath}"
+                ]
+                logger.print(msg.join("\n"))
             }
 
             return f.contentAsString()
         } catch(java.io.FileNotFoundException fne){
             if (logMissingFile) {
-                TemplateLogger.printWarning("""${filePath} threw FileNotFoundException.
-                                                -- scm: ${scmKey}""", true)
+                ArrayList msg = [
+                    "${filePath} threw FileNotFoundException.",
+                    "-- scm: ${scmKey}"
+                ]
+                logger.printWarning(msg.join("\n"))
             }
             return null
         }
@@ -100,7 +112,8 @@ class FileSystemWrapper {
 
     }
 
-    def fsFromSCM(SCM scm, WorkflowJob job = RunUtils.getJob()){
+    def fsFromSCM(SCM scm){
+        WorkflowJob job = owner.run().getParent()
         if(!scm || !job){
             return [null, null]
         }
@@ -110,7 +123,7 @@ class FileSystemWrapper {
             fs = SCMFileSystem.of(job,scm)
             return [fs, scmKey]
         }catch(any){
-            TemplateLogger.printWarning(any.toString())
+            new TemplateLogger(owner.getListener()).printWarning(any.toString())
             return [null, null]
         }
     }
@@ -121,8 +134,7 @@ class FileSystemWrapper {
     */
     def fsFrom(WorkflowJob job){
         ItemGroup<?> parent = job.getParent()
-        TaskListener listener = RunUtils.getListener()
-
+        TaskListener listener = owner.getListener()
 
         try {
             if (parent instanceof WorkflowMultiBranchProject) {
@@ -168,7 +180,7 @@ class FileSystemWrapper {
         }catch(JTEException jteex){//throw our exception
             throw (jteex.cause ?: jteex)
         }catch(any){// ignore but print every other exception
-            TemplateLogger.printWarning(any.toString())
+            new TemplateLogger(listener).printWarning(any.toString())
         }
 
         return [fs, scmKey]

@@ -20,13 +20,24 @@ package org.boozallen.plugins.jte.config
 import org.boozallen.plugins.jte.console.TemplateLogger
 import org.codehaus.groovy.runtime.InvokerHelper
 import jenkins.model.Jenkins
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
+import org.jenkinsci.plugins.workflow.job.WorkflowRun
 
 /*
   stores the aggregated & immutable pipeline configuration. 
 */
 class PipelineConfig {
 
-    TemplateLogger logger 
+    FlowExecutionOwner owner
+    TemplateLogger logger
+    WorkflowRun run 
+
+    PipelineConfig(FlowExecutionOwner owner){
+      this.owner = owner
+      this.logger = new TemplateLogger(owner.getListener())
+      this.run = owner.run()
+
+    }
 
     TemplateConfigObject configObject = null
     TemplateConfigObject getConfig(){
@@ -46,8 +57,9 @@ class PipelineConfig {
       }
 
       def pipeline_config
-      def argCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(child))
-      def prevCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(configObject))
+      TemplateConfigDsl dsl = new TemplateConfigDsl(run: run)
+      def argCopy = dsl.parse(dsl.serialize(child))
+      def prevCopy = dsl.parse(dsl.serialize(configObject))
 
       /*
         start out by wiping out any configurations that were

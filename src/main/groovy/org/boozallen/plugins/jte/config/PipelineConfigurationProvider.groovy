@@ -20,13 +20,14 @@ import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.DataBoundSetter
 import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 
 abstract class PipelineConfigurationProvider extends AbstractDescribableImpl<PipelineConfigurationProvider>{
 
-    abstract public TemplateConfigObject getConfig()
-    abstract public String getJenkinsfile()
-    abstract public String getTemplate(String template)
+    abstract public TemplateConfigObject getConfig(FlowExecutionOwner owner)
+    abstract public String getJenkinsfile(FlowExecutionOwner owner)
+    abstract public String getTemplate(FlowExecutionOwner owner, String template)
 
     public static class PipelineConfigurationProviderDescriptor extends Descriptor<PipelineConfigurationProvider> {}
 

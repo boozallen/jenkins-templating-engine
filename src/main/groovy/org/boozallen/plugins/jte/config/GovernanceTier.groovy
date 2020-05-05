@@ -16,6 +16,7 @@
 
 package org.boozallen.plugins.jte.config
 
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.boozallen.plugins.jte.config.libraries.LibraryProvider
 import org.boozallen.plugins.jte.config.libraries.LibraryConfiguration
 import org.boozallen.plugins.jte.utils.RunUtils
@@ -70,22 +71,18 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
     public List<LibraryConfiguration> getLibraries(){ 
         return libraries 
     }
-   
-    @Whitelisted
-    public TemplateConfigObject getConfig() throws Exception{
-        return configurationProvider.getConfig()
+
+    public TemplateConfigObject getConfig(FlowExecutionOwner owner) throws Exception{
+        return configurationProvider.getConfig(owner)
     }
 
-    @Whitelisted
     public String getJenkinsfile() throws Exception {
         return configurationProvider.getJenkinsfile()
     }
 
-    @Whitelisted
     public String getTemplate(String template) throws Exception {
         return configurationProvider.getTemplate(template)
     }
-
 
     /*
         returns the job's GovernanceTier hierarchy in ascending order
@@ -112,10 +109,8 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
         }
         return h
     }
-
     
-    @Extension public final static class DescriptorImpl extends Descriptor<GovernanceTier> {
-        
+    @Extension public final static class DescriptorImpl extends Descriptor<GovernanceTier> {        
         @Override public GovernanceTier newInstance(StaplerRequest req, JSONObject formData) throws FormException {
             GovernanceTier tier = (GovernanceTier) super.newInstance(req, formData);
             return tier.libraries?.isEmpty() ? null : tier
@@ -132,7 +127,5 @@ public class GovernanceTier extends AbstractDescribableImpl<GovernanceTier> impl
         public Descriptor getDefaultConfigurationProvider(){
             return Jenkins.get().getDescriptor(NullPipelineConfigurationProvider)
         }
-
     }
-
 }
