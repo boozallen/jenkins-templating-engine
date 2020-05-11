@@ -19,7 +19,6 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 class PipelineConfigurationObject implements Serializable{
-    ArrayList<PipelineConfigurationObject> parents = []
     LinkedHashMap config = [:]
     Set<String> merge = []
     Set<String> override = []

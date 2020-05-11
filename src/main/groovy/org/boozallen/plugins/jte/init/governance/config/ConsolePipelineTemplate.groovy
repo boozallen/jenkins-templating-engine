@@ -25,28 +25,28 @@ import org.kohsuke.stapler.QueryParameter
 
 public class ConsolePipelineTemplate extends AbstractDescribableImpl<ConsolePipelineTemplate> implements Serializable{
 
-	String name
-	String template
+    String name
+    String template
 
-	@DataBoundConstructor public ConsolePipelineTemplate(){}
+    @DataBoundConstructor public ConsolePipelineTemplate(){}
 
-	@DataBoundSetter
-	public void setName(String name){
-		this.name = Util.fixEmptyAndTrim(name)
-	}
+    @DataBoundSetter
+    public void setName(String name){
+        this.name = Util.fixEmptyAndTrim(name)
+    }
 
-	public String getName(){
-		return name
-	}
+    public String getName(){
+        return name
+    }
 
-	@DataBoundSetter
-	public void setTemplate(String template){
-		this.template = Util.fixEmptyAndTrim(template)
-	}
+    @DataBoundSetter
+    public void setTemplate(String template){
+        this.template = Util.fixEmptyAndTrim(template)
+    }
 
-	public String getTemplate(){
-		return template
-	}
+    public String getTemplate(){
+        return template
+    }
 
-	@Extension public final static class DescriptorImpl extends Descriptor<ConsolePipelineTemplate> {}
+    @Extension public final static class DescriptorImpl extends Descriptor<ConsolePipelineTemplate> {}
 }

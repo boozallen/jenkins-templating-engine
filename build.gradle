@@ -84,3 +84,11 @@ jacocoTestReport {
         html.enabled true
     }
 }
+
+spotless{
+    groovy{
+        trimTrailingWhitespace()
+        indentWithSpaces()
+        endWithNewline()
+    }
+}

@@ -73,4 +73,3 @@ assert currentJob instanceof WorkflowJob
     }
 
 }
-

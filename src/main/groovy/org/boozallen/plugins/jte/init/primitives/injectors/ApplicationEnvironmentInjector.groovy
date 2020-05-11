@@ -25,28 +25,27 @@ import java.lang.ClassLoader
 
 @Extension class ApplicationEnvironmentInjector extends TemplatePrimitiveInjector {
 
-	@NonCPS
-	static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
-		Class ApplicationEnvironment = getPrimitiveClass()
-		ArrayList createdEnvs = []
-		config.getConfig().application_environments.each{ name, appEnvConfig ->
-			def env = ApplicationEnvironment.newInstance(name, appEnvConfig)
-			createdEnvs << env
-			binding.setVariable(name, env)
-		}
-		createdEnvs.eachWithIndex{ env, index ->
-			def previous = index ? createdEnvs[index - 1] : null
-			def next = (index != (createdEnvs.size() - 1)) ? createdEnvs[index + 1] : null
-			env.setPrevious(previous)
-			env.setNext(next)
-		}
-	}
+    @NonCPS
+    static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
+        Class ApplicationEnvironment = getPrimitiveClass()
+        ArrayList createdEnvs = []
+        config.getConfig().application_environments.each{ name, appEnvConfig ->
+            def env = ApplicationEnvironment.newInstance(name, appEnvConfig)
+            createdEnvs << env
+            binding.setVariable(name, env)
+        }
+        createdEnvs.eachWithIndex{ env, index ->
+            def previous = index ? createdEnvs[index - 1] : null
+            def next = (index != (createdEnvs.size() - 1)) ? createdEnvs[index + 1] : null
+            env.setPrevious(previous)
+            env.setNext(next)
+        }
+    }
 
-	static Class getPrimitiveClass(){
-		ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
-		String self = this.getMetaClass().getTheClass().getName()
-		String classText = uberClassLoader.loadClass(self).getResource("ApplicationEnvironment.groovy").text
-		return TemplateScriptEngine.parseClass(classText)
-	}
+    static Class getPrimitiveClass(){
+        ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
+        String self = this.getMetaClass().getTheClass().getName()
+        String classText = uberClassLoader.loadClass(self).getResource("ApplicationEnvironment.groovy").text
+        return TemplateScriptEngine.parseClass(classText)
+    }
 }
-

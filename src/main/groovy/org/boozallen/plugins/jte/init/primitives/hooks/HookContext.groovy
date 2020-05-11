@@ -20,6 +20,6 @@ package org.boozallen.plugins.jte.init.primitives.hooks
  args: any arguments passed to the step triggering the hook
  */
 class HookContext implements Serializable{
-	String library
-	String step
+    String library
+    String step
 }

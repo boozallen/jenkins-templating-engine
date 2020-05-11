@@ -18,9 +18,9 @@ package org.boozallen.plugins.jte.init.primitives
  by library developers, or by pipeline templates.
  */
 abstract class TemplatePrimitive implements Serializable{
-	// gets called during template initialization
-	abstract void throwPreLockException()
+    // gets called during template initialization
+    abstract void throwPreLockException()
 
-	//gets called after template initialization
-	abstract void throwPostLockException()
+    //gets called after template initialization
+    abstract void throwPostLockException()
 }

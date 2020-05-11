@@ -39,158 +39,158 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
  */
 class PipelineDecorator extends InvisibleAction {
 
-	/*
-	 TODO:
-	 PipelineConfig:
-	 * remove class
-	 * add functionality of join to PipelineConfigurationObject.plus
-	 */
+    /*
+     TODO:
+     PipelineConfig:
+     * remove class
+     * add functionality of join to PipelineConfigurationObject.plus
+     */
 
-	FlowExecutionOwner flowOwner
-	PipelineConfig config
-	TemplateBinding binding
-	String template
+    FlowExecutionOwner flowOwner
+    PipelineConfig config
+    TemplateBinding binding
+    String template
 
-	PipelineDecorator(FlowExecutionOwner flowOwner){
-		this.flowOwner = flowOwner
-	}
+    PipelineDecorator(FlowExecutionOwner flowOwner){
+        this.flowOwner = flowOwner
+    }
 
-	void initialize(){
-		config = aggregatePipelineConfigurations()
-		binding = new TemplateBinding(flowOwner)
-		injectPrimitives()
-		template = determinePipelineTemplate()
-	}
+    void initialize(){
+        config = aggregatePipelineConfigurations()
+        binding = new TemplateBinding(flowOwner)
+        injectPrimitives()
+        template = determinePipelineTemplate()
+    }
 
-	PipelineConfig aggregatePipelineConfigurations(){
-		PipelineConfig pipelineConfig = new PipelineConfig(flowOwner)
-		List<GovernanceTier> tiers = GovernanceTier.getHierarchy(getJob())
+    PipelineConfig aggregatePipelineConfigurations(){
+        PipelineConfig pipelineConfig = new PipelineConfig(flowOwner)
+        List<GovernanceTier> tiers = GovernanceTier.getHierarchy(getJob())
 
-		//  we get the configs in ascending order of governance
-		//  so reverse the list to get the highest precedence first
-		tiers.reverse().each{ tier ->
-			PipelineConfigurationObject config = tier.getConfig(flowOwner)
-			if (config){
-				pipelineConfig.join(config)
-			}
-		}
+        //  we get the configs in ascending order of governance
+        //  so reverse the list to get the highest precedence first
+        tiers.reverse().each{ tier ->
+            PipelineConfigurationObject config = tier.getConfig(flowOwner)
+            if (config){
+                pipelineConfig.join(config)
+            }
+        }
 
-		// get job level configuration
-		PipelineConfigurationObject jobConfig = getJobPipelineConfiguration(getJob())
-		if(jobConfig){
-			pipelineConfig.join(jobConfig)
-		}
+        // get job level configuration
+        PipelineConfigurationObject jobConfig = getJobPipelineConfiguration(getJob())
+        if(jobConfig){
+            pipelineConfig.join(jobConfig)
+        }
 
-		return pipelineConfig
-	}
+        return pipelineConfig
+    }
 
-	PipelineConfigurationObject getJobPipelineConfiguration(WorkflowJob job){
-		PipelineConfigurationObject jobConfig = null
-		def flowDefinition = job.getDefinition()
-		if(flowDefinition instanceof AdHocTemplateFlowDefinition){
-			String jobConfigString = flowDefinition.getPipelineConfig()
-			if(jobConfigString){
-				try{
-					jobConfig = new TemplateConfigDsl(run: flowOwner.run()).parse(jobConfigString)
-				}catch(any){
-					getLogger().printError("Error parsing ${job.getName()}'s configuration file.")
-					throw any
-				}
-			}
-		} else {
-			// get job config if present
-			FileSystemWrapper fsw = FileSystemWrapper.createFromJob(flowOwner)
-			String repoConfigFile = fsw.getFileContents(ScmPipelineConfigurationProvider.CONFIG_FILE, "Template Configuration File", false)
-			if (repoConfigFile){
-				try{
-					jobConfig = new TemplateConfigDsl(run: flowOwner.run()).parse(repoConfigFile)
-				}catch(any){
-					getLogger().printError("Error parsing ${job.getName()}'s configuration file in SCM.")
-					throw any
-				}
-			}
-		}
-		return jobConfig
-	}
+    PipelineConfigurationObject getJobPipelineConfiguration(WorkflowJob job){
+        PipelineConfigurationObject jobConfig = null
+        def flowDefinition = job.getDefinition()
+        if(flowDefinition instanceof AdHocTemplateFlowDefinition){
+            String jobConfigString = flowDefinition.getPipelineConfig()
+            if(jobConfigString){
+                try{
+                    jobConfig = new TemplateConfigDsl(run: flowOwner.run()).parse(jobConfigString)
+                }catch(any){
+                    getLogger().printError("Error parsing ${job.getName()}'s configuration file.")
+                    throw any
+                }
+            }
+        } else {
+            // get job config if present
+            FileSystemWrapper fsw = FileSystemWrapper.createFromJob(flowOwner)
+            String repoConfigFile = fsw.getFileContents(ScmPipelineConfigurationProvider.CONFIG_FILE, "Template Configuration File", false)
+            if (repoConfigFile){
+                try{
+                    jobConfig = new TemplateConfigDsl(run: flowOwner.run()).parse(repoConfigFile)
+                }catch(any){
+                    getLogger().printError("Error parsing ${job.getName()}'s configuration file in SCM.")
+                    throw any
+                }
+            }
+        }
+        return jobConfig
+    }
 
-	void injectPrimitives(){
-		PipelineConfigurationObject configObj = config.getConfig()
+    void injectPrimitives(){
+        PipelineConfigurationObject configObj = config.getConfig()
 
-		ExtensionList<TemplatePrimitiveInjector> injectors = TemplatePrimitiveInjector.all()
+        ExtensionList<TemplatePrimitiveInjector> injectors = TemplatePrimitiveInjector.all()
 
-		injectors.each{ injector ->
-			injector.doInject(flowOwner, configObj, binding)
-		}
+        injectors.each{ injector ->
+            injector.doInject(flowOwner, configObj, binding)
+        }
 
-		injectors.each{ injector ->
-			injector.doPostInject(flowOwner, configObj, binding)
-		}
+        injectors.each{ injector ->
+            injector.doPostInject(flowOwner, configObj, binding)
+        }
 
-		/*
-		 seal the binding.
-		 <? extends TemplatePrimitive>.throwPostLockException() will now be thrown
-		 */
-		binding.lock()
-	}
+        /*
+         seal the binding.
+         <? extends TemplatePrimitive>.throwPostLockException() will now be thrown
+         */
+        binding.lock()
+    }
 
-	String determinePipelineTemplate(){
-		LinkedHashMap pipelineConfig = config.getConfig().getConfig()
-		WorkflowJob job = getJob()
-		FlowDefinition flowDefinition = job.getDefinition()
-		if (flowDefinition instanceof AdHocTemplateFlowDefinition){
-			String template = flowDefinition.getTemplate()
-			if(template){
-				getLogger().print "Obtained Pipeline Template from job configuration"
-				return template
-			}
-		} else {
-			FileSystemWrapper fs = FileSystemWrapper.createFromJob(flowOwner)
-			String repoJenkinsfile = fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false)
-			if (repoJenkinsfile){
-				Boolean allowScmJenkinsfile = pipelineConfig.containsKey("allow_scm_jenkinsfile") ? pipelineConfig.allow_scm_jenkinsfile : true
-				if (allowScmJenkinsfile){
-					return repoJenkinsfile
-				}else{
-					getLogger().printWarning "Repository provided Jenkinsfile that will not be used, per organizational policy."
-				}
-			}
-		}
+    String determinePipelineTemplate(){
+        LinkedHashMap pipelineConfig = config.getConfig().getConfig()
+        WorkflowJob job = getJob()
+        FlowDefinition flowDefinition = job.getDefinition()
+        if (flowDefinition instanceof AdHocTemplateFlowDefinition){
+            String template = flowDefinition.getTemplate()
+            if(template){
+                getLogger().print "Obtained Pipeline Template from job configuration"
+                return template
+            }
+        } else {
+            FileSystemWrapper fs = FileSystemWrapper.createFromJob(flowOwner)
+            String repoJenkinsfile = fs.getFileContents("Jenkinsfile", "Repository Jenkinsfile", false)
+            if (repoJenkinsfile){
+                Boolean allowScmJenkinsfile = pipelineConfig.containsKey("allow_scm_jenkinsfile") ? pipelineConfig.allow_scm_jenkinsfile : true
+                if (allowScmJenkinsfile){
+                    return repoJenkinsfile
+                }else{
+                    getLogger().printWarning "Repository provided Jenkinsfile that will not be used, per organizational policy."
+                }
+            }
+        }
 
-		// specified pipeline template from pipeline template directories in governance tiers
-		List<GovernanceTier> tiers = GovernanceTier.getHierarchy(job)
-		if (pipelineConfig.pipeline_template){
-			for (tier in tiers){
-				String pipelineTemplate = tier.getTemplate(flowOwner, pipelineConfig.pipeline_template)
-				if (pipelineTemplate){
-					return pipelineTemplate
-				}
-			}
-			throw new Exception("Pipeline Template ${pipelineConfig.pipeline_template} could not be found in hierarchy.")
-		}
+        // specified pipeline template from pipeline template directories in governance tiers
+        List<GovernanceTier> tiers = GovernanceTier.getHierarchy(job)
+        if (pipelineConfig.pipeline_template){
+            for (tier in tiers){
+                String pipelineTemplate = tier.getTemplate(flowOwner, pipelineConfig.pipeline_template)
+                if (pipelineTemplate){
+                    return pipelineTemplate
+                }
+            }
+            throw new Exception("Pipeline Template ${pipelineConfig.pipeline_template} could not be found in hierarchy.")
+        }
 
-		/*
-		 look for default Jenkinsfile in ascending order of governance tiers
-		 */
-		for (tier in tiers){
-			String pipelineTemplate = tier.getJenkinsfile(flowOwner)
-			if (pipelineTemplate){
-				return pipelineTemplate
-			}
-		}
+        /*
+         look for default Jenkinsfile in ascending order of governance tiers
+         */
+        for (tier in tiers){
+            String pipelineTemplate = tier.getJenkinsfile(flowOwner)
+            if (pipelineTemplate){
+                return pipelineTemplate
+            }
+        }
 
-		throw new Exception("Could not determine pipeline template.")
-	}
+        throw new Exception("Could not determine pipeline template.")
+    }
 
-	String getTemplate(){
-		return template
-	}
+    String getTemplate(){
+        return template
+    }
 
-	TemplateLogger getLogger(){
-		return new TemplateLogger(flowOwner.getListener())
-	}
+    TemplateLogger getLogger(){
+        return new TemplateLogger(flowOwner.getListener())
+    }
 
-	WorkflowJob getJob(){
-		return flowOwner.run().getParent()
-	}
+    WorkflowJob getJob(){
+        return flowOwner.run().getParent()
+    }
 
 }

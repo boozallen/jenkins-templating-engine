@@ -25,19 +25,19 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 
 @Extension class StageInjector extends TemplatePrimitiveInjector {
-	static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
-		Class Stage = getPrimitiveClass()
-		config.getConfig().stages.each{name, steps ->
-			ArrayList<String> stepsList = new ArrayList()
-			steps.collect(stepsList){ it.key }
-			binding.setVariable(name, Stage.newInstance(binding, name, stepsList))
-		}
-	}
+    static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
+        Class Stage = getPrimitiveClass()
+        config.getConfig().stages.each{name, steps ->
+            ArrayList<String> stepsList = new ArrayList()
+            steps.collect(stepsList){ it.key }
+            binding.setVariable(name, Stage.newInstance(binding, name, stepsList))
+        }
+    }
 
-	static Class getPrimitiveClass(){
-		ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
-		String self = this.getMetaClass().getTheClass().getName()
-		String classText = uberClassLoader.loadClass(self).getResource("Stage.groovy").text
-		return TemplateScriptEngine.parseClass(classText)
-	}
+    static Class getPrimitiveClass(){
+        ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
+        String self = this.getMetaClass().getTheClass().getName()
+        String classText = uberClassLoader.loadClass(self).getResource("Stage.groovy").text
+        return TemplateScriptEngine.parseClass(classText)
+    }
 }

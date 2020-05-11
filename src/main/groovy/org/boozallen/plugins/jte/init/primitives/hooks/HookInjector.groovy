@@ -29,34 +29,33 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
  */
 @Extension class HookInjector extends TemplatePrimitiveInjector {
 
-	static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
-		Class Hooks = getHooksClass()
-		getAnnotatedMethodClass()
+    static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
+        Class Hooks = getHooksClass()
+        getAnnotatedMethodClass()
 
-		/*
-		 This seems random without context.
-		 Check out GroovyShellDecoratorImpl.configureCompiler to understand why
-		 this is being done.
-		 */
-		binding.setVariable("Hooks", Hooks)
-		binding.setVariable("Validate", Validate)
-		binding.setVariable("Init", Init)
-		binding.setVariable("CleanUp", CleanUp)
-		binding.setVariable("Notify", Notify)
-	}
+        /*
+         This seems random without context.
+         Check out GroovyShellDecoratorImpl.configureCompiler to understand why
+         this is being done.
+         */
+        binding.setVariable("Hooks", Hooks)
+        binding.setVariable("Validate", Validate)
+        binding.setVariable("Init", Init)
+        binding.setVariable("CleanUp", CleanUp)
+        binding.setVariable("Notify", Notify)
+    }
 
-	static Class getHooksClass(){
-		ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
-		String self = this.getMetaClass().getTheClass().getName()
-		String classText = uberClassLoader.loadClass(self).getResource("Hooks.groovy").text
-		return TemplateScriptEngine.parseClass(classText)
-	}
+    static Class getHooksClass(){
+        ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
+        String self = this.getMetaClass().getTheClass().getName()
+        String classText = uberClassLoader.loadClass(self).getResource("Hooks.groovy").text
+        return TemplateScriptEngine.parseClass(classText)
+    }
 
-	static Class getAnnotatedMethodClass(){
-		ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
-		String self = this.getMetaClass().getTheClass().getName()
-		String classText = uberClassLoader.loadClass(self).getResource("AnnotatedMethod.groovy").text
-		return TemplateScriptEngine.parseClass(classText)
-	}
+    static Class getAnnotatedMethodClass(){
+        ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
+        String self = this.getMetaClass().getTheClass().getName()
+        String classText = uberClassLoader.loadClass(self).getResource("AnnotatedMethod.groovy").text
+        return TemplateScriptEngine.parseClass(classText)
+    }
 }
-

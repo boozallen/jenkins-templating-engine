@@ -22,18 +22,17 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 @Extension class KeywordInjector extends TemplatePrimitiveInjector {
-	static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
-		Class Keyword = getPrimitiveClass()
-		config.getConfig().keywords.each{ key, value ->
-			binding.setVariable(key, Keyword.newInstance(key, value))
-		}
-	}
+    static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
+        Class Keyword = getPrimitiveClass()
+        config.getConfig().keywords.each{ key, value ->
+            binding.setVariable(key, Keyword.newInstance(key, value))
+        }
+    }
 
-	static Class getPrimitiveClass(){
-		ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
-		String self = this.getMetaClass().getTheClass().getName()
-		String classText = uberClassLoader.loadClass(self).getResource("Keyword.groovy").text
-		return TemplateScriptEngine.parseClass(classText)
-	}
+    static Class getPrimitiveClass(){
+        ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
+        String self = this.getMetaClass().getTheClass().getName()
+        String classText = uberClassLoader.loadClass(self).getResource("Keyword.groovy").text
+        return TemplateScriptEngine.parseClass(classText)
+    }
 }
-

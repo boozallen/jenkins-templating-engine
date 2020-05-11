@@ -41,4 +41,3 @@ abstract class LibraryProvidingPlugin extends AbstractDescribableImpl<LibraryPro
         }
     }
 }
-
