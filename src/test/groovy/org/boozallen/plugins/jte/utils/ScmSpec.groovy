@@ -1,3 +1,18 @@
+/*
+    Copyright 2018 Booz Allen Hamilton
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 package org.boozallen.plugins.jte.utils
 
 import hudson.model.Action
@@ -14,7 +29,7 @@ import jenkins.plugins.git.GitSCMSource
 import jenkins.plugins.git.GitSampleRepoRule
 import jenkins.plugins.git.traits.BranchDiscoveryTrait
 import jenkins.scm.api.SCMFileSystem
-import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.util.TemplateLogger
 import org.boozallen.plugins.jte.testcategories.*
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution
@@ -57,7 +72,7 @@ class ScmSpec extends Specification {
     String cpsScript = """
                import org.jenkinsci.plugins.workflow.cps.*
                import org.jenkinsci.plugins.workflow.job.*
-              
+
 """
     @Shared
     String pipelineConfigPath = "pipeline_config.groovy"
@@ -67,7 +82,7 @@ class ScmSpec extends Specification {
     String pipelineConfigScript = """
         libraries{
             openshift{
-                url = "whatever" 
+                url = "whatever"
             }
         }
     """
@@ -82,7 +97,7 @@ class ScmSpec extends Specification {
                import org.boozallen.plugins.jte.utils.*
 
             def fsw = FileSystemWrapper.createFromJob()
-            println fsw.getFileContents('pipeline_config.groovy', "template configuration file")               
+            println fsw.getFileContents('pipeline_config.groovy', "template configuration file")
 
 """
 
@@ -125,7 +140,7 @@ class ScmSpec extends Specification {
 
         scmWorkflowJob = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "scmWorkflowJob");
         cpsScmFlowDefinition = new CpsScmFlowDefinition(scm, cpsScriptPath)
-        
+
         scmWorkflowJob.setDefinition(cpsScmFlowDefinition);
 
         stdWorkflowJob = groovyJenkinsRule.jenkins.createProject(WorkflowJob, "stdWorkflowJob");

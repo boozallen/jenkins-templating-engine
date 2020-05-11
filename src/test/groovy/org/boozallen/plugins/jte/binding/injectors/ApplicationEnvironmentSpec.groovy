@@ -1,32 +1,32 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-       http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+    Copyright 2018 Booz Allen Hamilton
 
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 package org.boozallen.plugins.jte.binding.injectors
 
 
-import org.boozallen.plugins.jte.binding.TemplateBinding
-import org.boozallen.plugins.jte.binding.TemplateException
-import org.boozallen.plugins.jte.binding.TemplatePrimitiveInjector
-import org.boozallen.plugins.jte.utils.RunUtils
-import spock.lang.*
-import org.junit.*
+import org.boozallen.plugins.jte.init.dsl.TemplateConfigException
+import org.boozallen.plugins.jte.init.dsl.PipelineConfigurationObject
+import org.boozallen.plugins.jte.init.primitives.TemplateBinding
+import org.boozallen.plugins.jte.init.primitives.TemplateException
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
+import org.boozallen.plugins.jte.util.RunUtils
+import org.boozallen.plugins.jte.util.TemplateScriptEngine
 import org.jenkinsci.plugins.workflow.cps.CpsScript
-import org.boozallen.plugins.jte.binding.*
-
-import org.boozallen.plugins.jte.config.TemplateConfigObject
-import org.boozallen.plugins.jte.config.TemplateConfigException
-import org.boozallen.plugins.jte.utils.TemplateScriptEngine
+import org.junit.*
 import org.jvnet.hudson.test.GroovyJenkinsRule
+import spock.lang.*
 
 class ApplicationEnvironmentSpec extends Specification{
 
@@ -64,7 +64,7 @@ class ApplicationEnvironmentSpec extends Specification{
     }
 
     void injectEnvironments(Map env_config){
-        TemplateConfigObject config = new TemplateConfigObject(config: [
+        PipelineConfigurationObject config = new PipelineConfigurationObject(config: [
                 application_environments: env_config
         ])
         ApplicationEnvironmentInjector.doInject(config, script)
@@ -76,7 +76,7 @@ class ApplicationEnvironmentSpec extends Specification{
             def envName = "dev"
             injectEnvironments(["${envName}": [:]])
         then:
-            assert binding.hasVariable(envName) 
+            assert binding.hasVariable(envName)
             assert getApplicationEnvironmentClass().isInstance( binding.getVariable(envName) )
     }
 
@@ -109,7 +109,7 @@ class ApplicationEnvironmentSpec extends Specification{
             def envName = "dev"
             injectEnvironments(["${envName}": [:]])
             def env = binding.getVariable(envName)
-        then: 
+        then:
             env.long_name == envName
     }
 
@@ -122,136 +122,136 @@ class ApplicationEnvironmentSpec extends Specification{
                 ]
             ])
             def env = binding.getVariable(envName)
-        then: 
+        then:
             assert env.long_name == "develop"
     }
 
     def "can set arbitrary additional key"(){
-        when: 
-            def envName = "dev" 
+        when:
+            def envName = "dev"
             injectEnvironments([
                 "${envName}": [
                     random: 11
                 ]
             ])
             def env = binding.getVariable(envName)
-        then: 
-            assert env.random == 11 
+        then:
+            assert env.random == 11
     }
 
     def "missing property returns null"(){
-        when: 
-            def envName = "dev" 
+        when:
+            def envName = "dev"
             injectEnvironments(["${envName}": [:]])
             def env = binding.getVariable(envName)
-        then: 
-            assert env.random == null 
-    } 
+        then:
+            assert env.random == null
+    }
 
     def "application environments are immutable"(){
-        when: 
-            def envName = "dev" 
+        when:
+            def envName = "dev"
             injectEnvironments(["${envName}": [:]])
             def env = binding.getVariable(envName)
-            env.short_name = "something else" 
-        then: 
+            env.short_name = "something else"
+        then:
             thrown(TemplateConfigException)
     }
 
     def "can set multiple environments"(){
-        when: 
+        when:
             injectEnvironments([
                 dev: [:],
                 test: [:]
             ])
-        then: 
+        then:
             assert binding.hasVariable("dev")
             assert binding.hasVariable("test")
     }
 
     def "fail on override during initialization"(){
-        when: 
+        when:
             injectEnvironments([dev: [:]])
             binding.setVariable("dev", "whatever")
         then:
         TemplateException ex = thrown()
-            assert ex.message == "Application Environment dev already defined." 
+            assert ex.message == "Application Environment dev already defined."
     }
 
     def "fail on override post initialization"(){
-        when: 
+        when:
             injectEnvironments([dev: [:]])
             binding.lock()
             binding.setVariable("dev", "whatever")
-        then: 
-            TemplateException ex = thrown() 
-            assert ex.message == "Variable dev is reserved as an Application Environment." 
+        then:
+            TemplateException ex = thrown()
+            assert ex.message == "Variable dev is reserved as an Application Environment."
     }
 
     def "first environment's previous is null"(){
-        when: 
+        when:
             injectEnvironments([
                 dev: [ long_name: "Development" ],
                 test: [ long_name: "Test" ]
             ])
-        then: 
-            binding.getVariable("dev").previous == null 
+        then:
+            binding.getVariable("dev").previous == null
     }
-    
+
     def "second env's previous is correct"(){
-        when: 
+        when:
             injectEnvironments([
                 dev: [ long_name: "Development" ],
                 test: [ long_name: "Test" ]
             ])
-        then: 
+        then:
             binding.getVariable("test").previous == binding.getVariable("dev")
     }
 
     def "first env's next is correct"(){
-        when: 
+        when:
             injectEnvironments([
                 dev: [ long_name: "Development" ],
                 test: [ long_name: "Test" ]
             ])
-        then: 
+        then:
             binding.getVariable("dev").next == binding.getVariable("test")
     }
 
     def "when only one environment previous/next are null"(){
-        when: 
+        when:
             injectEnvironments([
                 dev: [ long_name: "Development" ]
             ])
             def dev = binding.getVariable("dev")
-        then: 
+        then:
             dev.previous == null
-            dev.next == null 
+            dev.next == null
     }
 
     def "when >= 3 envs, middle envs previous and next are correct"(){
-        when: 
+        when:
             injectEnvironments([
                 dev: [ long_name: "Development" ],
                 test: [ long_name: "Test" ],
                 prod: [ long_name: "Production" ]
             ])
             def test = binding.getVariable("test")
-        then: 
+        then:
             test.previous == binding.getVariable("dev")
             test.next == binding.getVariable("prod")
     }
 
     def "last environment's next is null"(){
-        when: 
+        when:
             injectEnvironments([
                     dev: [ long_name: "Development" ],
                     test: [ long_name: "Test" ],
                     prod: [ long_name: "Production" ]
                 ])
             def prod = binding.getVariable("prod")
-        then: 
-            prod.next == null 
+        then:
+            prod.next == null
     }
 
     def "defining the previous configuration throws exception"(){
@@ -259,7 +259,7 @@ class ApplicationEnvironmentSpec extends Specification{
             injectEnvironments([
                 dev: [ previous: "_" ]
             ])
-        then: 
+        then:
             thrown(TemplateConfigException)
     }
 
@@ -268,7 +268,7 @@ class ApplicationEnvironmentSpec extends Specification{
             injectEnvironments([
                 dev: [ next: "_" ]
             ])
-        then: 
+        then:
             thrown(TemplateConfigException)
     }
 

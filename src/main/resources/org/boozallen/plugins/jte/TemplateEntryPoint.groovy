@@ -18,9 +18,9 @@
 import org.boozallen.plugins.jte.binding.*
 import org.boozallen.plugins.jte.config.*
 import org.boozallen.plugins.jte.hooks.*
-import org.boozallen.plugins.jte.console.TemplateLogger
+import org.boozallen.plugins.jte.util.TemplateLogger
 import org.boozallen.plugins.jte.TemplateEntryPointVariable
-import org.boozallen.plugins.jte.utils.TemplateScriptEngine
+import org.boozallen.plugins.jte.util.TemplateScriptEngine
 import com.cloudbees.groovy.cps.impl.CpsClosure 
 
 def call(CpsClosure body = null){

@@ -1,25 +1,24 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
+    Copyright 2018 Booz Allen Hamilton
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
-
 package org.boozallen.plugins.jte.config
 
 import spock.lang.*
 import org.junit.*
-import org.boozallen.plugins.jte.utils.RunUtils
-import org.jenkinsci.plugins.workflow.cps.EnvActionImpl 
+import org.boozallen.plugins.jte.util.RunUtils
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl
 import org.jvnet.hudson.test.GroovyJenkinsRule
 
 class TemplateConfigDslSpec extends Specification {
@@ -30,80 +29,80 @@ class TemplateConfigDslSpec extends Specification {
     public GroovyJenkinsRule groovyJenkinsRule = new GroovyJenkinsRule()
 
     def setup(){
-        EnvActionImpl env = Mock() 
-        env.getProperty("someField") >> "envProperty" 
+        EnvActionImpl env = Mock()
+        env.getProperty("someField") >> "envProperty"
 
         GroovySpy(TemplateConfigDsl, global:true)
         TemplateConfigDsl.getEnvironment() >> env
-        
+
         GroovySpy(RunUtils, global:true)
-        RunUtils.getClassLoader() >> groovyJenkinsRule.jenkins.getPluginManager().uberClassLoader 
+        RunUtils.getClassLoader() >> groovyJenkinsRule.jenkins.getPluginManager().uberClassLoader
     }
 
     def "include Jenkins env var in configuration"(){
-        setup: 
-        String config = "a = env.someField" 
-        
-        when: 
-        TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+        setup:
+        String config = "a = env.someField"
 
-        then: 
+        when:
+        PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+
+        then:
         configObject.config == [ a: "envProperty" ]
         configObject.merge.isEmpty()
         configObject.override.isEmpty()
     }
 
     def 'Empty Config File'(){
-        setup: 
-        String config = "" 
+        setup:
+        String config = ""
 
-        when: 
-        TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        
-        then: 
+        when:
+        PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+
+        then:
         configObject.config == [:]
         configObject.merge.isEmpty()
         configObject.override.isEmpty()
     }
 
     def 'Flat Keys Configuration'(){
-        setup: 
+        setup:
             String config = """
             a = 3
-            b = "hi" 
-            c = true 
+            b = "hi"
+            c = true
             """
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
             configObject.config == [
-                a: 3, 
-                b: "hi", 
+                a: 3,
+                b: "hi",
                 c: true
             ]
     }
 
     def 'Nested Keys Configuration'(){
-        setup: 
+        setup:
             String config = """
-            random = "hi" 
+            random = "hi"
             application_environments{
                 dev{
-                    field = true 
+                    field = true
                 }
                 test{
-                    field = false 
+                    field = false
                 }
-            } 
+            }
             blah{
                 another{
-                    field = "hey" 
+                    field = "hey"
                 }
             }
             """
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
             configObject.config == [
                 random: "hi",
                 application_environments: [
@@ -111,150 +110,150 @@ class TemplateConfigDslSpec extends Specification {
                         field: true
                     ],
                     test: [
-                        field: false 
+                        field: false
                     ]
                 ],
                 blah: [
                     another: [
-                        field: "hey" 
+                        field: "hey"
                     ]
                 ]
             ]
     }
 
     def 'One Merge First Key'(){
-        setup: 
+        setup:
             String config = """
             application_environments{
                 merge = true
-            } 
+            }
             """
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
             configObject.merge == [ "application_environments" ] as Set
     }
 
     def 'One Merge Nested Key'(){
-        setup: 
+        setup:
             String config = """
             application_environments{
                 dev{
                     merge = true
                 }
-            } 
+            }
             """
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
             configObject.merge == [ "application_environments.dev" ] as Set
     }
 
     def 'Multi-Merge'(){
-        setup: 
+        setup:
             String config = """
             application_environments{
                 dev{
                     merge = true
                 }
                 test{
-                    merge = true 
+                    merge = true
                 }
-            } 
+            }
             """
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
-            configObject.merge == [ "application_environments.dev", "application_environments.test" ] as Set 
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
+            configObject.merge == [ "application_environments.dev", "application_environments.test" ] as Set
     }
 
     def 'One Override First Key'(){
-        when: 
+        when:
             String config = """
             application_environments{
                 override = true
-            } 
+            }
             """
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
-            configObject.override == [ "application_environments" ] as Set 
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
+            configObject.override == [ "application_environments" ] as Set
     }
 
     def 'One Override Nested Key'(){
-        when: 
+        when:
             String config = """
             application_environments{
                 dev{
                     override = true
                 }
-            } 
+            }
             """
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
             configObject.override == [ "application_environments.dev" ] as Set
     }
 
     def 'Multi-Override'(){
-        setup: 
+        setup:
             String config = """
             application_environments{
                 dev{
                     override = true
                 }
                 test{
-                    override = true 
+                    override = true
                 }
-            } 
+            }
             """
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
-            configObject.override == [ "application_environments.dev", "application_environments.test" ] as Set 
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
+            configObject.override == [ "application_environments.dev", "application_environments.test" ] as Set
     }
 
     def 'File Access Throws Security Exception'(){
-        setup: 
+        setup:
             String config = """
-            password = new File("/etc/passwd").text 
+            password = new File("/etc/passwd").text
             """
-        when: 
+        when:
             TemplateConfigDsl.parse(config)
-        then: 
+        then:
             thrown(SecurityException)
     }
 
     def "nested blank entry results in empty hashmap"(){
-        setup: 
+        setup:
             String config = """
             application_environments{
                 dev
             }
             """
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
-            configObject.getConfig() == [ 
-                application_environments: [ 
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
+            configObject.getConfig() == [
+                application_environments: [
                     dev: [:]
                 ]
             ]
     }
 
     def "root blank entry results in empty hashmap"(){
-        setup: 
+        setup:
             String config = "field"
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
             configObject.getConfig() == [ field: [:] ]
     }
 
     def "merge key when not true is not added to list"(){
         setup:
             String config = "a{ merge = false }"
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
             configObject.getConfig() == [ a: [ merge: false ] ]
             configObject.merge == [] as Set
     }
@@ -262,75 +261,75 @@ class TemplateConfigDslSpec extends Specification {
     def "override key when not true is not added to list"(){
         setup:
             String config = "a{ override = false }"
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
             configObject.getConfig() == [ a: [ override: false ] ]
             configObject.override == [] as Set
     }
 
     def "syntax validation for unquoted values"(){
-        setup: 
-            String config = "a = b" 
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
+        setup:
+            String config = "a = b"
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
             TemplateConfigException ex = thrown()
             ex.message.contains('did you mean: a = "b"')
     }
 
     def "syntax validation for setting configs equal to blocks"(){
-        setup: 
+        setup:
             String config = """
             a = b{
-                field = true 
+                field = true
             }
             """
-        when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
-        then: 
+        when:
+            PipelineConfigurationObject configObject = TemplateConfigDsl.parse(config)
+        then:
             thrown(TemplateConfigException)
     }
 
     def "array lists are appropriately serialized"(){
-        setup: 
+        setup:
             String config = "field = [ 'a', 'b-c' ]"
             Map expectedConfig = [
                 field: [ "a", "b-c" ]
             ]
             def originalConfig, reparsedConfig
-        when: 
+        when:
             originalConfig = TemplateConfigDsl.parse(config)
             reparsedConfig = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(originalConfig))
-        then: 
+        then:
             originalConfig.getConfig() == expectedConfig
             reparsedConfig.getConfig() == expectedConfig
     }
 
     def "Double Quote String block keys with hyphens are appropriately serialized"(){
-        setup: 
+        setup:
             String config = "\"some-block\"{}"
             Map expectedConfig = [ "some-block": [:] ]
             def originalConfig, reparsedConfig
-        when: 
+        when:
             originalConfig = TemplateConfigDsl.parse(config)
             reparsedConfig = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(originalConfig))
             println TemplateConfigDsl.serialize(originalConfig)
-        then: 
+        then:
             originalConfig.getConfig() == expectedConfig
             reparsedConfig.getConfig() == expectedConfig
     }
 
     def "Single Quote String block keys with hyphens are appropriately serialized"(){
-        setup: 
+        setup:
             String config = "'some-block'{}"
             Map expectedConfig = [ "some-block": [:] ]
             def originalConfig, reparsedConfig
-        when: 
+        when:
             originalConfig = TemplateConfigDsl.parse(config)
             reparsedConfig = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(originalConfig))
             println TemplateConfigDsl.serialize(originalConfig)
-        then: 
+        then:
             originalConfig.getConfig() == expectedConfig
             reparsedConfig.getConfig() == expectedConfig
     }

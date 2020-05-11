@@ -3,7 +3,7 @@ plugins {
   id 'org.jenkins-ci.jpi' version '0.39.0'
   id 'jacoco'
   id 'codenarc'
-
+  id "com.diffplug.gradle.spotless" version "3.29.0"
 }
 
 repositories {
@@ -70,21 +70,17 @@ dependencies {
     testImplementation 'org.jenkins-ci.plugins.workflow:workflow-step-api:2.19'
 }
 
+codenarc {
+    toolVersion = "1.5"
+    configFile = file("config/codenarc/rules.groovy")
+}
+
+tasks.codenarcTest {
+    configFile = file("config/codenarc/rules-test.groovy")
+}
+
 jacocoTestReport {
     reports {
         html.enabled true
-    }
-}
-
-task testStable(type: Test) {
-    useJUnit {
-        excludeCategories 'org.boozallen.plugins.jte.testcategories.Unstable'
-        excludeCategories 'org.boozallen.plugins.jte.testcategories.InProgress'
-    }
-}
-
-task testIntegration(type: Test) {
-    useJUnit {
-        includeCategories 'org.boozallen.plugins.jte.testcategories.Integration'
     }
 }

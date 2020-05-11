@@ -1,25 +1,24 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
+    Copyright 2018 Booz Allen Hamilton
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
-
 package org.boozallen.plugins.jte.job
 
-import org.boozallen.plugins.jte.config.GovernanceTier
+import org.boozallen.plugins.jte.init.governance.GovernanceTier
 import hudson.Extension
 import jenkins.branch.MultiBranchProject
-import org.boozallen.plugins.jte.config.ScmPipelineConfigurationProvider
+import org.boozallen.plugins.jte.init.governance.config.ScmPipelineConfigurationProvider
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.DataBoundSetter
@@ -54,7 +53,7 @@ public class TemplateBranchProjectFactory extends WorkflowBranchProjectFactory {
         return filterBranches
     }
 
-    @Override 
+    @Override
     protected FlowDefinition createDefinition() {
         return new MultibranchTemplateFlowDefinition()
     }
@@ -65,10 +64,10 @@ public class TemplateBranchProjectFactory extends WorkflowBranchProjectFactory {
             @Override public boolean isHead(SCMSourceCriteria.Probe probe, TaskListener listener) throws IOException {
                 // default behavior is to create jobs for each branch
                 if(!filterBranches){
-                    return true 
+                    return true
                 }
 
-                // if user chose to filter branches, check for pipeline config file 
+                // if user chose to filter branches, check for pipeline config file
                 SCMProbeStat stat = probe.stat(ScmPipelineConfigurationProvider.CONFIG_FILE);
                 switch (stat.getType()) {
                     case SCMFile.Type.NONEXISTENT:
@@ -110,7 +109,7 @@ public class TemplateBranchProjectFactory extends WorkflowBranchProjectFactory {
         @Nonnull
         @Override
         public String getDisplayName() {
-            return "Jenkins Templating Engine" 
+            return "Jenkins Templating Engine"
         }
 
     }

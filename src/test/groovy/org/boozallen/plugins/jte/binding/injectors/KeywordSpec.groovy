@@ -1,26 +1,27 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-       http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+    Copyright 2018 Booz Allen Hamilton
 
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 package org.boozallen.plugins.jte.binding.injectors
 
-import org.boozallen.plugins.jte.utils.RunUtils
-import spock.lang.*
-import org.junit.*
+import org.boozallen.plugins.jte.init.dsl.PipelineConfigurationObject
+import org.boozallen.plugins.jte.util.RunUtils
+import org.boozallen.plugins.jte.util.TemplateScriptEngine
 import org.jenkinsci.plugins.workflow.cps.CpsScript
-import org.boozallen.plugins.jte.config.TemplateConfigObject
-import org.boozallen.plugins.jte.binding.*
-import org.boozallen.plugins.jte.utils.TemplateScriptEngine
+import org.junit.*
 import org.jvnet.hudson.test.GroovyJenkinsRule
+import spock.lang.*
 
 class KeywordSpec extends Specification{
 
@@ -32,7 +33,7 @@ class KeywordSpec extends Specification{
     @Shared
     public ClassLoader classLoader = null
 
-    TemplateBinding binding = new TemplateBinding() 
+    TemplateBinding binding = new TemplateBinding()
     CpsScript script = GroovyMock(CpsScript)
 
     def setupSpec(){
@@ -52,7 +53,7 @@ class KeywordSpec extends Specification{
         TemplateScriptEngine.createShell() >> { return shell }
 
         _ * script.getBinding() >> {
-            return binding 
+            return binding
         }
     }
 
@@ -62,7 +63,7 @@ class KeywordSpec extends Specification{
     }
 
     void injectKeywords(Map keywords){
-        TemplateConfigObject config = new TemplateConfigObject(config: [
+        PipelineConfigurationObject config = new PipelineConfigurationObject(config: [
             keywords: keywords
         ])
         Class Keyword = getKeywordClass()
@@ -70,26 +71,26 @@ class KeywordSpec extends Specification{
     }
 
     def "injector inserts keyword into binding"(){
-        when: 
+        when:
             injectKeywords([a: 1])
-        then: 
+        then:
             assert binding.hasVariable("a")
     }
 
     def "retrieving keyword from binding results in value"(){
-        when: 
+        when:
             injectKeywords([a: 1])
-        then: 
-            assert binding.getVariable("a") == 1 
+        then:
+            assert binding.getVariable("a") == 1
     }
 
     def "inject multiple keywords"(){
-        when: 
+        when:
             injectKeywords([
                 a: 1,
                 b: 2
             ])
-        then: 
+        then:
             assert binding.hasVariable("a")
             assert binding.hasVariable("b")
     }
@@ -98,7 +99,7 @@ class KeywordSpec extends Specification{
         when:
             injectKeywords([a: 1])
             binding.setVariable("a", 2)
-        then: 
+        then:
             TemplateException ex = thrown()
             assert ex.message == "Keyword a already defined."
     }
@@ -108,7 +109,7 @@ class KeywordSpec extends Specification{
             injectKeywords([a: 1])
             binding.lock()
             binding.setVariable("a", 2)
-        then: 
+        then:
             TemplateException ex = thrown()
             assert ex.message == "Variable a is reserved as a template Keyword."
     }

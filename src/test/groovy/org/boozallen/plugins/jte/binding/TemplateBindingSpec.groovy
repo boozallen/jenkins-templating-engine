@@ -1,19 +1,21 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-       http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+    Copyright 2018 Booz Allen Hamilton
 
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 package org.boozallen.plugins.jte.binding
 
-import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
+import org.boozallen.plugins.jte.init.primitives.injectors.LibraryLoader
 import spock.lang.*
 import org.boozallen.plugins.jte.binding.injectors.StepWrapper
 import org.junit.*
@@ -28,10 +30,10 @@ class TemplateBindingSpec extends Specification{
     @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
     @Shared @ClassRule BuildWatcher bw = new BuildWatcher()
 
-    TemplateBinding binding = new TemplateBinding() 
+    TemplateBinding binding = new TemplateBinding()
 
     /*
-        dummy primitive to be used for testing 
+        dummy primitive to be used for testing
     */
     class TestPrimitive extends TemplatePrimitive{
         void throwPreLockException(){
@@ -44,7 +46,7 @@ class TemplateBindingSpec extends Specification{
     }
 
     /*
-        dummy primitive to be used for testing 
+        dummy primitive to be used for testing
     */
     class TestPrimitiveGetValue extends TemplatePrimitive{
         void throwPreLockException(){
@@ -56,7 +58,7 @@ class TemplateBindingSpec extends Specification{
         }
 
         String getValue(){
-            return "dummy value" 
+            return "dummy value"
         }
     }
 
@@ -74,17 +76,17 @@ class TemplateBindingSpec extends Specification{
 
     @WithoutJenkins
     def "non-primitive variable set in binding maintains value"(){
-        when: 
+        when:
             binding.setVariable("x", 3)
-        then: 
-            assert binding.getVariable("x") == 3 
+        then:
+            assert binding.getVariable("x") == 3
     }
 
     @WithoutJenkins
     def "Normal variable does not get inserted into registry"(){
-        when: 
+        when:
             binding.setVariable("x", 3)
-        then: 
+        then:
             assert !("x" in binding.registry)
     }
 
@@ -93,64 +95,64 @@ class TemplateBindingSpec extends Specification{
         given:
         String name = "x"
 
-        when: 
+        when:
             binding.setVariable(name, new TestPrimitive())
-        then: 
+        then:
             assert name in binding.registry
     }
 
     @WithoutJenkins
     def "binding collision pre-lock throws pre-lock exception"(){
-        when: 
+        when:
             binding.setVariable("x", new TestPrimitive())
             binding.setVariable("x", 3)
-        then: 
-            TemplateException ex = thrown() 
+        then:
+            TemplateException ex = thrown()
             assert ex.message == "pre-lock exception"
     }
 
     @WithoutJenkins
     def "binding collision post-lock throws post-lock exception"(){
-        when: 
+        when:
             binding.setVariable("x", new TestPrimitive())
             binding.lock()
             binding.setVariable("x", 3)
-        then: 
-            TemplateException ex = thrown() 
+        then:
+            TemplateException ex = thrown()
             assert ex.message == "post-lock exception"
     }
-    
+
     @WithoutJenkins
     def "missing variable throws MissingPropertyException"(){
-        when: 
+        when:
             binding.getVariable("doesntexist")
-        then: 
+        then:
             thrown MissingPropertyException
     }
-    
+
     @WithoutJenkins
     def "getValue overrides actual value set"(){
-        when: 
+        when:
             binding.setVariable("x", new TestPrimitiveGetValue())
-        then: 
-            assert binding.getVariable("x") == "dummy value" 
+        then:
+            assert binding.getVariable("x") == "dummy value"
     }
 
     @WithoutJenkins
     def "primitive with no getValue returns same object set"(){
-        setup: 
-            TestPrimitive test = new TestPrimitive() 
-        when: 
+        setup:
+            TestPrimitive test = new TestPrimitive()
+        when:
             binding.setVariable("x", test)
         then:
-            assert binding.getVariable("x") == test 
+            assert binding.getVariable("x") == test
     }
 
     @WithoutJenkins
     def "can't overwrite library config variable"(){
-        when: 
+        when:
             binding.setVariable(StepWrapper.libraryConfigVariable, "test")
-        then: 
+        then:
             thrown(TemplateException)
     }
 
@@ -183,7 +185,7 @@ class TemplateBindingSpec extends Specification{
 
     @WithoutJenkins
     def "hasStep returns false when variable does not exist"(){
-        expect: 
+        expect:
             !binding.hasStep("test_step")
     }
 
@@ -199,7 +201,7 @@ class TemplateBindingSpec extends Specification{
 
         StepWrapper step = new StepWrapper()
             binding.setVariable("test_step", step)
-        expect: 
+        expect:
             binding.getStep("test_step") == step
     }
 
@@ -208,33 +210,33 @@ class TemplateBindingSpec extends Specification{
         setup:
 
             binding.setVariable("test_step", 1)
-        when: 
+        when:
             binding.getStep("test_step")
-        then: 
+        then:
             TemplateException ex = thrown()
             ex.message == "No step test_step in the TemplateBinding."
     }
 
     @WithoutJenkins
     def "getStep throws exception when variable does not exist"(){
-        when: 
+        when:
             binding.getStep("test_step")
-        then: 
+        then:
             TemplateException ex = thrown()
             ex.message == "No step test_step in the TemplateBinding."
     }
 
     def "validate TemplateBinding sets 'steps' var"(){
-        given: 
-            WorkflowJob job = jenkins.createProject(WorkflowJob); 
+        given:
+            WorkflowJob job = jenkins.createProject(WorkflowJob);
             job.setDefinition(new CpsFlowDefinition("""
-            import org.boozallen.plugins.jte.binding.TemplateBinding
+            import org.boozallen.plugins.jte.init.primitives.TemplateBinding
             setBinding(new TemplateBinding())
             node{
-                sh "echo hello" 
+                sh "echo hello"
             }
             """))
-        expect: 
+        expect:
             jenkins.assertLogContains("hello", jenkins.buildAndAssertSuccess(job))
     }
 

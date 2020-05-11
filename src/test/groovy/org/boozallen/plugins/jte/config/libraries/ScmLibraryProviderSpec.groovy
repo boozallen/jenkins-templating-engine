@@ -1,25 +1,27 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-       http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+    Copyright 2018 Booz Allen Hamilton
 
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 package org.boozallen.plugins.jte.config.libraries
 
 
-import org.boozallen.plugins.jte.binding.injectors.LibraryLoader
+import org.boozallen.plugins.jte.init.primitives.injectors.LibraryLoader
 import org.boozallen.plugins.jte.binding.injectors.StepWrapper
-import org.boozallen.plugins.jte.binding.TemplateBinding
-import org.boozallen.plugins.jte.console.TemplateLogger
-import org.boozallen.plugins.jte.utils.RunUtils
-import org.boozallen.plugins.jte.config.TemplateConfigDsl
+import org.boozallen.plugins.jte.init.primitives.TemplateBinding
+import org.boozallen.plugins.jte.util.TemplateLogger
+import org.boozallen.plugins.jte.util.RunUtils
+import org.boozallen.plugins.jte.init.dsl.TemplateConfigDsl
 
 import spock.lang.*
 import org.junit.Rule
@@ -34,7 +36,7 @@ import org.jvnet.hudson.test.JenkinsRule
 import org.jvnet.hudson.test.WithoutJenkins
 import org.jvnet.hudson.test.BuildWatcher
 import org.jenkinsci.plugins.workflow.cps.CpsScript
-import org.jenkinsci.plugins.workflow.cps.EnvActionImpl 
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl
 
 class ScmLibraryProviderSpec extends Specification{
 
@@ -127,7 +129,7 @@ class ScmLibraryProviderSpec extends Specification{
             GroovySpy(LibraryLoader.class, global:true)
             LibraryLoader.getPrimitiveClass() >> { return s }
 
-        when: 
+        when:
             libraryProvider.loadLibrary(script, "test_library", [:])
         then:
             1 * binding.setVariable("a", _)
@@ -183,7 +185,7 @@ class ScmLibraryProviderSpec extends Specification{
             GroovySpy(LibraryLoader.class, global:true)
             LibraryLoader.getPrimitiveClass() >> { return s }
 
-        when: 
+        when:
             libraryProvider.loadLibrary(script, "test_library", [:])
         then:
             1 * binding.setVariable("a", _)
