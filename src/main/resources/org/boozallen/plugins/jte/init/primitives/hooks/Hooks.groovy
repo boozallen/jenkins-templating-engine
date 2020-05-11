@@ -23,8 +23,10 @@ import org.boozallen.plugins.jte.init.primitives.injectors.LibraryLoader
 import org.boozallen.plugins.jte.util.RunUtils
 import org.boozallen.plugins.jte.util.TemplateLogger
 import org.boozallen.plugins.jte.util.TemplateScriptEngine
-import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 import org.jenkinsci.plugins.workflow.cps.CpsThread
+import org.jenkinsci.plugins.workflow.job.WorkflowRun
+import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
+
 
 class Hooks implements Serializable{
 
