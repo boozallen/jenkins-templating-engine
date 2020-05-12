@@ -16,7 +16,7 @@ import hudson.Extension
 import hudson.RelativePath
 import hudson.Util
 import hudson.util.FormValidation
-import org.boozallen.plugins.jte.init.dsl.TemplateConfigDsl
+import org.boozallen.plugins.jte.init.dsl.PipelineConfigurationDsl
 import org.boozallen.plugins.jte.init.dsl.PipelineConfigurationObject
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.kohsuke.stapler.DataBoundConstructor
@@ -59,7 +59,7 @@ public class ConsolePipelineConfigurationProvider extends PipelineConfigurationP
     }
 
     public PipelineConfigurationObject getConfig(FlowExecutionOwner owner){
-        return pipelineConfig ? new TemplateConfigDsl(run: owner.run()).parse(pipelineConfig) : null
+        return pipelineConfig ? new PipelineConfigurationDsl(owner).parse(pipelineConfig) : null
     }
 
     public String getJenkinsfile(FlowExecutionOwner owner){

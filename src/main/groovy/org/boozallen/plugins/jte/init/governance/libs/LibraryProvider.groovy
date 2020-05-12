@@ -25,7 +25,7 @@ import hudson.Util
 import jenkins.model.Jenkins
 import jenkins.scm.api.SCMFile
 import jenkins.scm.api.SCMFileSystem
-import org.boozallen.plugins.jte.init.dsl.TemplateConfigDsl
+import org.boozallen.plugins.jte.init.dsl.PipelineConfigurationDsl
 import org.boozallen.plugins.jte.init.primitives.injectors.LibraryLoader
 import org.boozallen.plugins.jte.util.FileSystemWrapper
 import org.boozallen.plugins.jte.util.TemplateLogger
@@ -57,7 +57,7 @@ abstract class LibraryProvider extends AbstractDescribableImpl<LibraryProvider>{
 
     public List doLibraryConfigValidation(FlowExecutionOwner flowOwner, String configFile, Map libConfig){
 
-        TemplateConfigDsl dsl = new TemplateConfigDsl(run: flowOwner.run())
+        PipelineConfigurationDsl dsl = new PipelineConfigurationDsl(flowOwner)
         Map allowedConfig = dsl.parse(configFile).getConfig()
 
         TemplateLogger logger = new TemplateLogger(flowOwner.getListener())

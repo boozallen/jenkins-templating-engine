@@ -21,10 +21,10 @@ package org.boozallen.plugins.jte.init.dsl
     into a nested hash map while recognizing the keys
     "merge" and "override" to put onto the PipelineConfigurationObject
 
-    the templateConfig variable here comes from the instance
-    being created and is instantiated in TemplateConfigDsl
+    the pipelineConfig variable here comes from the instance
+    being created and is instantiated in PipelineConfigurationDsl
 */
-abstract class TemplateConfigBuilder extends Script{
+abstract class PipelineConfigurationBuilder extends Script{
     ArrayList object_stack = []
     ArrayList node_stack = []
 
@@ -67,7 +67,7 @@ abstract class TemplateConfigBuilder extends Script{
         if (object_stack.size()){
             object_stack.last() << [ (node_name): node_config ]
         } else {
-            templateConfig.config << [ (name): node_config]
+            pipelineConfig.config << [ (name): node_config]
         }
         return BuilderMethod.METHOD_MISSING(name)
     }
@@ -92,13 +92,13 @@ abstract class TemplateConfigBuilder extends Script{
         }
 
         if (name.equals("merge") && value.equals(true)){
-            templateConfig.merge << node_stack.join(".")
+            pipelineConfig.merge << node_stack.join(".")
         } else if (name.equals("override") && value.equals(true)){
-            templateConfig.override << node_stack.join(".")
+            pipelineConfig.override << node_stack.join(".")
         } else if (object_stack.size()){
             object_stack.last()[name] = value
         } else {
-            templateConfig.config[name] = value
+            pipelineConfig.config[name] = value
         }
     }
 
@@ -106,7 +106,7 @@ abstract class TemplateConfigBuilder extends Script{
         if (object_stack.size()){
             object_stack.last()[name] = [:]
         } else {
-            templateConfig.config[name] = [:]
+            pipelineConfig.config[name] = [:]
         }
         return BuilderMethod.PROPERTY_MISSING(name)
     }

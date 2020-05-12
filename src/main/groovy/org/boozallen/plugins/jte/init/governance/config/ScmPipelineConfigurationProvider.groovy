@@ -19,7 +19,7 @@ import hudson.Extension
 import hudson.scm.NullSCM
 import hudson.scm.SCM
 import hudson.Util
-import org.boozallen.plugins.jte.init.dsl.TemplateConfigDsl
+import org.boozallen.plugins.jte.init.dsl.PipelineConfigurationDsl
 import org.boozallen.plugins.jte.init.dsl.PipelineConfigurationObject
 import org.boozallen.plugins.jte.util.FileSystemWrapper
 import org.boozallen.plugins.jte.util.TemplateLogger
@@ -54,7 +54,7 @@ public class ScmPipelineConfigurationProvider extends PipelineConfigurationProvi
             String configFile = fsw.getFileContents(filePath, "Pipeline Configuration File")
             if (configFile){
                 try{
-                    configObject = new TemplateConfigDsl(run: owner.run()).parse(configFile)
+                    configObject = new PipelineConfigurationDsl(owner).parse(configFile)
                 }catch(any){
                     new TemplateLogger(owner.getListener()).printError("Error parsing scm provided pipeline configuration")
                     throw any

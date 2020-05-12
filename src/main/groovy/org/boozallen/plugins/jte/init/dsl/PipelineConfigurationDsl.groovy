@@ -25,27 +25,35 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.kohsuke.groovy.sandbox.SandboxTransformer
 
-class TemplateConfigDsl {
+class PipelineConfigurationDsl {
 
-  // needed to resolve EnvActionImpl ('env' var)
-  WorkflowRun run
+  FlowExecutionOwner flowOwner
+
+  PipelineConfigurationDsl(FlowExecutionOwner flowOwner){
+    this.flowOwner = flowOwner 
+  }
 
   PipelineConfigurationObject parse(String script_text){
-    PipelineConfigurationObject templateConfig = new PipelineConfigurationObject()
-    EnvActionImpl env = EnvActionImpl.forRun(run)
+
+    if(!flowOwner){
+      throw new Exception("PipelineConfigurationDsl flowOwner not set. Can't determine current run.")
+    }
+
+    PipelineConfigurationObject pipelineConfig = new PipelineConfigurationObject(flowOwner)
+    EnvActionImpl env = EnvActionImpl.forRun(flowOwner.run())
     Binding our_binding = new Binding(
-      templateConfig: templateConfig,
+      pipelineConfig: pipelineConfig,
       env: env
     )
 
     CompilerConfiguration cc = new CompilerConfiguration()
     cc.addCompilationCustomizers(new SandboxTransformer())
-    cc.scriptBaseClass = TemplateConfigBuilder.class.name
+    cc.scriptBaseClass = PipelineConfigurationBuilder.class.name
 
     GroovyShell sh = new GroovyShell(this.getClass().getClassLoader(), our_binding, cc);
     Script script = sh.parse(script_text)
 
-    TemplateConfigDslSandbox sandbox = new TemplateConfigDslSandbox(script, env)
+    DslSandbox sandbox = new DslSandbox(script, env)
     sandbox.register();
     try {
       script.run()
@@ -53,7 +61,7 @@ class TemplateConfigDsl {
       sandbox.unregister();
     }
 
-    return templateConfig
+    return pipelineConfig
   }
 
 

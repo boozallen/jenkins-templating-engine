@@ -50,10 +50,19 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 
-
+/**
+ * Responsible for customizing the GroovyShell used to compile steps and the pipeline template.
+ *
+ * @author Steven Terrana
+ */
 @Extension
 public class GroovyShellDecoratorImpl extends GroovyShellDecorator {
 
+    /**
+     * If the current pipeline run has a @see PipelineDecorator action then 
+     * fetch the already configured @see org.boozallen.plugins.jte.init.primitives.TemplateBinding 
+     * and ensure the parsed scripts have this binding during execution.
+     */
     @Override
     void configureShell(@CheckForNull CpsFlowExecution context, GroovyShell shell) {
         if(!context){
@@ -75,12 +84,17 @@ public class GroovyShellDecoratorImpl extends GroovyShellDecorator {
         return this
     }
 
+    /**
+     * For all scripts, adds a star import for Lifecycle Hooks so that library steps need not 
+     * import them explicitly to use them. 
+     * 
+     * For the JTE pipeline template, customizes the compiler so that the template is wrapped
+     * in a try-finally block so that the @Validation and @Init Lifecycle Hooks can be invoked 
+     * prior to template execution and @CleanUp and @Notify Lifecycle Hooks can be invoked post 
+     * template execution. 
+     */
     @Override
     public void configureCompiler(@CheckForNull final CpsFlowExecution execution, CompilerConfiguration cc) {
-        /*
-         add a star import for the hooks package so that library developers
-         do not have to import Lifecyle Hooks to reference them
-        */
         ImportCustomizer ic = new ImportCustomizer()
         ic.addStarImports("org.boozallen.plugins.jte.init.primitives.hooks")
         cc.addCompilationCustomizers(ic)
@@ -129,7 +143,7 @@ public class GroovyShellDecoratorImpl extends GroovyShellDecorator {
 
                     to understand why specifically checking for "WorkflowScript" see:
                     https://github.com/jenkinsci/workflow-cps-plugin/blob/workflow-cps-2.80/src/main/java/org/jenkinsci/plugins/workflow/cps/CpsFlowExecution.java#L561
-                    
+
                     to understand where "evaluate" method comes from see:
                     https://github.com/jenkinsci/workflow-cps-plugin/blob/workflow-cps-2.80/src/main/java/org/jenkinsci/plugins/workflow/cps/CpsScript.java#L178-L182
                  */
@@ -140,6 +154,9 @@ public class GroovyShellDecoratorImpl extends GroovyShellDecorator {
         }
     }
 
+    /**
+     * determines if the current pipeline is using JTE 
+     */ 
     boolean isFromJTE(CpsFlowExecution execution){
         if(!execution){
             return false // no execution defined yet, still initializing

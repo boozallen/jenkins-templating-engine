@@ -16,10 +16,9 @@ import hudson.ExtensionList
 import hudson.model.InvisibleAction
 import hudson.model.TaskListener
 import org.boozallen.plugins.jte.init.dsl.PipelineConfigurationObject
-import org.boozallen.plugins.jte.init.dsl.TemplateConfigDsl
+import org.boozallen.plugins.jte.init.dsl.PipelineConfigurationDsl
 import org.boozallen.plugins.jte.init.governance.config.ScmPipelineConfigurationProvider
 import org.boozallen.plugins.jte.init.governance.GovernanceTier
-import org.boozallen.plugins.jte.init.governance.PipelineConfig
 import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.boozallen.plugins.jte.job.AdHocTemplateFlowDefinition
@@ -39,15 +38,8 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
  */
 class PipelineDecorator extends InvisibleAction {
 
-    /*
-     TODO:
-     PipelineConfig:
-     * remove class
-     * add functionality of join to PipelineConfigurationObject.plus
-     */
-
     FlowExecutionOwner flowOwner
-    PipelineConfig config
+    PipelineConfigurationObject config
     TemplateBinding binding
     String template
 
@@ -57,28 +49,29 @@ class PipelineDecorator extends InvisibleAction {
 
     void initialize(){
         config = aggregatePipelineConfigurations()
-        binding = new TemplateBinding(flowOwner)
-        injectPrimitives()
+        binding = injectPrimitives()
         template = determinePipelineTemplate()
     }
 
-    PipelineConfig aggregatePipelineConfigurations(){
-        PipelineConfig pipelineConfig = new PipelineConfig(flowOwner)
+    PipelineConfigurationObject aggregatePipelineConfigurations(){
+        PipelineConfigurationObject pipelineConfig = new PipelineConfigurationObject(flowOwner)
+        pipelineConfig.firstConfig = true
+
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy(getJob())
 
         //  we get the configs in ascending order of governance
         //  so reverse the list to get the highest precedence first
         tiers.reverse().each{ tier ->
-            PipelineConfigurationObject config = tier.getConfig(flowOwner)
-            if (config){
-                pipelineConfig.join(config)
+            PipelineConfigurationObject tierConfig = tier.getConfig(flowOwner)
+            if (tierConfig){
+                pipelineConfig += tierConfig
             }
         }
 
         // get job level configuration
         PipelineConfigurationObject jobConfig = getJobPipelineConfiguration(getJob())
         if(jobConfig){
-            pipelineConfig.join(jobConfig)
+            pipelineConfig += jobConfig 
         }
 
         return pipelineConfig
@@ -91,7 +84,7 @@ class PipelineDecorator extends InvisibleAction {
             String jobConfigString = flowDefinition.getPipelineConfig()
             if(jobConfigString){
                 try{
-                    jobConfig = new TemplateConfigDsl(run: flowOwner.run()).parse(jobConfigString)
+                    jobConfig = new PipelineConfigurationDsl(flowOwner).parse(jobConfigString)
                 }catch(any){
                     getLogger().printError("Error parsing ${job.getName()}'s configuration file.")
                     throw any
@@ -103,7 +96,7 @@ class PipelineDecorator extends InvisibleAction {
             String repoConfigFile = fsw.getFileContents(ScmPipelineConfigurationProvider.CONFIG_FILE, "Template Configuration File", false)
             if (repoConfigFile){
                 try{
-                    jobConfig = new TemplateConfigDsl(run: flowOwner.run()).parse(repoConfigFile)
+                    jobConfig = new PipelineConfigurationDsl(flowOwner).parse(repoConfigFile)
                 }catch(any){
                     getLogger().printError("Error parsing ${job.getName()}'s configuration file in SCM.")
                     throw any
@@ -113,28 +106,24 @@ class PipelineDecorator extends InvisibleAction {
         return jobConfig
     }
 
-    void injectPrimitives(){
-        PipelineConfigurationObject configObj = config.getConfig()
-
+    TemplateBinding injectPrimitives(){
+        TemplateBinding templateBinding = new TemplateBinding(flowOwner)
         ExtensionList<TemplatePrimitiveInjector> injectors = TemplatePrimitiveInjector.all()
 
         injectors.each{ injector ->
-            injector.doInject(flowOwner, configObj, binding)
+            injector.doInject(flowOwner, config, templateBinding)
         }
 
         injectors.each{ injector ->
-            injector.doPostInject(flowOwner, configObj, binding)
+            injector.doPostInject(flowOwner, config, templateBinding)
         }
 
-        /*
-         seal the binding.
-         <? extends TemplatePrimitive>.throwPostLockException() will now be thrown
-         */
-        binding.lock()
+        templateBinding.lock()
+        return templateBinding
     }
 
     String determinePipelineTemplate(){
-        LinkedHashMap pipelineConfig = config.getConfig().getConfig()
+        LinkedHashMap pipelineConfig = config.getConfig()
         WorkflowJob job = getJob()
         FlowDefinition flowDefinition = job.getDefinition()
         if (flowDefinition instanceof AdHocTemplateFlowDefinition){

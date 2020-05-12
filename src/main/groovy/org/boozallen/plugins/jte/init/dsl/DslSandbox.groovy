@@ -21,17 +21,17 @@ import org.jenkinsci.plugins.workflow.cps.EnvActionImpl
 
 /*
   our sandbox.  just block all the things except the creation of
-  the TemplateConfigBuilder base class and methods associated with that.
+  the PipelineConfigurationBuilder base class and methods associated with that.
 
-  The sandbox is having trouble recognizing the receiver as type TemplateConfigBuilder
+  The sandbox is having trouble recognizing the receiver as type PipelineConfigurationBuilder
   so backed off to checking if it's a Script object.
 */
-class TemplateConfigDslSandbox extends GroovyInterceptor {
+class DslSandbox extends GroovyInterceptor {
 
   Script script
   EnvActionImpl env
 
-  TemplateConfigDslSandbox(Script script, EnvActionImpl env){
+  DslSandbox(Script script, EnvActionImpl env){
     this.script = script
     this.env = env
   }
