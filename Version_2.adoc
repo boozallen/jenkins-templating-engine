@@ -58,6 +58,7 @@ As JTE grows in adoption, there is plenty that can be done to improve our abilit
 * https://github.com/jenkinsci/templating-engine-plugin/issues/83[Support arbitrary SCM's by falling back to a heavyweight checkout if the SCM API 2.0 spec is not fully implemented]
 * https://github.com/jenkinsci/templating-engine-plugin/issues/84[Improve overall initialization logging for JTE to help users debug issues]
 * https://github.com/jenkinsci/templating-engine-plugin/issues/23[Investigate whether or not JTE can integrate with Jenkins Pipeline's Declarative Syntax]
+* https://github.com/jenkinsci/templating-engine-plugin/issues/46[Add support for Library Resources]
 
 == Get Involved
 
