@@ -15,20 +15,15 @@
 */
 package org.boozallen.plugins.jte.init.primitives.injectors
 
-import com.cloudbees.groovy.cps.NonCPS
 import hudson.Extension
 import jenkins.model.Jenkins
 import org.boozallen.plugins.jte.init.dsl.PipelineConfigurationObject
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
-import org.boozallen.plugins.jte.util.RunUtils
 import org.boozallen.plugins.jte.util.TemplateScriptEngine
-import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
-import java.lang.ClassLoader
 
 @Extension class ApplicationEnvironmentInjector extends TemplatePrimitiveInjector {
 
-    @NonCPS
     static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
         Class ApplicationEnvironment = getPrimitiveClass()
         ArrayList createdEnvs = []
