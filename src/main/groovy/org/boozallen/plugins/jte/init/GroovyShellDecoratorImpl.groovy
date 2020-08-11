@@ -123,11 +123,8 @@ class GroovyShellDecoratorImpl extends GroovyShellDecorator {
                             Hooks.invoke(Notify)
                         }
                     }).first()
-
-                    // x = 1
-
+                    
                     wrapper.getStatements().first().getTryStatement().addStatements(statements)
-
                     statements.clear()
                     statements.add(0, wrapper)
                 }
