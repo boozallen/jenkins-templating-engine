@@ -155,13 +155,8 @@ class GroovyShellDecoratorImpl extends GroovyShellDecorator {
         if(!execution){
             return false // no execution defined yet, still initializing
         }
-
         WorkflowJob job = execution.getOwner().run().getParent()
         FlowDefinition definition = job.getDefinition()
-        if(!(definition in TemplateFlowDefinition)){
-            return false // not a JTE pipeline
-        }
-
-        return true
+        return (definition in TemplateFlowDefinition)
     }
 }
