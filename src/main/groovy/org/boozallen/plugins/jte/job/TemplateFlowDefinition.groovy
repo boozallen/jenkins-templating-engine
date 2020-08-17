@@ -33,26 +33,27 @@ import org.jenkinsci.plugins.workflow.flow.GlobalDefaultFlowDurabilityLevel
 import org.jenkinsci.plugins.workflow.cps.persistence.PersistIn
 import static org.jenkinsci.plugins.workflow.cps.persistence.PersistenceContext.*
 import org.kohsuke.stapler.DataBoundConstructor
+import hudson.Util
 
 @PersistIn(JOB)
 class TemplateFlowDefinition extends FlowDefinition {
 
-    private final String template
-    private final String pipelineConfig
+    private final boolean providePipelineTemplate
+    public String template
+    private final boolean providePipelineConfig
+    public String pipelineConfig
 
-    @DataBoundConstructor
-    public TemplateFlowDefinition(String template, String pipelineConfig){
-        this.template = template 
-        this.pipelineConfig = pipelineConfig
+    @DataBoundConstructor public TemplateFlowDefinition(boolean providePipelineTemplate, String template, boolean providePipelineConfig, String pipelineConfig){
+        this.providePipelineTemplate = providePipelineTemplate
+        this.template = providePipelineTemplate ? Util.fixEmptyAndTrim(template) : null 
+        this.providePipelineConfig = providePipelineConfig
+        this.pipelineConfig = providePipelineConfig ? Util.fixEmptyAndTrim(pipelineConfig) : null 
     }
 
-    public String getTemplate() {
-        return template
-    }
-
-    public String getPipelineConfig(){
-        return pipelineConfig
-    }
+    public boolean getProvidePipelineTemplate(){ return providePipelineTemplate }
+    public String getTemplate() { return template }
+    public boolean getProvidePipelineConfig(){ return providePipelineConfig }
+    public String getPipelineConfig(){ return pipelineConfig }
 
     @Override
     public FlowExecution create(FlowExecutionOwner handle, TaskListener listener, List<? extends Action> actions) throws Exception {

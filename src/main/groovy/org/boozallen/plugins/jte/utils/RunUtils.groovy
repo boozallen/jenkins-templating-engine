@@ -58,18 +58,20 @@ class RunUtils implements Serializable{
         PrintStream logger = listener.getLogger()
         return logger
     }
-   
-    static WorkflowJob getJob(){
-        FlowExecutionOwner owner = getOwner()
 
+    static WorkflowRun getRun(){
+        FlowExecutionOwner owner = getOwner()
         Queue.Executable exec = owner.getExecutable()
         if (!(exec instanceof WorkflowRun)) {
             throw new IllegalStateException("Must be run from a WorkflowRun, found: ${exec.getClass()}")
         }
-
-        WorkflowRun build = (WorkflowRun) exec
-        WorkflowJob job = build.getParent()
-
+        WorkflowRun run = (WorkflowRun) exec
+        return run 
+    }
+   
+    static WorkflowJob getJob(){
+        WorkflowRun run = getRun() 
+        WorkflowJob job = run.getParent()
         return job
     }
 

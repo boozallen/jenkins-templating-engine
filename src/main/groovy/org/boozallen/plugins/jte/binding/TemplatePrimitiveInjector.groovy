@@ -33,14 +33,6 @@ abstract class TemplatePrimitiveInjector implements ExtensionPoint{
 
     // used to get all injectors
     static ExtensionList<TemplatePrimitiveInjector> all(){
-        return Impl.all()
-    }
-
-    static class Impl {// could not mock the abstract class
-
-        // used to get all injectors
-        static ExtensionList<TemplatePrimitiveInjector> all(){
-            return Jenkins.get().getExtensionList(TemplatePrimitiveInjector)
-        }
+        return Jenkins.get().getExtensionList(TemplatePrimitiveInjector)
     }
 }

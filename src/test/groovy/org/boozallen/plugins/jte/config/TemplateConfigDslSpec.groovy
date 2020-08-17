@@ -17,18 +17,53 @@
 package org.boozallen.plugins.jte.config
 
 import spock.lang.*
+import org.junit.*
+import org.boozallen.plugins.jte.utils.RunUtils
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl 
+import org.jvnet.hudson.test.GroovyJenkinsRule
 
 class TemplateConfigDslSpec extends Specification {
 
+    @Shared
+    @ClassRule
+    @SuppressWarnings('JUnitPublicField')
+    public GroovyJenkinsRule groovyJenkinsRule = new GroovyJenkinsRule()
+
+    def setup(){
+        EnvActionImpl env = Mock() 
+        env.getProperty("someField") >> "envProperty" 
+
+        GroovySpy(TemplateConfigDsl, global:true)
+        TemplateConfigDsl.getEnvironment() >> env
+        
+        GroovySpy(RunUtils, global:true)
+        RunUtils.getClassLoader() >> groovyJenkinsRule.jenkins.getPluginManager().uberClassLoader 
+    }
+
+    def "include Jenkins env var in configuration"(){
+        setup: 
+        String config = "a = env.someField" 
+        
+        when: 
+        TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+
+        then: 
+        configObject.config == [ a: "envProperty" ]
+        configObject.merge.isEmpty()
+        configObject.override.isEmpty()
+    }
+
     def 'Empty Config File'(){
         setup: 
-            String config = "" 
+        String config = "" 
+
         when: 
-            TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+        TemplateConfigObject configObject = TemplateConfigDsl.parse(config)
+        
         then: 
-            configObject.config == [:]
-            configObject.merge.isEmpty()
-            configObject.override.isEmpty()
+        configObject.config == [:]
+        configObject.merge.isEmpty()
+        configObject.override.isEmpty()
     }
 
     def 'Flat Keys Configuration'(){
@@ -296,6 +331,34 @@ class TemplateConfigDslSpec extends Specification {
             reparsedConfig = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(originalConfig))
             println TemplateConfigDsl.serialize(originalConfig)
         then: 
+            originalConfig.getConfig() == expectedConfig
+            reparsedConfig.getConfig() == expectedConfig
+    }
+
+    def "Single Quote String block keys with / are appropriately serialized"(){
+        setup:
+            String config = "'some/block'{}"
+            Map expectedConfig = [ "some/block": [:] ]
+            def originalConfig, reparsedConfig
+        when:
+            originalConfig = TemplateConfigDsl.parse(config)
+            reparsedConfig = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(originalConfig))
+            println TemplateConfigDsl.serialize(originalConfig)
+        then:
+            originalConfig.getConfig() == expectedConfig
+            reparsedConfig.getConfig() == expectedConfig
+    }
+
+    def "Double Quote String block keys with / are appropriately serialized"(){
+        setup:
+            String config = "\"some/block\"{}"
+            Map expectedConfig = [ "some/block": [:] ]
+            def originalConfig, reparsedConfig
+        when:
+            originalConfig = TemplateConfigDsl.parse(config)
+            reparsedConfig = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(originalConfig))
+            println TemplateConfigDsl.serialize(originalConfig)
+        then:
             originalConfig.getConfig() == expectedConfig
             reparsedConfig.getConfig() == expectedConfig
     }

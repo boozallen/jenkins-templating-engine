@@ -26,74 +26,90 @@ import jenkins.model.Jenkins
   stores the aggregated & immutable pipeline configuration. 
 */
 class PipelineConfig implements Serializable{
-    TemplateConfigObject currentConfigObject
-    Boolean firstJoin = true  
-
-    PipelineConfig(){
-      String defaultTemplateConfig = RunUtils.classLoader
-                                  .loadClass("org.boozallen.plugins.jte.config.PipelineConfig")
-                                  .getResource(GovernanceTier.CONFIG_FILE).text
-      
-      currentConfigObject = TemplateConfigDsl.parse(defaultTemplateConfig)
-    }
-
-    // for testing using any base config object
-    PipelineConfig(TemplateConfigObject tco){
-        this.currentConfigObject = tco
-    }
-
-
-    // for testing using the base pipeline config file contents
-    static String baseConfigContentsFromLoader(ClassLoader ldr){
-        ldr.loadClass("org.boozallen.plugins.jte.config.PipelineConfig")
-                .getResource(GovernanceTier.CONFIG_FILE).text
-    }
+    TemplateConfigObject configObject = null
 
     TemplateConfigObject getConfig(){
-      return currentConfigObject
+      return configObject ?: new TemplateConfigObject() 
     }
 
-    /*
-      
-    */
     void join(TemplateConfigObject child){
-      def pipeline_config
-      def argCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(child))
-      def prevCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(currentConfigObject))
-
-      if (firstJoin){
-        pipeline_config = currentConfigObject.config + child.config 
-        firstJoin = false 
-      } else{
-        pipeline_config = child.config + currentConfigObject.config
+      /*
+        If this is the first call to join, then there is no pre-existing
+        configuration to merge.  set the current pipeline configuration to 
+        the child and return 
+      */
+      if(!configObject){
+        configObject = child 
+        printJoin(child, child, new TemplateConfigObject(config: [:], merge: [], override: []))
+        return 
       }
 
-      currentConfigObject.override.each{ key ->
-        if (get_prop(child.config, key)){
+      def pipeline_config
+      def argCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(child))
+      def prevCopy = TemplateConfigDsl.parse(TemplateConfigDsl.serialize(configObject))
+
+      /*
+        start out by wiping out any configurations that were
+        already defined by the previous configuration.. bc governance
+      */ 
+      pipeline_config = child.config + configObject.config
+
+      /*
+        if the current pipeline configuration allows children configurations 
+        to perform overrides for any block, then check the incoming pipeline 
+        configuration being joined to see if that block has been modified. 
+
+        If it has, overwrite the block with the child's. 
+      */
+      configObject.override.each{ key ->
+        if (get_prop(child.config, key) != null){
           clear_prop(pipeline_config, key)
-          get_prop(pipeline_config, key) << get_prop(child.config, key) 
+          if(get_prop(pipeline_config, key) instanceof Map){
+            get_prop(pipeline_config, key) << get_prop(child.config, key)
+          } else { 
+            def newValue = get_prop(child.config, key)
+            set_prop(pipeline_config, key, newValue)
+          }
         }
       }
 
-      currentConfigObject.merge.each{ key ->
-        if (get_prop(child.config, key)){
+      /*
+        if the current pipeline configuration allows children configurations 
+        to perform merges for any block, then check the incoming pipeline 
+        configuration being joined to see if that block has been modified. 
+
+        If it has, add any new fields in the block but leave the already 
+        defined ones as is. 
+      */
+      configObject.merge.each{ key ->
+        if (get_prop(child.config, key) != null){
           get_prop(pipeline_config, key) << (get_prop(child.config, key) + get_prop(pipeline_config, key))
         }
       }
 
+      // trim merge and overrides that don't apply 
+      // see: https://github.com/jenkinsci/templating-engine-plugin/issues/48
+      def r = getNested(pipeline_config)
+      child.merge = child.merge.findAll{ m -> 
+        r.keySet().collect{ it.startsWith(m) }.contains(true)
+      }
+      child.override = child.override.findAll{ o -> 
+        r.keySet().collect{ it.startsWith(o) }.contains(true)
+      }
+
       child.setConfig(pipeline_config)
       printJoin(child, argCopy, prevCopy)
-      currentConfigObject = child
+      configObject = child
 
     }
 
-    static def get_prop(o, p){
+    def get_prop(o, p){
       return p.tokenize('.').inject(o){ obj, prop ->       
         obj?."$prop"
       }   
     }
 
-    static void clear_prop(o, p){
+    void clear_prop(o, p){
       def last_token
       if (p.tokenize('.')){
         last_token = p.tokenize('.').last()
@@ -108,7 +124,22 @@ class PipelineConfig implements Serializable{
       }   
     }
 
-    static def getNestedKeys(map, result = [], String keyPrefix = '') {
+    void set_prop(o, p, n){
+      def last_token
+      if (p.tokenize('.')){
+        last_token = p.tokenize('.').last()
+      } else if (InvokerHelper.getMetaClass(o).respondsTo(o, "clear", (Object[]) null)){
+        o = n 
+      }
+      p.tokenize('.').inject(o){ obj, prop ->    
+        if (prop.equals(last_token)){
+          obj?."$prop" = n 
+        }
+        obj?."$prop"
+      }   
+    }
+
+    def getNestedKeys(map, result = [], String keyPrefix = '') {
       map.each { key, value ->
         if (value instanceof Map) {
             getNestedKeys(value, result, "${keyPrefix}${key}.")
@@ -119,7 +150,7 @@ class PipelineConfig implements Serializable{
       return result
     }
 
-    static def getNested(map, resultKeys = [], String keyPrefix = '') {
+    def getNested(map, resultKeys = [], String keyPrefix = '') {
         def ret = [:]
         map.each { key, value ->
           def pathKey = "${keyPrefix}${key}"
@@ -141,60 +172,88 @@ class PipelineConfig implements Serializable{
         return ret
     }
 
-    static printJoin(TemplateConfigObject outcome, TemplateConfigObject incoming, TemplateConfigObject prev){
-        def data = [outcome:[c:outcome, nestedKeys:[]],
-                    incoming:[c:incoming, nestedKeys:[]],
-                    prev:[c:prev, nestedKeys:[]]]
+    void printJoin(TemplateConfigObject outcome, TemplateConfigObject incoming, TemplateConfigObject prev){
+        // flatten each configuration for ease of delta analysis 
+        def fOutcome = getNested(outcome.getConfig())
+        def fIncoming = getNested(incoming.getConfig())
+        def fPrevious = getNested(prev.getConfig())
 
         def output = ['Pipeline Configuration Modifications']
 
-        // get the nested keys and data
-        data.each { k, v ->
-            v['nested'] = getNested(v.c.config, v['nestedKeys'])
+        // Determine Configurations Added
+        def configurationsAdded = fOutcome.keySet() - fPrevious.keySet()
+        if (configurationsAdded){
+          output << "Configurations Added:" 
+          configurationsAdded.each{ key -> 
+            output << "- ${key} set to ${fOutcome[key]}"
+          }
+        }else{
+          output << "Configurations Added: None" 
         }
 
-        // get the added keys
-        def keys = (data.incoming.nestedKeys - data.prev.nestedKeys).intersect(data.outcome.nestedKeys)
-        output << "Configurations Added:${keys.empty? ' None': '' }"
-        keys.each{ k ->
-            output << "- ${k} set to ${data.outcome.nested[k]}"
+        // Determine Configurations Deleted
+        def configurationsDeleted = (fPrevious - fOutcome).keySet().findAll{ !(it in fOutcome.keySet()) }
+        if (configurationsDeleted){
+          output << "Configurations Deleted:" 
+          configurationsDeleted.each{ key -> 
+            output << "- ${key}"
+          }
+        }else{
+          output << "Configurations Deleted: None" 
+        }
+        // Determine Configurations Changed 
+        def configurationsChanged = (fOutcome - fPrevious).findAll{ it.getKey() in fPrevious.keySet() }
+        if (configurationsChanged){
+          output << "Configurations Changed:" 
+          configurationsChanged.keySet().each{ key  -> 
+            output << "- ${key} changed from ${fPrevious[key]} to ${fOutcome[key]}"
+          }
+        }else{
+          output << "Configurations Changed: None" 
         }
 
-        def changeKeys = data.incoming.nestedKeys.intersect(data.prev.nestedKeys)
-
-        keys = changeKeys.findAll{ k -> data.prev.nested[k] != data.incoming.nested[k] }
-        def overriddenChangedKeys = keys.findAll({k -> data.prev.c.override.find({ 1 == (k.toString() - it).count(".")})})
-        def notOverriddenChangedKeys = keys - overriddenChangedKeys
-
-        output << "Configurations Changed:${overriddenChangedKeys.empty? ' None': '' }"
-        overriddenChangedKeys.each{ k ->
-            output << "- ${k} changed from ${data.prev.nested[k]} to ${data.outcome.nested[k]}"
+        // Determine Configurations Duplicated
+        def configurationsDuplicated = fPrevious.intersect(fIncoming)
+        if (configurationsDuplicated){
+          output << "Configurations Duplicated:" 
+          configurationsDuplicated.keySet().each{ key -> 
+            output << "- ${key}"
+          }
+        }else{
+          output << "Configurations Duplicated: None" 
         }
 
-        keys = changeKeys.findAll{ k -> data.prev.nested[k] == data.incoming.nested[k] }
-        output << "Configurations Duplicated:${keys.empty? ' None': '' }"
-        keys.each{ k ->
-          output << "- ${k} duplicated with ${data.prev.nested[k]}"
+        // Determine Configurations Ignored 
+        def configurationsIgnored = (fIncoming - fOutcome).keySet()
+        if (configurationsIgnored){
+          output << "Configurations Ignored:" 
+          configurationsIgnored.each{ key -> 
+            output << "- ${key}"
+          }
+        }else{
+          output << "Configurations Ignored: None" 
+        }
+        
+        // Print Subsequent May Merge
+        def subsequentMayMerge = outcome.merge 
+        if(subsequentMayMerge){
+          output << "Subsequent May Merge:"
+          subsequentMayMerge.each{ key -> 
+            output << "- ${key}" 
+          }
+        }else{
+          output << "Subsequent May Merge: None" 
         }
 
-        keys = (data.incoming.nestedKeys - data.outcome.nestedKeys)
-        output << "Configurations Ignored:${(notOverriddenChangedKeys + keys).empty? ' None': '' }"
-        keys.each{ k ->
-            output << "- ${k}"
-        }
-        notOverriddenChangedKeys.each{ k ->
-            output << "- ${k} ignored change from ${data.prev.nested[k]} to ${data.incoming.nested[k]}"
-        }
-
-
-        output << "Subsequent may merge:${data.outcome.c.merge.empty? ' None': '' }"
-        data.outcome.c.merge.each{ k ->
-            output << "- ${k}"
-        }
-
-        output << "Subsequent may override:${data.outcome.c.override.empty? ' None': '' }"
-        data.outcome.c.override.each{ k ->
-            output << "- ${k}"
+        // Print Subsequent May Override 
+        def subsequentMayOverride = outcome.override 
+        if(subsequentMayOverride){
+          output << "Subsequent May Override:"
+          subsequentMayOverride.each{ key -> 
+            output << "- ${key}" 
+          }
+        }else{
+          output << "Subsequent May Override: None" 
         }
 
         TemplateLogger.print( output.join("\n"), [ initiallyHidden: true, trimLines: false ])

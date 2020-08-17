@@ -16,33 +16,87 @@
 
 package org.boozallen.plugins.jte.job
 
+import org.boozallen.plugins.jte.config.GovernanceTier
 import hudson.Extension
 import jenkins.branch.MultiBranchProject
+import org.boozallen.plugins.jte.config.ScmPipelineConfigurationProvider
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
 import org.kohsuke.stapler.DataBoundConstructor
+import org.kohsuke.stapler.DataBoundSetter
 import javax.annotation.Nonnull
 import hudson.model.TaskListener
 import jenkins.scm.api.SCMSource
 import jenkins.scm.api.SCMSourceCriteria
+import jenkins.scm.api.SCMProbeStat
+import jenkins.scm.api.SCMFile
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowBranchProjectFactory
 import org.jenkinsci.plugins.workflow.multibranch.AbstractWorkflowBranchProjectFactory
 
 public class TemplateBranchProjectFactory extends WorkflowBranchProjectFactory {
 
+    Boolean filterBranches
+
     @DataBoundConstructor public TemplateBranchProjectFactory() {}
 
-    @Override protected FlowDefinition createDefinition() {
+    public Object readResolve() {
+        if (this.filterBranches == null) {
+            this.filterBranches = false;
+        }
+        return this;
+    }
+
+    @DataBoundSetter
+    public void setFilterBranches(Boolean filterBranches){
+        this.filterBranches = filterBranches
+    }
+
+    public Boolean getFilterBranches(){
+        return filterBranches
+    }
+
+    @Override 
+    protected FlowDefinition createDefinition() {
         return new MultibranchTemplateFlowDefinition()
     }
 
     @Override
     protected SCMSourceCriteria getSCMSourceCriteria(SCMSource source) {
         return new SCMSourceCriteria() {
-            @Override
-            public boolean isHead(Probe probe, TaskListener listener) throws IOException {
-                return true
+            @Override public boolean isHead(SCMSourceCriteria.Probe probe, TaskListener listener) throws IOException {
+                // default behavior is to create jobs for each branch
+                if(!filterBranches){
+                    return true 
+                }
+
+                // if user chose to filter branches, check for pipeline config file 
+                SCMProbeStat stat = probe.stat(ScmPipelineConfigurationProvider.CONFIG_FILE);
+                switch (stat.getType()) {
+                    case SCMFile.Type.NONEXISTENT:
+                        if (stat.getAlternativePath() != null) {
+                            listener.getLogger().format("      ‘%s’ not found (but found ‘%s’, search is case sensitive)%n", ScmPipelineConfigurationProvider.CONFIG_FILE, stat.getAlternativePath());
+                        } else {
+                            listener.getLogger().format("      ‘%s’ not found%n", ScmPipelineConfigurationProvider.CONFIG_FILE);
+                        }
+                        return false;
+                    case SCMFile.Type.DIRECTORY:
+                        listener.getLogger().format("      ‘%s’ found but is a directory not a file%n", ScmPipelineConfigurationProvider.CONFIG_FILE);
+                        return false;
+                    default:
+                        listener.getLogger().format("      ‘%s’ found%n", ScmPipelineConfigurationProvider.CONFIG_FILE);
+                        return true;
+                }
             }
-        }
+
+            @Override
+            public int hashCode() {
+                return getClass().hashCode();
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                return getClass().isInstance(obj);
+            }
+        };
     }
 
     @Extension

@@ -16,11 +16,14 @@
 
 package org.boozallen.plugins.jte.config
 
+import org.boozallen.plugins.jte.utils.RunUtils
 import org.apache.commons.lang.StringEscapeUtils
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.kohsuke.groovy.sandbox.SandboxTransformer
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl 
+import org.jenkinsci.plugins.workflow.job.WorkflowRun
 
 /*
   Parses an Template Config File and returns a TemplateConfigObject
@@ -40,19 +43,24 @@ class TemplateConfigDsl implements Serializable{
   static TemplateConfigObject parse(String script_text){
 
     TemplateConfigObject templateConfig = new TemplateConfigObject()
-    
-    Binding our_binding = new Binding(templateConfig: templateConfig)
+    EnvActionImpl env = getEnvironment()
+
+    Binding our_binding = new Binding(
+      templateConfig: templateConfig,
+      env: env 
+    )
     
     CompilerConfiguration cc = new CompilerConfiguration()
     cc.addCompilationCustomizers(new SandboxTransformer())
     cc.scriptBaseClass = TemplateConfigBuilder.class.name
     
-    GroovyShell sh = new GroovyShell(TemplateConfigDsl.classLoader, our_binding, cc);
-    
-    TemplateConfigDslSandbox sandbox = new TemplateConfigDslSandbox()
+    GroovyShell sh = new GroovyShell(RunUtils.getClassLoader(), our_binding, cc);
+    Script script = sh.parse(script_text)
+
+    TemplateConfigDslSandbox sandbox = new TemplateConfigDslSandbox(script, env)
     sandbox.register();
     try {
-      sh.evaluate script_text
+      script.run()
     }finally {
       sandbox.unregister();
     }
@@ -110,7 +118,10 @@ class TemplateConfigDsl implements Serializable{
     String tab = "    "
     block.each{ key, value -> 
       if(value instanceof Map){
-        String nodeName = key.contains("-") ? "'${key}'" : key
+        String nodeName = key
+        if (key.contains("-") || key.contains("/")) {
+          nodeName = "'${key}'"
+        }
         if (value == [:]){
           file += "${tab*depth}${nodeName}{}"
         }else{
@@ -131,6 +142,11 @@ class TemplateConfigDsl implements Serializable{
       }
     }
     return file 
+  }
+
+  // for unit testing
+  private static EnvActionImpl getEnvironment(){
+    return EnvActionImpl.forRun(RunUtils.getRun())
   }
 
 }

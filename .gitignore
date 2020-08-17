@@ -1,6 +1,6 @@
 bin
 build
-docs/_build
+docs/html
 .settings
 .project
 .classpath
@@ -10,3 +10,4 @@ docs/_build
 .scannerwork/
 target/
 .DS_Store
+node_modules

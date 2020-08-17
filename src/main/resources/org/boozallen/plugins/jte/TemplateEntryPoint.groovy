@@ -31,26 +31,10 @@ def call(CpsClosure body = null){
     if(!body){
         template = TemplateEntryPointVariable.getTemplate(pipelineConfig)
     }
-    // checkout SCM and stash "workspace"
-    createWorkspaceStash()
-
-    // archive the current configuration
-    archiveConfig()
-
-    // otherwise currentBuild.result defaults to null 
-    currentBuild.result = "SUCCESS"
-    Map context = [
-        step: null, 
-        library: null, 
-        status: currentBuild.result 
-    ]
 
     try{
-        // execute methods in steps annotated @Validate
-        Hooks.invoke(Validate, getBinding(), context)
-
-        // execute methods in steps annotated @Init
-        Hooks.invoke(Init, getBinding(), context)
+        Hooks.invoke(Validate, getBinding())
+        Hooks.invoke(Init, getBinding())
         
         /*
           exists if JTE invoked via:
@@ -65,36 +49,9 @@ def call(CpsClosure body = null){
         }
     }catch(any){
         currentBuild.result = "FAILURE" 
-        context.status = currentBuild.result 
         throw any 
     }finally{
-        /*
-          execute methods in steps annotated with @CleanUp
-          followed by @Notify
-        */
-        Hooks.invoke(CleanUp, getBinding(), context)
-        Hooks.invoke(Notify, getBinding(), context)
-    }
-}
-
-void createWorkspaceStash(){
-    try{
-        if (scm){
-            node{
-                cleanWs()
-                checkout scm 
-                stash name: 'workspace', allowEmpty: true, useDefaultExcludes: false
-            }
-        }
-    }catch(any){
-
-    }
-}
-
-void archiveConfig(){
-    node{
-        // templateConfigObject variable injected from TemplateEntryPointVariable.groovy
-        writeFile text: TemplateConfigDsl.serialize(templateConfigObject), file: "pipeline_config.groovy"
-        archiveArtifacts "pipeline_config.groovy"
+        Hooks.invoke(CleanUp, getBinding())
+        Hooks.invoke(Notify, getBinding())
     }
 }
