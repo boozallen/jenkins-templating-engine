@@ -126,8 +126,8 @@ class StepWrapper extends TemplatePrimitive implements Serializable{
         CpsScript recognizes the StepWrapper as something it 
         should execute in the binding. 
     */
-    def call(Object... args){
-        return invoke("call", args) 
+    def call(Object... args) {
+        return invoke("call", args)
     }
 
     /*

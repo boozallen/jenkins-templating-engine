@@ -20,15 +20,15 @@ import hudson.FilePath
 import org.boozallen.plugins.jte.init.governance.GovernanceTier
 import org.boozallen.plugins.jte.init.governance.TemplateGlobalConfig
 import org.boozallen.plugins.jte.init.primitives.injectors.StepWrapperFactory
-import org.boozallen.plugins.jte.util.TemplateLogger
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 class TestLibraryProvider extends LibraryProvider{
 
     ArrayList<TestLibrary> libraries = []
 
+    @SuppressWarnings('UnusedMethodParameter')
     Boolean hasLibrary(FlowExecutionOwner flowOwner, String libName){
-        return libraries.find{ it.name == libName } as boolean
+        return getLibrary(libName) as boolean
     }
 
     List loadLibrary(FlowExecutionOwner flowOwner, Binding binding, String libName, Map libConfig){
@@ -36,7 +36,7 @@ class TestLibraryProvider extends LibraryProvider{
         FilePath rootDir = buildRootDir.child("jte/${libName}")
         rootDir.mkdirs()
         if(hasLibrary(flowOwner, libName)){
-            TestLibrary library = libraries.find{ it.name == libName }
+            TestLibrary library = getLibrary(libName)
 
             // copy resources
             library.resources.each{ path, contents ->
@@ -55,18 +55,18 @@ class TestLibraryProvider extends LibraryProvider{
         }
         return []
     }
-    
+
     void addStep(String libName, String stepName, String stepText){
-        TestLibrary library = libraries.find{ it.name == libName }
+        TestLibrary library = getLibrary(libName)
         if(!library){
             library = new TestLibrary(name: libName)
-            libraries << library 
+            libraries << library
         }
         library.addStep(stepName, stepText)
     }
 
     void addResource(String libName, String path, String resourceText){
-        TestLibrary library = libraries.find{ it.name == libName }
+        TestLibrary library = getLibrary(libName)
         if(!library){
             library = new TestLibrary(name: libName)
             libraries << library
@@ -74,7 +74,12 @@ class TestLibraryProvider extends LibraryProvider{
         library.addResource(path, resourceText)
     }
 
+    TestLibrary getLibrary(String libName){
+        return libraries.find{ lib -> lib.name == libName }
+    }
+
     class TestLibrary {
+
         String name
         LinkedHashMap steps = [:]
         LinkedHashMap resources = [:]
@@ -92,6 +97,7 @@ class TestLibraryProvider extends LibraryProvider{
             }
             resources[path] = text
         }
+
     }
 
     void addGlobally(){
@@ -100,18 +106,20 @@ class TestLibraryProvider extends LibraryProvider{
         LibrarySource libSource = new LibrarySource(this)
         if(tier){
             tier.getLibrarySources() << libSource
-        }else{
+        } else{
             tier = new GovernanceTier()
             List<LibrarySource> libSources = [ libSource ]
             tier.setLibrarySources(libSources)
             global.setTier(tier)
         }
-        
     }
 
     @Extension static class DescriptorImpl extends LibraryProvider.LibraryProviderDescriptor{
+
         String getDisplayName(){
             return "From Unit Test"
         }
+
     }
+
 }

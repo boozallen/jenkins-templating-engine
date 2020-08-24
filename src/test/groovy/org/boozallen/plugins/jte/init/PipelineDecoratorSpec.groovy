@@ -15,7 +15,6 @@
 */
 package org.boozallen.plugins.jte.init.primitives
 
-
 import org.junit.ClassRule
 import org.jvnet.hudson.test.JenkinsRule
 import spock.lang.Shared

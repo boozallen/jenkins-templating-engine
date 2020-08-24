@@ -1,16 +1,18 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-       http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+    Copyright 2018 Booz Allen Hamilton
 
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 package org.boozallen.plugins.jte.init.governance.config
 
 import hudson.model.TaskListener
@@ -33,7 +35,6 @@ import org.jvnet.hudson.test.JenkinsRule
 import spock.lang.Shared
 import spock.lang.Specification
 
-
 class ScmPipelineConfigurationProviderSpec extends Specification{
 
     @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
@@ -49,7 +50,7 @@ class ScmPipelineConfigurationProviderSpec extends Specification{
         run.getParent() >> job
         TaskListener listener = Mock()
         listener.getLogger() >> logger
-        owner = Mock() 
+        owner = Mock()
         owner.getListener() >> listener
         owner.run() >> run
     }
@@ -59,106 +60,106 @@ class ScmPipelineConfigurationProviderSpec extends Specification{
      ************************************/
 
     def "getConfig: returns null if scm not defined"(){
-        setup: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        setup:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
 
-        expect: 
-        p.getConfig(owner) == null 
+        expect:
+        p.getConfig(owner) == null
     }
 
     def "getConfig: returns null if scm is NullSCM"(){
-        setup: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        setup:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         NullSCM scm = Mock()
         p.setScm(scm)
 
-        expect: 
-        p.getConfig(owner) == null 
+        expect:
+        p.getConfig(owner) == null
     }
 
     def "getConfig: repository root: returns null if absent"(){
-        given: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
-        repo.init() 
+        given:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
+        repo.init()
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         GroovySpy(EnvActionImpl, global:true)
-        EnvActionImpl.forRun(_) >> Mock(EnvActionImpl) 
+        EnvActionImpl.forRun(_) >> Mock(EnvActionImpl)
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getConfig(owner) == null
     }
-    
+
     def "getConfig: repository root: returns parsed config if present"(){
-        given: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
-        repo.init() 
+        given:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
+        repo.init()
         repo.write(ScmPipelineConfigurationProvider.CONFIG_FILE, "x = 1")
         repo.git("add", "*")
         repo.git("commit", "--message=init")
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         GroovySpy(EnvActionImpl, global:true)
-        EnvActionImpl.forRun(_) >> Mock(EnvActionImpl) 
+        EnvActionImpl.forRun(_) >> Mock(EnvActionImpl)
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getConfig(owner).config == [x: 1]
     }
 
     def "getConfig: base directory: returns null if absent"(){
-        given: 
+        given:
         ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         p.setBaseDir("pipeline-configuration")
-        repo.init() 
+        repo.init()
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         GroovySpy(EnvActionImpl, global:true)
-        EnvActionImpl.forRun(_) >> Mock(EnvActionImpl) 
+        EnvActionImpl.forRun(_) >> Mock(EnvActionImpl)
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getConfig(owner) == null
     }
-    
+
     def "getConfig: base directory: returns parsed config if present"(){
-        given: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        given:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         repo.init()
         String baseDir = "pipeline-configuration"
         p.setBaseDir(baseDir)
-        String path = "${baseDir}/${ScmPipelineConfigurationProvider.CONFIG_FILE}"  
+        String path = "${baseDir}/${ScmPipelineConfigurationProvider.CONFIG_FILE}"
         repo.write(path, "x = 1")
         repo.git("add", "*")
         repo.git("commit", "--message=init")
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         GroovySpy(EnvActionImpl, global:true)
-        EnvActionImpl.forRun(_) >> Mock(EnvActionImpl) 
+        EnvActionImpl.forRun(_) >> Mock(EnvActionImpl)
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getConfig(owner).config == [x: 1]
     }
 
@@ -178,7 +179,7 @@ class ScmPipelineConfigurationProviderSpec extends Specification{
         }
         GroovySpy(PipelineConfigurationDsl, global: true)
         new PipelineConfigurationDsl(_) >> dsl
-  
+
         when:
         p.getConfig(owner)
 
@@ -192,61 +193,61 @@ class ScmPipelineConfigurationProviderSpec extends Specification{
      ************************************/
 
     def "getJenkinsfile: returns null if scm not defined"(){
-        setup: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        setup:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
 
-        expect: 
-        p.getJenkinsfile(owner) == null 
+        expect:
+        p.getJenkinsfile(owner) == null
     }
 
     def "getJenkinsfile: returns null if scm is NullSCM"(){
-        setup: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        setup:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         NullSCM scm = Mock()
         p.setScm(scm)
 
-        expect: 
-        p.getJenkinsfile(owner) == null 
+        expect:
+        p.getJenkinsfile(owner) == null
     }
 
     def "getJenkinsfile: no basedir returns null if not present"(){
-        given: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        given:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         repo.init()
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getJenkinsfile(owner) == null
     }
 
     def "getJenkinsfile: no basedir returns Jenkinsfile if present"(){
-        given: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        given:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         repo.init()
         repo.write("Jenkinsfile", "the jenkinsfile")
         repo.git("add", "*")
         repo.git("commit", "--message=init")
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getJenkinsfile(owner) == "the jenkinsfile"
     }
 
     def "getJenkinsfile: basedir returns Jenkinsfile if present"(){
-        given: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        given:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         String baseDir = "pipeline-configuration"
         p.setBaseDir(baseDir)
         repo.init()
@@ -255,31 +256,31 @@ class ScmPipelineConfigurationProviderSpec extends Specification{
         repo.git("commit", "--message=init")
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getJenkinsfile(owner) == "the jenkinsfile"
     }
 
     def "getJenkinsfile: basedir returns null if not present"(){
-        given: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        given:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         String baseDir = "pipeline-configuration"
         p.setBaseDir(baseDir)
         repo.init()
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getJenkinsfile(owner) == null
     }
 
@@ -287,41 +288,41 @@ class ScmPipelineConfigurationProviderSpec extends Specification{
      *  tests for getTemplate
      ************************************/
     def "getTemplate: returns null if scm not defined"(){
-        setup: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        setup:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
 
-        expect: 
-        p.getTemplate(owner, "someTemplate") == null 
+        expect:
+        p.getTemplate(owner, "someTemplate") == null
     }
 
     def "getTemplate: returns null if scm is NullSCM"(){
-        setup: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        setup:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         NullSCM scm = Mock()
         p.setScm(scm)
 
-        expect: 
-        p.getTemplate(owner, "someTemplate") == null 
+        expect:
+        p.getTemplate(owner, "someTemplate") == null
     }
 
     def "getTemplate: no basedir returns null if not present"(){
-        given: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        given:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         repo.init()
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getTemplate(owner, "someTemplate") == null
     }
 
     def "getTemplate: no basedir returns template if present"(){
-        given: 
+        given:
         ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         repo.init()
         repo.write("pipeline_templates/someTemplate", "the template")
@@ -329,19 +330,19 @@ class ScmPipelineConfigurationProviderSpec extends Specification{
         repo.git("commit", "--message=init")
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getTemplate(owner, "someTemplate") == "the template"
     }
 
     def "getTemplate: basedir returns template if present"(){
-        given: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        given:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         String baseDir = "pipeline-configuration"
         p.setBaseDir(baseDir)
         repo.init()
@@ -350,35 +351,35 @@ class ScmPipelineConfigurationProviderSpec extends Specification{
         repo.git("commit", "--message=init")
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getTemplate(owner, "someTemplate") == "the template"
     }
 
     def "getTemplate: basedir returns null if not present"(){
-        given: 
-        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider() 
+        given:
+        ScmPipelineConfigurationProvider p = new ScmPipelineConfigurationProvider()
         String baseDir = "pipeline-configuration"
         p.setBaseDir(baseDir)
         repo.init()
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
-        
+
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.getTemplate(owner, "someTemplate") == null
     }
 
-    GitSCM createSCM(_repo){
+    GitSCM createSCM(GitSampleRepoRule _repo){
         return new GitSCM(
             GitSCM.createRepoList(_repo.toString(), null),
             Collections.singletonList(new BranchSpec("*/master")),
@@ -388,5 +389,6 @@ class ScmPipelineConfigurationProviderSpec extends Specification{
             null,
             Collections.<GitSCMExtension>emptyList()
         )
-    }    
+    }
+
 }

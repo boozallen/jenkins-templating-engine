@@ -15,6 +15,7 @@
 */
 package org.boozallen.plugins.jte.job
 
+import static org.jenkinsci.plugins.workflow.cps.persistence.PersistenceContext.JOB
 
 import hudson.model.Action
 import hudson.model.Item
@@ -23,13 +24,25 @@ import hudson.model.TaskListener
 import org.boozallen.plugins.jte.init.PipelineDecorator
 import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution
 import org.jenkinsci.plugins.workflow.cps.persistence.PersistIn
-import org.jenkinsci.plugins.workflow.flow.*
+import org.jenkinsci.plugins.workflow.flow.FlowDefinition
+import org.jenkinsci.plugins.workflow.flow.FlowExecution
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
+import org.jenkinsci.plugins.workflow.flow.FlowDurabilityHint
+import org.jenkinsci.plugins.workflow.flow.DurabilityHintProvider
+import org.jenkinsci.plugins.workflow.flow.GlobalDefaultFlowDurabilityLevel
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
-
-import static org.jenkinsci.plugins.workflow.cps.persistence.PersistenceContext.JOB
 
 @PersistIn(JOB)
 abstract class TemplateFlowDefinition extends FlowDefinition {
+
+    static FlowDurabilityHint determineFlowDurabilityHint(FlowExecutionOwner owner){
+        Queue.Executable exec = owner.getExecutable()
+        if (!(exec instanceof WorkflowRun)) {
+            throw new IllegalStateException("inappropriate context")
+        }
+        FlowDurabilityHint hint = (exec instanceof Item) ? DurabilityHintProvider.suggestedFor((Item)exec) : GlobalDefaultFlowDurabilityLevel.getDefaultDurabilityHint()
+        return hint
+    }
 
     @Override
     FlowExecution create(FlowExecutionOwner owner, TaskListener listener, List<? extends Action> actions) throws Exception {
@@ -49,12 +62,4 @@ abstract class TemplateFlowDefinition extends FlowDefinition {
         return template
     }
 
-    static FlowDurabilityHint determineFlowDurabilityHint(FlowExecutionOwner owner){
-        Queue.Executable exec = owner.getExecutable()
-        if (!(exec instanceof WorkflowRun)) {
-            throw new IllegalStateException("inappropriate context")
-        }
-        FlowDurabilityHint hint = (exec instanceof Item) ? DurabilityHintProvider.suggestedFor((Item)exec) : GlobalDefaultFlowDurabilityLevel.getDefaultDurabilityHint()
-        return hint
-    }
 }

@@ -1,16 +1,18 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-       http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+    Copyright 2018 Booz Allen Hamilton
 
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 package org.boozallen.plugins.jte.init.governance.libs
 
 import hudson.FilePath
@@ -50,16 +52,16 @@ class ScmLibraryProviderSpec extends Specification{
         run.getParent() >> job
         TaskListener listener = Mock()
         listener.getLogger() >> logger
-        owner = Mock() 
+        owner = Mock()
         owner.getListener() >> listener
         owner.run() >> run
     }
-    
+
     def "hasLibrary returns true when library exists"(){
-        given: 
-        ScmLibraryProvider p = new ScmLibraryProvider() 
+        given:
+        ScmLibraryProvider p = new ScmLibraryProvider()
         String libraryName = "someLibrary"
-        repo.init() 
+        repo.init()
         repo.write("${libraryName}/someStep.groovy", "void call(){ println 'the step' }")
         repo.git("add", "*")
         repo.git("commit", "--message=init")
@@ -71,15 +73,15 @@ class ScmLibraryProviderSpec extends Specification{
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         p.hasLibrary(owner, libraryName)
     }
 
     def "hasLibrary returns false when library does not exist"(){
-        given: 
-        ScmLibraryProvider p = new ScmLibraryProvider() 
+        given:
+        ScmLibraryProvider p = new ScmLibraryProvider()
         String libraryName = "someLibrary"
-        repo.init() 
+        repo.init()
         GitSCM scm = createSCM(repo)
         p.setScm(scm)
 
@@ -88,7 +90,7 @@ class ScmLibraryProviderSpec extends Specification{
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
 
-        expect: 
+        expect:
         !p.hasLibrary(owner, libraryName)
     }
 
@@ -102,10 +104,10 @@ class ScmLibraryProviderSpec extends Specification{
     }
 
     def "loadLibrary puts step into binding"(){
-        given: 
-        ScmLibraryProvider p = new ScmLibraryProvider() 
+        given:
+        ScmLibraryProvider p = new ScmLibraryProvider()
         String libraryName = "someLibrary"
-        repo.init() 
+        repo.init()
         repo.write("${libraryName}/steps/someStep.groovy", "void call(){ println 'the step' }")
         repo.git("add", "*")
         repo.git("commit", "--message=init")
@@ -131,7 +133,7 @@ class ScmLibraryProviderSpec extends Specification{
 
         def binding = new Binding()
 
-        when: 
+        when:
         p.loadLibrary(owner, binding, libraryName, [:])
 
         then:
@@ -139,10 +141,10 @@ class ScmLibraryProviderSpec extends Specification{
     }
 
     def "loadLibrary logs library being loaded"(){
-        given: 
-        ScmLibraryProvider p = new ScmLibraryProvider() 
+        given:
+        ScmLibraryProvider p = new ScmLibraryProvider()
         String libraryName = "someLibrary"
-        repo.init() 
+        repo.init()
         repo.write("${libraryName}/someStep.groovy", "void call(){ println 'the step' }")
         repo.git("add", "*")
         repo.git("commit", "--message=init")
@@ -165,10 +167,10 @@ class ScmLibraryProviderSpec extends Specification{
         fsw.fs = SCMFileSystem.of(job, scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
-        
+
         def binding = new Binding()
 
-        when: 
+        when:
         p.loadLibrary(owner, binding, libraryName, [:])
 
         then:
@@ -176,10 +178,10 @@ class ScmLibraryProviderSpec extends Specification{
     }
 
     def "loadLibrary logs if library does not have library configuration file"(){
-        given: 
-        ScmLibraryProvider p = new ScmLibraryProvider() 
+        given:
+        ScmLibraryProvider p = new ScmLibraryProvider()
         String libraryName = "someLibrary"
-        repo.init() 
+        repo.init()
         repo.write("${libraryName}/someStep.groovy", "void call(){ println 'the step' }")
         repo.git("add", "*")
         repo.git("commit", "--message=init")
@@ -202,10 +204,10 @@ class ScmLibraryProviderSpec extends Specification{
         fsw.fs = SCMFileSystem.of(job, scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
-        
+
         def binding = new Binding()
 
-        when: 
+        when:
         p.loadLibrary(owner, binding, libraryName, [:])
 
         then:
@@ -213,11 +215,11 @@ class ScmLibraryProviderSpec extends Specification{
     }
 
     def "loadLibrary invokes library configuration validation if lib config file present"(){
-        given: 
+        given:
         ScmLibraryProvider p = new ScmLibraryProvider()
-        
+
         String libraryName = "someLibrary"
-        repo.init() 
+        repo.init()
         repo.write("${libraryName}/someStep.groovy", "void call(){ println 'the step' }")
         repo.write("${libraryName}/library_config.groovy", """
         fields{
@@ -241,7 +243,7 @@ class ScmLibraryProviderSpec extends Specification{
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
         GroovySpy(FileSystemWrapper, global: true)
         FileSystemWrapper.createFromSCM(owner, scm) >> fsw
-        
+
         def binding = new Binding()
         def result
 
@@ -275,7 +277,7 @@ class ScmLibraryProviderSpec extends Specification{
         null       | null   || ""
     }
 
-    GitSCM createSCM(_repo){
+    GitSCM createSCM(GitSampleRepoRule _repo){
         return new GitSCM(
             GitSCM.createRepoList(_repo.toString(), null),
             Collections.singletonList(new BranchSpec("*/master")),
@@ -285,5 +287,6 @@ class ScmLibraryProviderSpec extends Specification{
             null,
             Collections.<GitSCMExtension>emptyList()
         )
-    }    
+    }
+
 }

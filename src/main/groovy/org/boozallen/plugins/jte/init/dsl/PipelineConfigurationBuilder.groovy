@@ -25,10 +25,11 @@ package org.boozallen.plugins.jte.init.dsl
     being created and is instantiated in PipelineConfigurationDsl
 */
 abstract class PipelineConfigurationBuilder extends Script{
-    ArrayList object_stack = []
-    ArrayList node_stack = []
-    Boolean recordMergeKey = false 
-    Boolean recordOverrideKey = false 
+
+    List objectStack = []
+    List nodeStack = []
+    Boolean recordMergeKey = false
+    Boolean recordOverrideKey = false
 
     /*
         used purely to catch syntax errors such as:
@@ -46,6 +47,7 @@ abstract class PipelineConfigurationBuilder extends Script{
             }
     */
     static enum BuilderMethod{
+
         METHOD_MISSING, PROPERTY_MISSING
 
         String name
@@ -54,37 +56,38 @@ abstract class PipelineConfigurationBuilder extends Script{
             return this
         }
 
-        String getName(){return name}
+        String getName(){ return name }
+
     }
 
-    void builderMerge(){
+    void setMergeToTrue(){
         recordMergeKey = true
     }
 
-    void builderOverride(){
+    void setOverrideToTrue(){
         recordOverrideKey = true
     }
 
+    @SuppressWarnings(['MethodParameterTypeRequired', 'NoDef'])
     BuilderMethod methodMissing(String name, args){
-        object_stack.push([:])
-        node_stack.push(name)
+        objectStack.push([:])
+        nodeStack.push(name)
 
         recordMergeOrOverride()
         args[0]()
 
-        def node_config = object_stack.pop()
-        def node_name = node_stack.pop()
+        LinkedHashMap nodeConfig = objectStack.pop()
+        String nodeName = nodeStack.pop()
 
-        if (object_stack.size()){
-            object_stack.last() << [ (node_name): node_config ]
+        if (objectStack.size()){
+            objectStack.last() << [ (nodeName): nodeConfig ]
         } else {
-            pipelineConfig.config << [ (name): node_config]
+            pipelineConfig.config << [ (name): nodeConfig]
         }
         return BuilderMethod.METHOD_MISSING(name)
     }
 
-    void setProperty(String name, value){
-
+    void setProperty(String name, Object value){
         // validate syntax errors
         if (value instanceof BuilderMethod){
             ArrayList ex = [ "Template Configuration File Syntax Error: " ]
@@ -103,8 +106,8 @@ abstract class PipelineConfigurationBuilder extends Script{
         }
 
         recordMergeOrOverride(name)
-        if (object_stack.size()){
-            object_stack.last()[name] = value
+        if (objectStack.size()){
+            objectStack.last()[name] = value
         } else {
             pipelineConfig.config[name] = value
         }
@@ -112,8 +115,8 @@ abstract class PipelineConfigurationBuilder extends Script{
 
     BuilderMethod propertyMissing(String name){
         recordMergeOrOverride(name)
-        if (object_stack.size()){
-            object_stack.last()[name] = [:]
+        if (objectStack.size()){
+            objectStack.last()[name] = [:]
         } else {
             pipelineConfig.config[name] = [:]
         }
@@ -122,20 +125,20 @@ abstract class PipelineConfigurationBuilder extends Script{
 
     void recordMergeOrOverride(String name = null){
         if(!recordMergeKey && !recordOverrideKey){
-            return 
+            return
         }
 
-        String key = node_stack.join(".") 
+        String key = nodeStack.join(".")
         if(name){
             key += (key.length() ? ".${name}" : name)
         }
         if(recordMergeKey){
             pipelineConfig.merge << key
-            recordMergeKey = false 
+            recordMergeKey = false
         }
         if(recordOverrideKey){
             pipelineConfig.override << key
-            recordOverrideKey = false 
+            recordOverrideKey = false
         }
     }
 

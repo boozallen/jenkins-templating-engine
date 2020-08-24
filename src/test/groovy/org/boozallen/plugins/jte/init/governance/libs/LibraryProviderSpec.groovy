@@ -1,18 +1,19 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-       http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+    Copyright 2018 Booz Allen Hamilton
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
-
 package org.boozallen.plugins.jte.init.governance.libs
-
 
 import org.boozallen.plugins.jte.util.TemplateLogger
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
@@ -22,8 +23,8 @@ import spock.lang.Unroll
 class LibraryProviderSpec extends Specification{
 
     class LibraryProviderImpl extends LibraryProvider{
-        Boolean hasLibrary(FlowExecutionOwner owner, String library){ return false }
-        ArrayList loadLibrary(FlowExecutionOwner owner, Binding binding, String s, Map c){
+        @Override Boolean hasLibrary(FlowExecutionOwner owner, String library){ return false }
+        @Override ArrayList loadLibrary(FlowExecutionOwner owner, Binding binding, String s, Map c){
             return []
         }
     }
@@ -35,7 +36,7 @@ class LibraryProviderSpec extends Specification{
 
         expect:
         libSource.validateType(Mock(TemplateLogger), actual, expected) == result
-        
+
         where:
         actual      |     expected      | result
         true        |      boolean      | true
@@ -57,7 +58,7 @@ class LibraryProviderSpec extends Specification{
         "hey"       |     ~/.*he.*/     | true
         "heyyy"     |     ~/^hey.*/     | true
         "hi"        |     ~/^hey.*/     | false
-        "hi"        |    ["hi","hey"]   | true
+        "hi"        |    ["hi", "hey"]  | true
         "opt3"      |  ["opt1", "opt2"] | false
     }
 

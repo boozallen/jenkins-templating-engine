@@ -1,19 +1,18 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
+    Copyright 2018 Booz Allen Hamilton
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
-
 package org.boozallen.plugins.jte.init.dsl
 
 import hudson.model.TaskListener
@@ -25,34 +24,34 @@ import spock.lang.Specification
 
 class PipelineConfigurationObjectSpec extends Specification {
 
-    ArrayList templateLogs = [] 
+    ArrayList templateLogs = []
     PipelineConfigurationDsl dsl = new PipelineConfigurationDsl(GroovyMock(FlowExecutionOwner){
         run() >> GroovyMock(WorkflowRun)
         getListener() >> GroovyMock(TaskListener){
             getLogger() >> Mock(PrintStream){
                 println(_) >> { msg ->
-                    templateLogs << msg[0] 
+                    templateLogs << msg[0]
                     println msg[0]
                 }
             }
         }
-        asBoolean() >> true 
+        asBoolean() >> true
     })
-    
+
     PipelineConfigurationObject aggregatedConfig
 
     def setup(){
-        EnvActionImpl env = Mock() 
-        env.getProperty("someField") >> "envProperty" 
+        EnvActionImpl env = Mock()
+        env.getProperty("someField") >> "envProperty"
 
         GroovySpy(EnvActionImpl, global:true)
-        EnvActionImpl.forRun(_) >> env 
+        EnvActionImpl.forRun(_) >> env
 
         aggregatedConfig = new PipelineConfigurationObject(dsl.getFlowOwner())
         aggregatedConfig.firstConfig = true
 
         /**
-         * at beginning of test.. log to std out: 
+         * at beginning of test.. log to std out:
          * ============
          * name of test
          * ============
@@ -63,7 +62,7 @@ class PipelineConfigurationObjectSpec extends Specification {
     }
 
     def "First join results in correct aggregated config"(){
-        given: 
+        given:
         aggregatedConfig += dsl.parse("""
             a = 1
             b = 2
@@ -72,8 +71,8 @@ class PipelineConfigurationObjectSpec extends Specification {
             }
         """)
 
-        expect: 
-        aggregatedConfig.config == [ 
+        expect:
+        aggregatedConfig.config == [
             a: 1,
             b: 2,
             x: [
@@ -85,7 +84,7 @@ class PipelineConfigurationObjectSpec extends Specification {
             "Configurations Added:",
             "- a set to 1",
             "- b set to 2",
-            "- x.y set to whatever", 
+            "- x.y set to whatever",
             "Configurations Deleted: None",
             "Configurations Changed: None",
             "Configurations Duplicated: None",
@@ -96,11 +95,11 @@ class PipelineConfigurationObjectSpec extends Specification {
     }
 
     def "merge block: add key"(){
-        given: 
+        given:
         String config1 = "@merge a{ x = 1 }"
         String config2 = "a{ y = 2 }"
 
-        when: 
+        when:
         aggregatedConfig += dsl.parse(config1)
         aggregatedConfig += dsl.parse(config2)
 
@@ -136,11 +135,11 @@ class PipelineConfigurationObjectSpec extends Specification {
     }
 
     def "merge block: can't override existing key"(){
-        given: 
+        given:
         String config1 = "@merge a{ x = 1 }"
         String config2 = "a{ x = 2 }"
 
-        when: 
+        when:
         aggregatedConfig += dsl.parse(config1)
         aggregatedConfig += dsl.parse(config2)
 
@@ -171,15 +170,15 @@ class PipelineConfigurationObjectSpec extends Specification {
             "- a.x",
             "Subsequent May Merge: None",
             "Subsequent May Override: None"
-        ])   
+        ])
     }
 
     def "merge block: log duplicated key"(){
-        given: 
+        given:
         String config1 = "@merge a{ x = 1 }"
         String config2 = "a{ x = 1 }"
 
-        when: 
+        when:
         aggregatedConfig += dsl.parse(config1)
         aggregatedConfig += dsl.parse(config2)
 
@@ -210,15 +209,15 @@ class PipelineConfigurationObjectSpec extends Specification {
             "Configurations Ignored: None",
             "Subsequent May Merge: None",
             "Subsequent May Override: None"
-        ])    
+        ])
     }
 
     def "override block: change key value"(){
-        given: 
+        given:
         String config1 = "@override a{ x = 1 }"
         String config2 = "a{ x = 2 }"
 
-        when: 
+        when:
         aggregatedConfig += dsl.parse(config1)
         aggregatedConfig += dsl.parse(config2)
 
@@ -253,11 +252,11 @@ class PipelineConfigurationObjectSpec extends Specification {
     }
 
     def "override block: leave block as-is if not declared"(){
-        given: 
+        given:
         String config1 = "@override a{ x = 1 }"
         String config2 = "b{ y = 1 }"
 
-        when: 
+        when:
         aggregatedConfig += dsl.parse(config1)
         aggregatedConfig += dsl.parse(config2)
 
@@ -295,7 +294,7 @@ class PipelineConfigurationObjectSpec extends Specification {
     }
 
     def "override block: delete previous configuration"(){
-        given: 
+        given:
         String config1 = """
         @override a{
             x = 1
@@ -308,7 +307,7 @@ class PipelineConfigurationObjectSpec extends Specification {
         }
         """
 
-        when: 
+        when:
         aggregatedConfig += dsl.parse(config1)
         aggregatedConfig += dsl.parse(config2)
 
@@ -345,7 +344,7 @@ class PipelineConfigurationObjectSpec extends Specification {
     }
 
     def "override nested block"(){
-        given: 
+        given:
         String config1 = """
         a{
             @override b{
@@ -361,7 +360,7 @@ class PipelineConfigurationObjectSpec extends Specification {
         }
         """
 
-        when: 
+        when:
         aggregatedConfig += dsl.parse(config1)
         aggregatedConfig += dsl.parse(config2)
 
@@ -398,7 +397,7 @@ class PipelineConfigurationObjectSpec extends Specification {
     }
 
     def "override nested field"(){
-        given: 
+        given:
         String config1 = """
         a{
             b{
@@ -416,7 +415,7 @@ class PipelineConfigurationObjectSpec extends Specification {
         }
         """
 
-        when: 
+        when:
         aggregatedConfig += dsl.parse(config1)
         aggregatedConfig += dsl.parse(config2)
 
@@ -456,16 +455,16 @@ class PipelineConfigurationObjectSpec extends Specification {
     }
 
     def "override root field"(){
-        given: 
+        given:
         String config1 = "@override x = 1"
         String config2 = "x = 2"
 
-        when: 
+        when:
         aggregatedConfig += dsl.parse(config1)
         aggregatedConfig += dsl.parse(config2)
 
         then:
-        aggregatedConfig.config == [ x: 2 ] 
+        aggregatedConfig.config == [ x: 2 ]
         TestUtil.assertOrder(templateLogs.join("\n"), [
             "Pipeline Configuration Modifications",
             "Configurations Added:",
@@ -491,11 +490,11 @@ class PipelineConfigurationObjectSpec extends Specification {
     }
 
     def "override root field with block"(){
-        given: 
+        given:
         String config1 = "@override x = 1"
         String config2 = "x{ y = 1 }"
 
-        when: 
+        when:
         aggregatedConfig += dsl.parse(config1)
         aggregatedConfig += dsl.parse(config2)
 
@@ -504,7 +503,7 @@ class PipelineConfigurationObjectSpec extends Specification {
             x: [
                 y: 1
             ]
-        ] 
+        ]
         TestUtil.assertOrder(templateLogs.join("\n"), [
             "Pipeline Configuration Modifications",
             "Configurations Added:",

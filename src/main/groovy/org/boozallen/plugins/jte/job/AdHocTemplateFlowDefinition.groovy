@@ -27,9 +27,9 @@ import org.kohsuke.stapler.DataBoundConstructor
 class AdHocTemplateFlowDefinition extends TemplateFlowDefinition {
 
     private final boolean providePipelineTemplate
-    public String template
+    private final String template
     private final boolean providePipelineConfig
-    public String pipelineConfig
+    private final String pipelineConfig
 
     @DataBoundConstructor
     AdHocTemplateFlowDefinition(boolean providePipelineTemplate, String template, boolean providePipelineConfig, String pipelineConfig){
@@ -65,4 +65,5 @@ class AdHocTemplateFlowDefinition extends TemplateFlowDefinition {
             return true
         }
     }
+
 }

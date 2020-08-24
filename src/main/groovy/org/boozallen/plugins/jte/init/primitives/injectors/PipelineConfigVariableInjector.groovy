@@ -21,11 +21,13 @@ import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 @Extension class PipelineConfigVariableInjector extends TemplatePrimitiveInjector {
+
     static final String VARIABLE = "pipelineConfig"
 
+    @SuppressWarnings(['UnusedMethodParameter', 'NoDef'])
     static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
-        Class Keyword = KeywordInjector.getPrimitiveClass()
-        def pipelineConfig = Keyword.newInstance(
+        Class keywordClass = KeywordInjector.getPrimitiveClass()
+        def pipelineConfig = keywordClass.newInstance(
             var_name: VARIABLE,
             value: config.getConfig(),
             preLockException: "Variable ${VARIABLE} reserved for accessing the aggregated pipeline configuration",
@@ -33,4 +35,5 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
         )
         binding.setVariable(VARIABLE, pipelineConfig)
     }
+
 }

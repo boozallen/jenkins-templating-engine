@@ -23,6 +23,7 @@ import jenkins.model.Jenkins
 import org.kohsuke.stapler.DataBoundConstructor
 
 class LibrarySource extends AbstractDescribableImpl<LibrarySource> {
+
     private final LibraryProvider libraryProvider
 
     @DataBoundConstructor
@@ -38,4 +39,5 @@ class LibrarySource extends AbstractDescribableImpl<LibrarySource> {
             return DescriptorVisibilityFilter.apply(null, Jenkins.get().getExtensionList(LibraryProvider.LibraryProviderDescriptor))
         }
     }
+
 }

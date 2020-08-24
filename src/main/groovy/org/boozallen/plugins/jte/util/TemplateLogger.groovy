@@ -26,12 +26,15 @@ import org.jenkinsci.plugins.workflow.cps.CpsThread
 import org.jenkinsci.plugins.workflow.flow.FlowExecution
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
+import java.security.SecureRandom
 
 enum LogLevel{
+
     INFO(tag: "info"),
     WARN(tag: "warn"),
     ERROR(tag: "error")
     String tag
+
 }
 
 class TemplateLogger {
@@ -45,14 +48,35 @@ class TemplateLogger {
         this.logger = listener.getLogger()
     }
 
-    void print(String message, LogLevel logType = LogLevel.INFO){
-        message = message.trim()
-        if(!message.startsWith("[")){
-            message = message.split("\n").collect{ " ${it}" }.join("\n")
+    static TemplateLogger createDuringRun(){
+        CpsThread thread = CpsThread.current()
+        FlowExecution execution = thread?.getExecution()
+        FlowExecutionOwner owner = execution?.getOwner()
+        TaskListener listener = owner?.getListener()
+        if(!listener){
+            throw new Exception("Unable to find current TaskListener.  Can't create a TemplateLogger.")
         }
-        Boolean isMultiline = message.contains("\n")
+        TemplateLogger logger = new TemplateLogger(listener)
+        return logger
+    }
+
+    // used for static calls to print methods
+    @SuppressWarnings('MethodName')
+    static void $static_methodMissing(String name, Object args) {
+        TemplateLogger logger = createDuringRun()
+        InvokerHelper.getMetaClass(logger).invokeMethod(logger, name, args)
+    }
+
+    void print(String message, LogLevel logType = LogLevel.INFO){
+        String messageToPrint = message.trim()
+        if(!messageToPrint.startsWith("[")){
+            messageToPrint = messageToPrint.split("\n").collect{ line ->
+                " ${line}"
+            }.join("\n")
+        }
+        Boolean isMultiline = messageToPrint.contains("\n")
         String messageId = generateMessageId()
-        message.eachLine{ line, i ->
+        messageToPrint.eachLine{ line, i ->
             synchronized (logger) {
                 listener.annotate(new Annotator(
                     logType: logType,
@@ -74,8 +98,8 @@ class TemplateLogger {
     }
 
     private String generateMessageId(){
-        def alphabet = (["a".."z"] + [0..9]).flatten()
-        String messageId = (1..10).collect{ alphabet[ new Random().nextInt(alphabet.size()) ] }.join()
+        List alphabet = (["a".."z"] + [0..9]).flatten()
+        String messageId = (1..10).collect{ alphabet[ new SecureRandom().nextInt(alphabet.size()) ] }.join()
         return messageId
     }
 
@@ -93,7 +117,7 @@ class TemplateLogger {
 
         @Override
         ConsoleAnnotator<?> annotate(WorkflowRun context, MarkupText text, int charPos) {
-            def tags = [
+            List<String> tags = [
                 "class='jte-${logType.tag}'",
                 "jte-id='${messageId}'",
             ]
@@ -112,21 +136,4 @@ class TemplateLogger {
         static final class DescriptorImpl extends ConsoleAnnotationDescriptor {}
     }
 
-    static TemplateLogger createDuringRun(){
-        CpsThread thread = CpsThread.current()
-        FlowExecution execution = thread?.getExecution()
-        FlowExecutionOwner owner = execution?.getOwner()
-        TaskListener listener = owner?.getListener()
-        if(!listener){
-            throw new Exception("Unable to find current TaskListener.  Can't create a TemplateLogger.")
-        }
-        TemplateLogger logger = new TemplateLogger(listener)
-        return logger
-    }
-
-    // used for static calls to print methods
-    static def $static_methodMissing(String name, Object args) {
-        TemplateLogger logger = createDuringRun()
-        InvokerHelper.getMetaClass(logger).invokeMethod(logger, name, args)
-    }
 }

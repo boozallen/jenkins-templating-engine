@@ -87,13 +87,13 @@ class PipelineDecorator extends InvisibleAction {
 
     PipelineConfigurationObject getJobPipelineConfiguration(WorkflowJob job){
         PipelineConfigurationObject jobConfig = null
-        def flowDefinition = job.getDefinition()
+        FlowDefinition flowDefinition = job.getDefinition()
         if(flowDefinition instanceof AdHocTemplateFlowDefinition){
             String jobConfigString = flowDefinition.getPipelineConfig()
             if(jobConfigString){
                 try{
                     jobConfig = new PipelineConfigurationDsl(flowOwner).parse(jobConfigString)
-                }catch(any){
+                } catch(any){
                     getLogger().printError("Error parsing ${job.getName()}'s configuration file.")
                     throw any
                 }
@@ -105,7 +105,7 @@ class PipelineDecorator extends InvisibleAction {
             if (repoConfigFile){
                 try{
                     jobConfig = new PipelineConfigurationDsl(flowOwner).parse(repoConfigFile)
-                }catch(any){
+                } catch(any){
                     getLogger().printError("Error parsing ${job.getName()}'s configuration file in SCM.")
                     throw any
                 }
@@ -147,9 +147,8 @@ class PipelineDecorator extends InvisibleAction {
                 Boolean allowScmJenkinsfile = pipelineConfig.containsKey("allow_scm_jenkinsfile") ? pipelineConfig.allow_scm_jenkinsfile : true
                 if (allowScmJenkinsfile){
                     return repoJenkinsfile
-                }else{
-                    getLogger().printWarning "Repository provided Jenkinsfile that will not be used, per organizational policy."
                 }
+                getLogger().printWarning "Repository provided Jenkinsfile that will not be used, per organizational policy."
             }
         }
 

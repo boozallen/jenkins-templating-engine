@@ -30,8 +30,9 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
  */
 @Extension class HookInjector extends TemplatePrimitiveInjector {
 
+    @SuppressWarnings('UnusedMethodParameter')
     static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
-        Class Hooks = getHooksClass()
+        Class hooksClass = getHooksClass()
         getAnnotatedMethodClass()
 
         /*
@@ -39,7 +40,7 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
          Check out GroovyShellDecoratorImpl.configureCompiler to understand why
          this is being done.
          */
-        binding.setVariable("Hooks", Hooks)
+        binding.setVariable("Hooks", hooksClass)
         binding.setVariable("Validate", Validate)
         binding.setVariable("Init", Init)
         binding.setVariable("CleanUp", CleanUp)
@@ -59,4 +60,5 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
         String classText = uberClassLoader.loadClass(self).getResource("AnnotatedMethod.groovy").text
         return TemplateScriptEngine.parseClass(classText)
     }
+
 }

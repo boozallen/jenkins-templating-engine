@@ -35,8 +35,10 @@ class TemplateBranchProjectFactory extends WorkflowBranchProjectFactory {
 
     Boolean filterBranches
 
+    // jenkins requires this be here
+    @SuppressWarnings('UnnecessaryConstructor')
     @DataBoundConstructor
-    TemplateBranchProjectFactory() {}
+    TemplateBranchProjectFactory(){}
 
     Object readResolve() {
         if (this.filterBranches == null) {
@@ -105,7 +107,7 @@ class TemplateBranchProjectFactory extends WorkflowBranchProjectFactory {
 
         @Override
         boolean isApplicable(Class<? extends MultiBranchProject> clazz) {
-            return MultiBranchProject.class.isAssignableFrom(clazz)
+            return MultiBranchProject.isAssignableFrom(clazz)
         }
 
         @Nonnull

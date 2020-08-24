@@ -182,7 +182,7 @@ class TemplateBindingSpec extends Specification{
     @WithoutJenkins
     def "getStep returns step when variable exists and is StepWrapper"(){
         setup:
-        GroovySpy(StepWrapperFactory.class, global:true)
+        GroovySpy(StepWrapperFactory, global:true)
         StepWrapperFactory.getPrimitiveClass() >> { return StepWrapper }
         StepWrapper step = new StepWrapper()
 
@@ -226,4 +226,5 @@ class TemplateBindingSpec extends Specification{
         expect:
         jenkins.assertLogContains("hello", jenkins.buildAndAssertSuccess(job))
     }
+
 }

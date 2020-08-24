@@ -36,8 +36,10 @@ class TemplateMultiBranchProjectFactory extends MultiBranchProjectFactory.BySCMS
 
     Boolean filterBranches
 
+    // jenkins requires this be here
+    @SuppressWarnings('UnnecessaryConstructor')
     @DataBoundConstructor
-    TemplateMultiBranchProjectFactory() { }
+    TemplateMultiBranchProjectFactory(){}
 
     Object readResolve() {
         if (this.filterBranches == null) {
@@ -55,6 +57,12 @@ class TemplateMultiBranchProjectFactory extends MultiBranchProjectFactory.BySCMS
         return filterBranches
     }
 
+    @Override
+    final void updateExistingProject(MultiBranchProject<?, ?> project, Map<String, Object> attributes, TaskListener listener) throws IOException, InterruptedException {
+        if (project instanceof WorkflowMultiBranchProject) {
+            customize((WorkflowMultiBranchProject) project)
+        } // otherwise got recognized by something else before, oh well
+    }
 
     private AbstractWorkflowBranchProjectFactory newProjectFactory() {
         TemplateBranchProjectFactory factory = new TemplateBranchProjectFactory()
@@ -72,13 +80,6 @@ class TemplateMultiBranchProjectFactory extends MultiBranchProjectFactory.BySCMS
         return project
     }
 
-    @Override
-    final void updateExistingProject(MultiBranchProject<?, ?> project, Map<String, Object> attributes, TaskListener listener) throws IOException, InterruptedException {
-        if (project instanceof WorkflowMultiBranchProject) {
-            customize((WorkflowMultiBranchProject) project)
-        } // otherwise got recognized by something else before, oh well
-    }
-
     @Override protected SCMSourceCriteria getSCMSourceCriteria(SCMSource source) {
         return newProjectFactory().getSCMSourceCriteria(source)
     }
@@ -88,16 +89,15 @@ class TemplateMultiBranchProjectFactory extends MultiBranchProjectFactory.BySCMS
 
         @Override
         Class<OrganizationFolder> type() {
-            return OrganizationFolder.class
+            return OrganizationFolder
         }
 
         @Override
         Collection<? extends Action> createFor(OrganizationFolder target) {
-            if (target.getProjectFactories().get(TemplateMultiBranchProjectFactory.class) != null && target.hasPermission(Item.EXTENDED_READ)) {
+            if (target.getProjectFactories().get(TemplateMultiBranchProjectFactory) != null && target.hasPermission(Item.EXTENDED_READ)) {
                 return Collections.singleton(new Snippetizer.LocalAction())
-            } else {
-                return Collections.emptySet()
             }
+            return Collections.emptySet()
         }
 
     }

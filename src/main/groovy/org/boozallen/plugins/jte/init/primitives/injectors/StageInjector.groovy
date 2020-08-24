@@ -23,12 +23,14 @@ import org.boozallen.plugins.jte.util.TemplateScriptEngine
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 @Extension class StageInjector extends TemplatePrimitiveInjector {
+
+    @SuppressWarnings('UnusedMethodParameter')
     static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
-        Class Stage = getPrimitiveClass()
-        config.getConfig().stages.each{name, steps ->
-            ArrayList<String> stepsList = new ArrayList()
-            steps.collect(stepsList){ it.key }
-            binding.setVariable(name, Stage.newInstance(binding, name, stepsList))
+        Class stageClass = getPrimitiveClass()
+        config.getConfig().stages.each{ name, steps ->
+            ArrayList<String> stepsList = []
+            steps.collect(stepsList){ step -> step.key }
+            binding.setVariable(name, stageClass.newInstance(binding, name, stepsList))
         }
     }
 
@@ -38,4 +40,5 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
         String classText = uberClassLoader.loadClass(self).getResource("Stage.groovy").text
         return TemplateScriptEngine.parseClass(classText)
     }
+
 }

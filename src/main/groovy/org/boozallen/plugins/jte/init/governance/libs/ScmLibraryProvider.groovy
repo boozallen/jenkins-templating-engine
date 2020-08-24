@@ -30,9 +30,11 @@ import org.kohsuke.stapler.DataBoundSetter
 
 class ScmLibraryProvider extends LibraryProvider{
 
-    public SCM scm
-    public String baseDir
+    SCM scm
+    String baseDir
 
+    // jenkins requires this be here
+    @SuppressWarnings('UnnecessaryConstructor')
     @DataBoundConstructor
     ScmLibraryProvider(){}
 
@@ -50,17 +52,15 @@ class ScmLibraryProvider extends LibraryProvider{
 
     Boolean hasLibrary(FlowExecutionOwner flowOwner, String libName){
         SCMFileSystem fs = createFs(flowOwner)
-        if (!fs) return false
+        if (!fs){ return false }
         SCMFile lib = fs.child(prefixBaseDir(libName))
         return lib.isDirectory()
     }
 
     List loadLibrary(FlowExecutionOwner flowOwner, Binding binding, String libName, Map libConfig){
         SCMFileSystem fs = createFs(flowOwner)
-        if (!fs){ return }
-
+        if (!fs){ return [] }
         TemplateLogger logger = new TemplateLogger(flowOwner.getListener())
-
         ArrayList msg = [
             "Loading Library ${libName}",
             "-- scm: ${scm.getKey()}"
@@ -76,12 +76,11 @@ class ScmLibraryProvider extends LibraryProvider{
         if(libConfigFile.exists() && libConfigFile.isFile()){
             libConfigErrors = doLibraryConfigValidation(flowOwner, libConfigFile.contentAsString(), libConfig)
             if(libConfigErrors){
-                return [ "${libName}:" ] + libConfigErrors.collect{ " - ${it}" }
+                return [ "${libName}:" ] + libConfigErrors.collect{ error -> " - ${error}" }
             }
-        }else{
+        } else{
             logger.printWarning("Library ${libName} does not have a configuration file.")
         }
-
 
         FilePath buildRootDir = new FilePath(flowOwner.getRootDir())
         FilePath rootDir = buildRootDir.child("jte/${libName}")
@@ -99,8 +98,13 @@ class ScmLibraryProvider extends LibraryProvider{
                 String relativePath = file.getPath() - "${prefixBaseDir(libName)}/"
                 FilePath stepFile = rootDir.child(relativePath)
                 stepFile.write(file.contentAsString(), "UTF-8")
-                def s = stepFactory.createFromFilePath(stepFile, binding, libName, libConfig)
-                binding.setVariable(s.getName(), s)
+                String stepName = file.getName() - ".groovy"
+                binding.setVariable(stepName, stepFactory.createFromFilePath(
+                    stepFile,
+                    binding,
+                    libName,
+                    libConfig
+                ))
             }
         }
 
@@ -131,10 +135,13 @@ class ScmLibraryProvider extends LibraryProvider{
         }
     }
 
+    @SuppressWarnings('ImplicitClosureParameter')
     String prefixBaseDir(String s){
         return [baseDir, s?.trim()].findAll{ it }.join("/")
     }
 
+    // lol CodeNarc is probably right and we should find a new place for this
+    @SuppressWarnings('FactoryMethodName')
     SCMFileSystem createFs(FlowExecutionOwner flowOwner){
         return FileSystemWrapper.createFromSCM(flowOwner, scm) as SCMFileSystem
     }
@@ -145,4 +152,5 @@ class ScmLibraryProvider extends LibraryProvider{
             return "From SCM"
         }
     }
+
 }

@@ -18,7 +18,6 @@ package org.boozallen.plugins.jte.init.primitives.injectors
 import hudson.AbortException
 import hudson.FilePath
 import jenkins.model.Jenkins
-import jenkins.scm.api.SCMFile
 import org.boozallen.plugins.jte.util.TemplateLogger
 import org.boozallen.plugins.jte.util.TemplateScriptEngine
 import org.boozallen.plugins.jte.init.primitives.ReservedVariableName
@@ -33,7 +32,9 @@ import org.jenkinsci.plugins.workflow.cps.CpsScript
  *
  * @auther Steven Terrana
  */
+@SuppressWarnings(['NoDef', 'MethodReturnTypeRequired'])
 class StepWrapperFactory{
+
     /**
      * the variable to autowire to expose the library
      * configuration to the step
@@ -53,10 +54,21 @@ class StepWrapperFactory{
         }
     }
 
-    private FlowExecutionOwner flowOwner
+    private final FlowExecutionOwner flowOwner
 
     StepWrapperFactory(FlowExecutionOwner flowOwner){
         this.flowOwner = flowOwner
+    }
+
+    /**
+     * returns the CPS-transformed StepWrapper Class that will work during pipeline execution
+     * @return the StepWrapper Class
+     */
+    static Class getPrimitiveClass(){
+        ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
+        String self = this.getMetaClass().getTheClass().getName()
+        String classText = uberClassLoader.loadClass(self).getResource("StepWrapper.groovy").text
+        return TemplateScriptEngine.parseClass(classText)
     }
 
     /**
@@ -79,14 +91,14 @@ class StepWrapperFactory{
                 flowOwner,
                 TemplateFlowDefinition.determineFlowDurabilityHint(flowOwner)
             ).parseScript()
-        }catch(any){
+        } catch(any){
             TemplateLogger logger = new TemplateLogger(flowOwner.getListener())
             logger.printError("Failed to parse step text. Library: ${library}. Step: ${name}.")
             throw any
         }
 
         script.metaClass."get${CONFIG_VAR.capitalize()}" << { return config }
-        script.metaClass.getStageContext = {->  [ name: null, args: [:] ]}
+        script.metaClass.getStageContext = { [ name: null, args: [:] ] }
 
         script.metaClass.resource = { String resource ->
             if(resource.startsWith("/")){
@@ -118,8 +130,8 @@ class StepWrapperFactory{
      * @return a StepWrapper representing the stepText
      */
     def createFromString(String sourceText, Binding binding, String name, String library, Map config){
-        Class StepWrapper = getPrimitiveClass()
-        return StepWrapper.newInstance(
+        Class stepWrapper = getPrimitiveClass()
+        return stepWrapper.newInstance(
             name: name,
             library: library,
             config: config,
@@ -140,10 +152,10 @@ class StepWrapperFactory{
      * @return a StepWrapper instance
      */
     def createFromFilePath(FilePath filePath, Binding binding, String library, Map config){
-        Class StepWrapper = getPrimitiveClass()
+        Class stepWrapper = getPrimitiveClass()
         String name = filePath.getBaseName()
         String sourceText = filePath.readToString()
-        return StepWrapper.newInstance(
+        return stepWrapper.newInstance(
             name: name,
             library: library,
             config: config,
@@ -165,8 +177,9 @@ class StepWrapperFactory{
         ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
         String self = this.getMetaClass().getTheClass().getName()
         String defaultImpl = uberClassLoader.loadClass(self).getResource("defaultStepImplementation.groovy").text
-        if (!stepConfig.name) stepConfig.name = name 
-        return createFromString(defaultImpl, binding, name, "Default Step Implementation", stepConfig) 
+        // will be nice to eventually use the ?= operator when groovy version gets upgraded
+        stepConfig.name = stepConfig.name ?: name
+        return createFromString(defaultImpl, binding, name, "Default Step Implementation", stepConfig)
     }
 
     /**
@@ -180,14 +193,4 @@ class StepWrapperFactory{
         return createFromString(nullImpl, binding, stepName, null, [:])
     }
 
-    /**
-     * returns the CPS-transformed StepWrapper Class that will work during pipeline execution
-     * @return the StepWrapper Class
-     */
-    static Class getPrimitiveClass(){
-        ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
-        String self = this.getMetaClass().getTheClass().getName()
-        String classText = uberClassLoader.loadClass(self).getResource("StepWrapper.groovy").text
-        return TemplateScriptEngine.parseClass(classText)
-    }
 }

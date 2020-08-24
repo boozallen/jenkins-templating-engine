@@ -29,7 +29,7 @@ class ApplicationEnvironmentSpec extends Specification{
 
     def "Injector populates binding"(){
         given:
-        WorkflowJob job = TestUtil.createAdHoc(jenkins, 
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
             config: "application_environments{ dev }",
             template: 'assert binding.hasVariable("dev")'
         )
@@ -110,7 +110,7 @@ class ApplicationEnvironmentSpec extends Specification{
             }
             """,
             template: """
-            assert dev.extra1 == "foo" 
+            assert dev.extra1 == "foo"
             assert dev.extra2 == "bar"
             """
         )
@@ -268,7 +268,7 @@ class ApplicationEnvironmentSpec extends Specification{
             }
             """,
             template: """
-            assert dev.previous == null 
+            assert dev.previous == null
             assert dev.next == null
             """
         )
@@ -288,8 +288,8 @@ class ApplicationEnvironmentSpec extends Specification{
             }
             """,
             template: """
-            assert test.previous == dev 
-            assert test.next == prod 
+            assert test.previous == dev
+            assert test.next == prod
             """
         )
 
@@ -347,4 +347,5 @@ class ApplicationEnvironmentSpec extends Specification{
         expect:
         jenkins.assertBuildStatus(Result.FAILURE, job.scheduleBuild2(0))
     }
+
 }

@@ -15,7 +15,6 @@
 */
 package org.boozallen.plugins.jte.init.governance.libs
 
-
 import hudson.model.AbstractDescribableImpl
 import hudson.model.Descriptor
 import org.boozallen.plugins.jte.init.dsl.PipelineConfigurationDsl
@@ -23,6 +22,7 @@ import org.boozallen.plugins.jte.util.TemplateLogger
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 abstract class LibraryProvider extends AbstractDescribableImpl<LibraryProvider>{
+
     public static final String CONFIG_FILE = "library_config.groovy"
 
     /*
@@ -38,12 +38,8 @@ abstract class LibraryProvider extends AbstractDescribableImpl<LibraryProvider>{
     */
     abstract List loadLibrary(FlowExecutionOwner flowOwner, Binding binding, String libName, Map libConfig)
 
-    Map libConfigToMap(String configFile) {
-        return
-    }
-
-    List doLibraryConfigValidation(FlowExecutionOwner flowOwner, String configFile, Map libConfig){
-
+    @SuppressWarnings('NoDef')
+    List<String> doLibraryConfigValidation(FlowExecutionOwner flowOwner, String configFile, Map libConfig){
         PipelineConfigurationDsl dsl = new PipelineConfigurationDsl(flowOwner)
         Map allowedConfig = dsl.parse(configFile).getConfig()
 
@@ -52,9 +48,9 @@ abstract class LibraryProvider extends AbstractDescribableImpl<LibraryProvider>{
         ArrayList libConfigErrors = []
 
         // define keysets in dot notation
-        ArrayList keys = getNestedKeys(libConfig).collect{ it.toString() }
-        ArrayList required = getNestedKeys(allowedConfig.fields.required).collect{ it.toString() }
-        ArrayList optional = getNestedKeys(allowedConfig.fields.optional).collect{ it.toString() }
+        ArrayList keys = getNestedKeys(libConfig).collect{ key -> key.toString() }
+        ArrayList required = getNestedKeys(allowedConfig.fields.required).collect{ key -> key.toString() }
+        ArrayList optional = getNestedKeys(allowedConfig.fields.optional).collect{ key -> key.toString() }
 
         // validate required keys
         required.each{ requiredKey  ->
@@ -102,13 +98,14 @@ abstract class LibraryProvider extends AbstractDescribableImpl<LibraryProvider>{
         return libConfigErrors
     }
 
-    def getProp(o, p){
+    @SuppressWarnings(['NoDef', 'MethodReturnTypeRequired'])
+    def getProp(LinkedHashMap o, String p){
         return p.tokenize('.').inject(o){ obj, prop ->
             obj?."$prop"
         }
     }
 
-    def getNestedKeys(map, result = [], String keyPrefix = '') {
+    List<String> getNestedKeys(LinkedHashMap map, List<String> result = [], String keyPrefix = '') {
         map.each { key, value ->
             if (value instanceof Map) {
                 getNestedKeys(value, result, "${keyPrefix}${key}.")
@@ -127,39 +124,31 @@ abstract class LibraryProvider extends AbstractDescribableImpl<LibraryProvider>{
         JTE configuration file and we should strive to avoid
         confusion when people specify a validation.
     */
-    Boolean validateType(logger, actual, expected){
+    @SuppressWarnings(['MethodParameterTypeRequired', 'NoDef'])
+    Boolean validateType(TemplateLogger logger, actual, expected){
         switch(expected){
             case [ boolean, Boolean ]:
                 return actual.getClass() in [ boolean, Boolean ]
-                break
             case String:
                 return actual.getClass() in [ String,  org.codehaus.groovy.runtime.GStringImpl ]
-                break
             case [ Integer, int]:
                 return actual.getClass() in [ Integer, int ]
-                break
             case [ Double, BigDecimal, Float ]:
                 return actual.getClass() in [ Double, BigDecimal, Float ]
-                break
             case Number:
                 return actual instanceof Number
-                break
             case { expected instanceof java.util.regex.Pattern }:
                 if(!(actual.getClass() in [ String,  org.codehaus.groovy.runtime.GStringImpl ])){
                     return false
                 }
                 return actual.matches(expected)
-                break
             case { expected instanceof ArrayList }:
                 return actual in expected
-                break
             default:
                 logger.printWarning("Library Validator: Not sure how to handle value ${expected} with class ${expected.class}")
                 return true
-                break
         }
     }
-
 
     static class LibraryProviderDescriptor extends Descriptor<LibraryProvider> {}
 

@@ -15,18 +15,17 @@
 */
 package org.boozallen.plugins.jte.init.primitives.hooks
 
-import java.lang.annotation.Retention
-
 import static java.lang.annotation.RetentionPolicy.RUNTIME
+import java.lang.annotation.Retention
 
 /*
  Will get triggered after every StepWrapper execution and
  at the end of the pipeline template execution regardless
  of build status
- TODO:
- maybe enhance to also after every Stage?
  */
 @Retention(RUNTIME)
 @interface Notify{
+
     Class value() default { true }
+
 }

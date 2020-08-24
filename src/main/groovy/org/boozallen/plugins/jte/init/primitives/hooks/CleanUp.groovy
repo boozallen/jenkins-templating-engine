@@ -15,17 +15,16 @@
 */
 package org.boozallen.plugins.jte.init.primitives.hooks
 
-import java.lang.annotation.Retention
-
 import static java.lang.annotation.RetentionPolicy.RUNTIME
+import java.lang.annotation.Retention
 
 /*
  Will get triggered at the end of a pipeline template
  execution regardless of build status
- TODO:
- maybe enhance to also after every Stage?
  */
 @Retention(RUNTIME)
 @interface CleanUp{
+
     Class value() default { true }
+
 }

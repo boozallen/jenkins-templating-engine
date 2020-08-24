@@ -24,17 +24,18 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 @Extension class ApplicationEnvironmentInjector extends TemplatePrimitiveInjector {
 
+    @SuppressWarnings(['UnusedMethodParameter', 'NoDef'])
     static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
-        Class ApplicationEnvironment = getPrimitiveClass()
+        Class appEnvClass = getPrimitiveClass()
         ArrayList createdEnvs = []
         config.getConfig().application_environments.each{ name, appEnvConfig ->
-            def env = ApplicationEnvironment.newInstance(name, appEnvConfig)
+            def env = appEnvClass.newInstance(name, appEnvConfig)
             createdEnvs << env
             binding.setVariable(name, env)
         }
         createdEnvs.eachWithIndex{ env, index ->
             def previous = index ? createdEnvs[index - 1] : null
-            def next = (index != (createdEnvs.size() - 1)) ? createdEnvs[index + 1] : null
+            def next = (index == (createdEnvs.size() - 1)) ? null : createdEnvs[index + 1]
             env.setPrevious(previous)
             env.setNext(next)
         }
@@ -46,4 +47,5 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
         String classText = uberClassLoader.loadClass(self).getResource("ApplicationEnvironment.groovy").text
         return TemplateScriptEngine.parseClass(classText)
     }
+
 }

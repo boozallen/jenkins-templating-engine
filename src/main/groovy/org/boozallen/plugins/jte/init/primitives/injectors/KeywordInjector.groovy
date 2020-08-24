@@ -23,10 +23,12 @@ import org.boozallen.plugins.jte.util.TemplateScriptEngine
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 @Extension class KeywordInjector extends TemplatePrimitiveInjector {
+
+    @SuppressWarnings('UnusedMethodParameter')
     static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
-        Class Keyword = getPrimitiveClass()
+        Class keywordClass = getPrimitiveClass()
         config.getConfig().keywords.each{ key, value ->
-            binding.setVariable(key, Keyword.newInstance(var_name: key, value: value))
+            binding.setVariable(key, keywordClass.newInstance(var_name: key, value: value))
         }
     }
 
@@ -36,4 +38,5 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
         String classText = uberClassLoader.loadClass(self).getResource("Keyword.groovy").text
         return TemplateScriptEngine.parseClass(classText)
     }
+
 }

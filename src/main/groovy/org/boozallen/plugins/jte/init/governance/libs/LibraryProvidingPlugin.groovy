@@ -21,10 +21,12 @@ import hudson.model.Descriptor
 import jenkins.model.Jenkins
 
 abstract class LibraryProvidingPlugin extends AbstractDescribableImpl<LibraryProvidingPlugin>{
+
     static class LibraryProvidingPluginDescriptor extends Descriptor<LibraryProvidingPlugin> {
         String getDisplayName(){
             PluginWrapper plugin = Jenkins.get().getPluginManager().whichPlugin(this.getClass())
             return plugin.getDisplayName()
         }
     }
+
 }

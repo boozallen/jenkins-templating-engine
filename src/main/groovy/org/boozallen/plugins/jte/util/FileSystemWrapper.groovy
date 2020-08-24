@@ -19,8 +19,11 @@ import hudson.model.ItemGroup
 import hudson.model.TaskListener
 import hudson.scm.SCM
 import jenkins.branch.Branch
-import jenkins.scm.api.*
-import org.boozallen.plugins.jte.util.TemplateLogger
+import jenkins.scm.api.SCMFile
+import jenkins.scm.api.SCMFileSystem
+import jenkins.scm.api.SCMHead
+import jenkins.scm.api.SCMRevision
+import jenkins.scm.api.SCMSource
 import org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
@@ -29,12 +32,11 @@ import org.jenkinsci.plugins.workflow.multibranch.BranchJobProperty
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 
 class FileSystemWrapper {
+
     SCM scm
     SCMFileSystem fs
     String scmKey
     FlowExecutionOwner owner
-
-    FileSystemWrapper(){}
 
     static FileSystemWrapper createFromSCM(FlowExecutionOwner owner, SCM scm){
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
@@ -54,6 +56,7 @@ class FileSystemWrapper {
         if ignoreMissing = true, missing files arent logged.
         returns null if file not present
     */
+    @SuppressWarnings('ReturnNullFromCatchBlock')
     String getFileContents(String filePath, String loggingDescription = null, Boolean logMissingFile = true) {
         if (!fs) {
             return null
@@ -89,7 +92,7 @@ class FileSystemWrapper {
             }
 
             return f.contentAsString()
-        } catch(java.io.FileNotFoundException fne){
+        } catch(FileNotFoundException ignored){
             if (logMissingFile) {
                 ArrayList msg = [
                     "${filePath} threw FileNotFoundException.",
@@ -102,10 +105,9 @@ class FileSystemWrapper {
         finally {
             fs.close()
         }
-
     }
 
-    def fsFromSCM(SCM scm){
+    List<?> fsFromSCM(SCM scm){
         WorkflowJob job = owner.run().getParent()
         if(!scm || !job){
             return [null, null]
@@ -113,9 +115,9 @@ class FileSystemWrapper {
 
         try{
             scmKey = scm.getKey()
-            fs = SCMFileSystem.of(job,scm)
+            fs = SCMFileSystem.of(job, scm)
             return [fs, scmKey]
-        }catch(any){
+        } catch(any){
             new TemplateLogger(owner.getListener()).printWarning(any.toString())
             return [null, null]
         }
@@ -125,14 +127,14 @@ class FileSystemWrapper {
         return[0]: SCMFileSystem
         return[1]: String: key from scm
     */
-    def fsFrom(WorkflowJob job){
+    List<?> fsFrom(WorkflowJob job){
         ItemGroup<?> parent = job.getParent()
         TaskListener listener = owner.getListener()
 
         try {
             if (parent instanceof WorkflowMultiBranchProject) {
                 // ensure branch is defined
-                BranchJobProperty property = job.getProperty(BranchJobProperty.class)
+                BranchJobProperty property = job.getProperty(BranchJobProperty)
                 if (!property) {
                     throw new JTEException("inappropriate context") // removed IllegalStateEx as an example
                 }
@@ -154,25 +156,22 @@ class FileSystemWrapper {
                     SCMRevision rev = scmSource.getTrustedRevision(tip, listener)
                     fs = SCMFileSystem.of(scmSource, head, rev)
                     return [fs, scmKey]
-                } else {
-                    SCM scm = branch.getScm()
-                    fs = SCMFileSystem.of(job, scm)
-                    return [fs, scmKey]
                 }
-            } else {
-                FlowDefinition definition = job.getDefinition()
-                if (definition instanceof CpsScmFlowDefinition) {
-                    SCM scm = definition.getScm()
-                    scmKey = scm.getKey()
-                    fs = SCMFileSystem.of(job, scm)
-                    return [fs, scmKey]
-                } else {
-                    return [fs, scmKey]
-                }
+                SCM scm = branch.getScm()
+                fs = SCMFileSystem.of(job, scm)
+                return [fs, scmKey]
             }
-        }catch(JTEException jteex){//throw our exception
+            FlowDefinition definition = job.getDefinition()
+            if (definition instanceof CpsScmFlowDefinition) {
+                SCM scm = definition.getScm()
+                scmKey = scm.getKey()
+                fs = SCMFileSystem.of(job, scm)
+                return [fs, scmKey]
+            }
+            return [fs, scmKey]
+        } catch(JTEException jteex){ //throw our exception
             throw (jteex.cause ?: jteex)
-        }catch(any){// ignore but print every other exception
+        } catch(any){ // ignore but print every other exception
             new TemplateLogger(listener).printWarning(any.toString())
         }
 

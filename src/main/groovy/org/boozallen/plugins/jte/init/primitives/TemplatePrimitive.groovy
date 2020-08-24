@@ -14,6 +14,7 @@
     limitations under the License.
 */
 package org.boozallen.plugins.jte.init.primitives
+
 /*
  A base class for objects that will be stored in the
  script binding.  Extending this base class will protect
@@ -21,9 +22,13 @@ package org.boozallen.plugins.jte.init.primitives
  by library developers, or by pipeline templates.
  */
 abstract class TemplatePrimitive implements Serializable{
+
+    private static final long serialVersionUID = 1L
+
     // gets called during template initialization
     abstract void throwPreLockException()
 
     //gets called after template initialization
     abstract void throwPostLockException()
+
 }

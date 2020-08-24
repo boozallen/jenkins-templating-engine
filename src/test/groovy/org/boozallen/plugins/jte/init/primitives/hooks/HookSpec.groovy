@@ -1,3 +1,18 @@
+/*
+    Copyright 2018 Booz Allen Hamilton
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 package org.boozallen.plugins.jte.init.primitives.hooks
 
 import hudson.model.Result
@@ -14,7 +29,7 @@ class HookSpec extends Specification{
     @Rule JenkinsRule jenkins = new JenkinsRule()
 
     def "Hooks execute in order"(){
-        given: 
+        given:
         def run
         TestLibraryProvider libProvider = new TestLibraryProvider()
         libProvider.addStep("hooksLibrary", "theHooks", """
@@ -38,10 +53,10 @@ class HookSpec extends Specification{
             template: "aStep()"
         )
 
-        when: 
+        when:
         run = job.scheduleBuild2(0).get()
 
-        then: 
+        then:
         jenkins.assertBuildStatusSuccess(run)
         TestUtil.assertOrder(jenkins.getLog(run), [
             "Validate Hook",
@@ -50,13 +65,13 @@ class HookSpec extends Specification{
             "the actual step",
             "AfterStep Hook",
             "Notify Hook",
-            "CleanUp Hook", 
+            "CleanUp Hook",
             "Notify Hook"
         ])
     }
 
     def "Hooks log their execution"(){
-        given: 
+        given:
         def run
         TestLibraryProvider libProvider = new TestLibraryProvider()
         libProvider.addStep("hooksLibrary", "theHooks", """
@@ -80,10 +95,10 @@ class HookSpec extends Specification{
             template: "aStep()"
         )
 
-        when: 
+        when:
         run = job.scheduleBuild2(0).get()
 
-        then: 
+        then:
         jenkins.assertBuildStatusSuccess(run)
         jenkins.assertLogContains("[JTE][@Validate - hooksLibrary/theHooks.validate]", run)
         jenkins.assertLogContains("[JTE][@Init - hooksLibrary/theHooks.init]", run)
@@ -95,7 +110,7 @@ class HookSpec extends Specification{
     }
 
     def "Hook context variable resolvable inside hook closure parameter"(){
-        given: 
+        given:
         def run
         TestLibraryProvider libProvider = new TestLibraryProvider()
         libProvider.addStep("hooksLibrary", "theHooks", """
@@ -127,18 +142,17 @@ class HookSpec extends Specification{
             template: "foo(); bar()"
         )
 
-        when: 
+        when:
         run = job.scheduleBuild2(0).get()
 
-        then: 
+        then:
         jenkins.assertBuildStatusSuccess(run)
         jenkins.assertLogContains("running before foo", run)
         jenkins.assertLogNotContains("running before bar", run)
-        
     }
 
     def "library config variable resolvable inside hook closure parameter"(){
-        given: 
+        given:
         def run
         TestLibraryProvider libProvider = new TestLibraryProvider()
         libProvider.addStep("hooksLibrary", "theHooks", """
@@ -172,17 +186,17 @@ class HookSpec extends Specification{
             template: "foo(); bar()"
         )
 
-        when: 
+        when:
         run = job.scheduleBuild2(0).get()
 
-        then: 
+        then:
         jenkins.assertBuildStatusSuccess(run)
         jenkins.assertLogContains("running before foo", run)
-        jenkins.assertLogNotContains("running before bar", run)        
+        jenkins.assertLogNotContains("running before bar", run)
     }
 
     def "Hook closure params can't invoke other steps"(){
-        given: 
+        given:
         def run
         TestLibraryProvider libProvider = new TestLibraryProvider()
         libProvider.addStep("hooksLibrary", "theHooks", """
@@ -214,17 +228,17 @@ class HookSpec extends Specification{
             template: "foo()"
         )
 
-        when: 
+        when:
         run = job.scheduleBuild2(0).get()
 
-        then: 
+        then:
         jenkins.assertBuildStatus(Result.FAILURE, run)
         jenkins.assertLogNotContains("step: bar", run)
     }
 
     @Unroll
     def "Multiple #annotation hooks are executed"(){
-        given: 
+        given:
         def run
         TestLibraryProvider libProvider = new TestLibraryProvider()
         libProvider.addStep("hooksLibrary", "theHooks", """
@@ -244,21 +258,21 @@ class HookSpec extends Specification{
             template: "theActualStep()"
         )
 
-        when: 
+        when:
         run = job.scheduleBuild2(0).get()
 
-        then: 
+        then:
         jenkins.assertBuildStatusSuccess(run)
         jenkins.assertLogContains("step: foo", run)
         jenkins.assertLogContains("step: bar", run)
 
-        where: 
+        where:
         annotation << [ "@Validate", "@Init", "@BeforeStep", "@AfterStep", "@Notify", "@CleanUp"]
     }
 
     @Unroll
     def "#annotation adherest to conditional execution when closure param is { #shouldRun }"(){
-        given: 
+        given:
         def run
         TestLibraryProvider libProvider = new TestLibraryProvider()
         libProvider.addStep("hooksLibrary", "theHooks", """
@@ -277,18 +291,18 @@ class HookSpec extends Specification{
             template: "theActualStep()"
         )
 
-        when: 
+        when:
         run = job.scheduleBuild2(0).get()
 
-        then: 
+        then:
         jenkins.assertBuildStatusSuccess(run)
         if(shouldRun){
             jenkins.assertLogContains("step: foo", run)
-        } else { 
+        } else {
             jenkins.assertLogNotContains("step: foo", run)
         }
 
-        where: 
+        where:
         annotation    | shouldRun
         "@Validate"   | true
         "@Validate"   | false
@@ -303,4 +317,5 @@ class HookSpec extends Specification{
         "@CleanUp"    | true
         "@CleanUp"    | false
     }
+
 }

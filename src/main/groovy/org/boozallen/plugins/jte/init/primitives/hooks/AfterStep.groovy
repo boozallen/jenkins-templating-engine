@@ -15,16 +15,15 @@
 */
 package org.boozallen.plugins.jte.init.primitives.hooks
 
-import java.lang.annotation.Retention
-
 import static java.lang.annotation.RetentionPolicy.RUNTIME
+import java.lang.annotation.Retention
 
 /*
  Will get triggered after every StepWrapper execution
- TODO:
- maybe enhance to also after every Stage?
  */
 @Retention(RUNTIME)
 @interface AfterStep{
+
     Class value() default { true }
+
 }

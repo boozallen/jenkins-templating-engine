@@ -26,7 +26,8 @@ import org.kohsuke.stapler.DataBoundConstructor
     job hierarchy
 */
 class TemplateConfigFolderProperty extends AbstractFolderProperty<AbstractFolder<?>> {
-    private GovernanceTier tier
+
+    private final GovernanceTier tier
 
     @DataBoundConstructor
     TemplateConfigFolderProperty(GovernanceTier tier){

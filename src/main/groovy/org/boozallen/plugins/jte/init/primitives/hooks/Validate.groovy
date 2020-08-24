@@ -15,9 +15,8 @@
 */
 package org.boozallen.plugins.jte.init.primitives.hooks
 
-import java.lang.annotation.Retention
-
 import static java.lang.annotation.RetentionPolicy.RUNTIME
+import java.lang.annotation.Retention
 
 /*
  Will get triggered after the code has been checked out
@@ -26,5 +25,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME
 
 @Retention(RUNTIME)
 @interface Validate {
+
     Class value() default { true }
+
 }

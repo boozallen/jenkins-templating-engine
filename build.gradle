@@ -3,6 +3,7 @@ plugins {
   id 'org.jenkins-ci.jpi' version '0.39.0'
   id 'jacoco'
   id "com.diffplug.gradle.spotless" version "3.29.0"
+  id 'codenarc'
 }
 
 repositories {
@@ -82,4 +83,18 @@ spotless{
         endWithNewline()
         licenseHeaderFile 'groovy.header'
     }
+}
+
+codenarc {
+    toolVersion = '1.6.1'
+    configFile = file('./config/codenarc/rules.groovy')
+}
+
+codenarcTest{
+    configFile = file('./config/codenarc/rulesTest.groovy')
+}
+
+task codenarc {
+    description = "Evaluate code against CodeNarc"
+    dependsOn = [ 'codenarcMain', 'codenarcTest' ]
 }

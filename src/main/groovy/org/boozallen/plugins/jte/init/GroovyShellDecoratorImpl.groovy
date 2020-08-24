@@ -15,7 +15,6 @@
 */
 package org.boozallen.plugins.jte.init
 
-
 import hudson.Extension
 import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.hooks.CleanUp
@@ -41,7 +40,6 @@ import org.jenkinsci.plugins.workflow.flow.FlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
-
 import javax.annotation.CheckForNull
 import java.lang.reflect.Field
 
@@ -60,7 +58,7 @@ class GroovyShellDecoratorImpl extends GroovyShellDecorator {
      */
     @Override
     void configureShell(@CheckForNull CpsFlowExecution context, GroovyShell shell) {
-        if(!context){
+        if (!context) {
             return
         }
         FlowExecutionOwner owner = context.getOwner()
@@ -68,7 +66,7 @@ class GroovyShellDecoratorImpl extends GroovyShellDecorator {
         PipelineDecorator pipelineDecorator = run.getAction(PipelineDecorator)
         if(pipelineDecorator){
             TemplateBinding binding = pipelineDecorator.getBinding()
-            Field shellBinding = GroovyShell.class.getDeclaredField("context")
+            Field shellBinding = GroovyShell.getDeclaredField("context")
             shellBinding.setAccessible(true)
             shellBinding.set(shell, binding)
         }
@@ -95,9 +93,12 @@ class GroovyShellDecoratorImpl extends GroovyShellDecorator {
         cc.addCompilationCustomizers(ic)
 
         if(isFromJTE(execution)){
-            cc.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.SEMANTIC_ANALYSIS){
+            cc.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.SEMANTIC_ANALYSIS) {
+
                 @Override
-                void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+                void call(SourceUnit source,
+                          GeneratorContext context,
+                          ClassNode classNode) throws CompilationFailedException {
                     if(!isTemplate(classNode)){
                         return
                     }
@@ -118,12 +119,12 @@ class GroovyShellDecoratorImpl extends GroovyShellDecorator {
                             Hooks.invoke(Validate)
                             Hooks.invoke(Init)
                             // <-- this is where the template AST statements get injected
-                        }finally{
+                        } finally{
                             Hooks.invoke(CleanUp)
                             Hooks.invoke(Notify)
                         }
                     }).first()
-                    
+
                     wrapper.getStatements().first().getTryStatement().addStatements(statements)
                     statements.clear()
                     statements.add(0, wrapper)
@@ -142,7 +143,7 @@ class GroovyShellDecoratorImpl extends GroovyShellDecorator {
                     https://github.com/jenkinsci/workflow-cps-plugin/blob/workflow-cps-2.80/src/main/java/org/jenkinsci/plugins/workflow/cps/CpsScript.java#L178-L182
                  */
                 boolean isTemplate(ClassNode classNode){
-                    return classNode.getName().equals("WorkflowScript")
+                    return classNode.getName() == "WorkflowScript"
                 }
             })
         }
@@ -159,4 +160,5 @@ class GroovyShellDecoratorImpl extends GroovyShellDecorator {
         FlowDefinition definition = job.getDefinition()
         return (definition in TemplateFlowDefinition)
     }
+
 }

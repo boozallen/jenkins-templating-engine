@@ -34,19 +34,25 @@ class LibraryLoader extends TemplatePrimitiveInjector {
         // 1. Inject steps from loaded libraries
         WorkflowJob job = flowOwner.run().getParent()
         List<GovernanceTier> tiers = GovernanceTier.getHierarchy(job)
-        List<LibrarySource> libs = tiers.collect{ it.getLibrarySources() }.flatten().minus(null)
-        List<LibraryProvider> providers = libs.collect{ it.getLibraryProvider() }.flatten().minus(null)
+        List<LibrarySource> libs = tiers.collect{ tier ->
+            tier.getLibrarySources()
+        }.flatten() - null
+        List<LibraryProvider> providers = libs.collect{ libSource ->
+            libSource.getLibraryProvider()
+        } - null
 
         ArrayList libConfigErrors = []
         config.getConfig().libraries.each{ libName, libConfig ->
-            LibraryProvider p = providers.find{ it.hasLibrary(flowOwner, libName) }
-            if (!p){
-                libConfigErrors << "Library ${libName} Not Found."
-            } else {
+            LibraryProvider p = providers.find{ provider ->
+                provider.hasLibrary(flowOwner, libName)
+            }
+            if (p){
                 libConfigErrors << p.loadLibrary(flowOwner, binding, libName, libConfig)
+            } else {
+                libConfigErrors << "Library ${libName} Not Found."
             }
         }
-        libConfigErrors = libConfigErrors.flatten().minus(null)
+        libConfigErrors = libConfigErrors.flatten() - null
 
         TemplateLogger logger = new TemplateLogger(flowOwner.getListener())
 

@@ -23,10 +23,11 @@ import jenkins.security.CustomClassFilter
 */
 @Extension
 class CustomClassFilterImpl implements CustomClassFilter {
+
+    @SuppressWarnings('BooleanMethodReturnsNull')
     @Override Boolean permits(Class<?> c){
-        if(c.getName().startsWith("org.boozallen.plugins.jte") || c.getName().startsWith("WorkflowScript")){
-            return true
-        }
-        return null
+        List<String> permitted = [ "org.boozallen.plugins.jte", "WorkflowScript" ]
+        return permitted.find{ p -> c.getName().startsWith(p) } ? true : null
     }
+
 }

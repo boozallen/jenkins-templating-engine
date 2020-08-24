@@ -23,6 +23,9 @@ package org.boozallen.plugins.jte.init.primitives.hooks
  args: any arguments passed to the step triggering the hook
  */
 class HookContext implements Serializable{
+
+    private static final long serialVersionUID = 1L
     String library
     String step
+
 }

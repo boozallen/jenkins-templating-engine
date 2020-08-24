@@ -18,6 +18,9 @@ package org.boozallen.plugins.jte.util
 import org.jenkinsci.plugins.workflow.cps.CpsGroovyShellFactory
 
 class TemplateScriptEngine implements Serializable{
+
+    private static final long serialVersionUID = 1L
+
     static Class parseClass(String classText){
         GroovyShell shell = new CpsGroovyShellFactory(null).forTrusted().build()
         GroovyClassLoader classLoader = shell.getClassLoader()
@@ -39,4 +42,5 @@ class TemplateScriptEngine implements Serializable{
         }
         return returnClass
     }
+
 }

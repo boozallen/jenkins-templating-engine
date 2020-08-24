@@ -42,4 +42,5 @@ class MultibranchTemplateFlowDefinition extends TemplateFlowDefinition {
             return true
         }
     }
+
 }

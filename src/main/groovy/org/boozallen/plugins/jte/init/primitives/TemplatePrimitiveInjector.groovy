@@ -24,9 +24,11 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 /**
  * Classes wishing to parse the aggregated pipeline configuration and create
  * a TemplatePrimitive to inject into the TemplateBinding should extend this
- * class to become discoverable during initalization by the PipelineDecorator
+ * class to become discoverable during initialization by the PipelineDecorator
  */
+@SuppressWarnings(['EmptyMethodInAbstractClass', 'UnusedMethodParameter'])
 abstract class TemplatePrimitiveInjector implements ExtensionPoint{
+
     // Optional. delegate injecting template primitives into the binding to the specific
     // implementations of TemplatePrimitive
     static void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){}
@@ -38,4 +40,5 @@ abstract class TemplatePrimitiveInjector implements ExtensionPoint{
     static ExtensionList<TemplatePrimitiveInjector> all(){
         return Jenkins.get().getExtensionList(TemplatePrimitiveInjector)
     }
+
 }

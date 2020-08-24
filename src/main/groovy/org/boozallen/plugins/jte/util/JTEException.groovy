@@ -16,15 +16,17 @@
 package org.boozallen.plugins.jte.util
 
 class JTEException extends Exception {
-  JTEException(String message){
-    super(message)
-  }
 
-  JTEException(String message, Throwable t){
-    super(message, t)
-  }
+    JTEException(String message){
+        super(message)
+    }
 
-  JTEException(Throwable t){
-    super(t)
-  }
+    JTEException(String message, Throwable t){
+        super(message, t)
+    }
+
+    JTEException(Throwable t){
+        super(t)
+    }
+
 }

@@ -24,84 +24,84 @@ import spock.lang.Specification
 class ConsolePipelineConfigurationProviderSpec extends Specification{
 
     def "when pipeline configuration is provided getConfig returns correct config object"(){
-        given: 
-        List<ConsolePipelineTemplate> pipelineCatalog = [] 
+        given:
+        List<ConsolePipelineTemplate> pipelineCatalog = []
         def c = new ConsolePipelineConfigurationProvider(true, "a = 1", false, null, pipelineCatalog)
 
         // mocks necessary to parse config
         FlowExecutionOwner mockOwner = GroovyMock{
             run() >> GroovyMock(WorkflowRun)
-            asBoolean() >> true 
+            asBoolean() >> true
         }
 
-        EnvActionImpl env = Mock() 
-        env.getProperty("someField") >> "envProperty" 
+        EnvActionImpl env = Mock()
+        env.getProperty("someField") >> "envProperty"
 
         GroovySpy(EnvActionImpl, global:true)
-        EnvActionImpl.forRun(_) >> env 
+        EnvActionImpl.forRun(_) >> env
 
-        when: 
+        when:
         PipelineConfigurationObject conf = c.getConfig(mockOwner)
 
-        then: 
+        then:
         conf.getConfig() == [ a: 1 ]
     }
 
     def "when pipeline configuration is not provided getConfig returns null"(){
-        given: 
-        List<ConsolePipelineTemplate> pipelineCatalog = [] 
+        given:
+        List<ConsolePipelineTemplate> pipelineCatalog = []
         def c = new ConsolePipelineConfigurationProvider(false, null, false, null, pipelineCatalog)
 
         // mocks necessary to parse config
         FlowExecutionOwner mockOwner = GroovyMock{
             run() >> GroovyMock(WorkflowRun)
-            asBoolean() >> true 
+            asBoolean() >> true
         }
 
-        EnvActionImpl env = Mock() 
-        env.getProperty("someField") >> "envProperty" 
+        EnvActionImpl env = Mock()
+        env.getProperty("someField") >> "envProperty"
 
         GroovySpy(EnvActionImpl, global:true)
-        EnvActionImpl.forRun(_) >> env 
+        EnvActionImpl.forRun(_) >> env
 
-        when: 
+        when:
         PipelineConfigurationObject conf = c.getConfig(mockOwner)
 
-        then: 
+        then:
         conf == null
     }
 
     def "When Jenkinsfile is provided, getJenkinsfile returns Jenkinsfile"(){
-        given: 
-        List<ConsolePipelineTemplate> pipelineCatalog = [] 
+        given:
+        List<ConsolePipelineTemplate> pipelineCatalog = []
         def c = new ConsolePipelineConfigurationProvider(false, null, true, "default jenkinsfile", pipelineCatalog)
 
-        when: 
+        when:
         String jenkinsfile = c.getJenkinsfile()
 
-        then: 
+        then:
         jenkinsfile == "default jenkinsfile"
     }
 
     def "fetch nonexistent named template returns null"(){
-        given: 
-        List<ConsolePipelineTemplate> pipelineCatalog = [] 
+        given:
+        List<ConsolePipelineTemplate> pipelineCatalog = []
         def c = new ConsolePipelineConfigurationProvider(false, null, false, null, pipelineCatalog)
 
         FlowExecutionOwner mockOwner = GroovyMock{
             run() >> GroovyMock(WorkflowRun)
-            asBoolean() >> true 
+            asBoolean() >> true
         }
 
-        when: 
+        when:
         String namedTemplate = c.getTemplate(mockOwner, "nonexistent")
 
-        then: 
-        namedTemplate == null 
+        then:
+        namedTemplate == null
     }
 
     def "fetch named template returns correct template"(){
-        given: 
+        given:
         List<ConsolePipelineTemplate> pipelineCatalog = [
             new ConsolePipelineTemplate(
                 name: "myCoolTemplate",
@@ -112,13 +112,13 @@ class ConsolePipelineConfigurationProviderSpec extends Specification{
 
         FlowExecutionOwner mockOwner = GroovyMock{
             run() >> GroovyMock(WorkflowRun)
-            asBoolean() >> true 
+            asBoolean() >> true
         }
 
-        when: 
+        when:
         String namedTemplate = c.getTemplate(mockOwner, "myCoolTemplate")
 
-        then: 
+        then:
         namedTemplate == "named template!"
     }
 

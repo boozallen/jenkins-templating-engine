@@ -26,14 +26,15 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.kohsuke.stapler.DataBoundConstructor
 
 import java.nio.charset.StandardCharsets
+import java.security.CodeSource
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
 class PluginLibraryProvider extends LibraryProvider{
 
-    public LibraryProvidingPlugin plugin
-    public HashMap libraries = [:]
+    private final LibraryProvidingPlugin plugin
+    private final HashMap libraries = [:]
 
     @DataBoundConstructor PluginLibraryProvider(LibraryProvidingPlugin plugin){
         this.plugin = plugin
@@ -48,18 +49,18 @@ class PluginLibraryProvider extends LibraryProvider{
     */
     void initialize(){
         // initialize libraries
-        def src = plugin.getClass().getProtectionDomain().getCodeSource()
+        CodeSource src = plugin.getClass().getProtectionDomain().getCodeSource()
         URL jar = src.getLocation()
         ZipFile zipFile = new ZipFile(new File(jar.toURI()))
         ZipInputStream zipStream = new ZipInputStream(jar.openStream())
         ZipEntry zipEntry
         while( (zipEntry = zipStream.getNextEntry()) != null ){
-            String path = zipEntry.getName().toString()
+            String path = zipEntry.getName()
             ArrayList parts = path.split("/")
             if(path.startsWith("libraries/") && parts.size() >= 3){
-                String libName = parts.getAt(1)
+                String libName = parts[1]
                 // create new library entry if we haven't seen this before
-                if(!libraries[libName]){
+                if(!libraries.containsKey(libName)){
                     libraries[libName] = [
                         steps: [:],
                         resources: [:],
@@ -67,7 +68,7 @@ class PluginLibraryProvider extends LibraryProvider{
                     ]
                 }
 
-                String thing = parts.getAt(2)
+                String thing = parts[2]
                 if(thing == CONFIG_FILE){
                     libraries[libName] = getFileContents(zipFile, zipEntry)
                 } else if (thing in [ "steps", "resources"]){
@@ -80,23 +81,24 @@ class PluginLibraryProvider extends LibraryProvider{
 
     String getFileContents(ZipFile z, ZipEntry e){
         InputStream stream = z.getInputStream(e)
-        StringBuilder stringBuilder = new StringBuilder()
         ArrayList lines = []
         try{
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))
             String line
-            while ((line = bufferedReader.readLine()) != null) {
+            while((line = bufferedReader.readLine()) != null){
                 lines << line
             }
-        }catch(any){}
+        } catch(ignored){}
 
         return lines.join("\n")
     }
 
+    @Override
     Boolean hasLibrary(FlowExecutionOwner flowOwner, String libName){
         return libName in libraries.keySet()
     }
 
+    @Override
     List loadLibrary(FlowExecutionOwner flowOwner, Binding binding, String libName, Map libConfig){
         TemplateLogger logger = new TemplateLogger(flowOwner.getListener())
 
@@ -111,9 +113,9 @@ class PluginLibraryProvider extends LibraryProvider{
         if(libraries[libName]?.config){
             libConfigErrors = doLibraryConfigValidation(flowOwner, libraries[libName].config, libConfig)
             if(libConfigErrors){
-                return [ "${libName}:" ] + libConfigErrors.collect{ " - ${it}" }
+                return [ "${libName}:" ] + libConfigErrors.collect{ error -> " - ${error}" }
             }
-        }else{
+        } else{
             logger.printWarning("Library ${libName} does not have a configuration file.")
         }
 
@@ -130,8 +132,12 @@ class PluginLibraryProvider extends LibraryProvider{
         StepWrapperFactory stepFactory = new StepWrapperFactory(flowOwner)
         libraries[libName].steps.each{ stepPath, stepContents ->
             String stepName = stepPath.split("/").last() - ".groovy"
-            def s = stepFactory.createFromFilePath(rootDir.child(stepPath), binding, libName, libConfig)
-            binding.setVariable(stepName, s)
+            binding.setVariable(stepName, stepFactory.createFromFilePath(
+                rootDir.child(stepPath),
+                binding,
+                libName,
+                libConfig
+            ))
         }
         return libConfigErrors
     }
@@ -148,12 +154,13 @@ class PluginLibraryProvider extends LibraryProvider{
 
     @Extension
     static class DescriptorImpl extends LibraryProvider.LibraryProviderDescriptor{
-        String getDisplayName(){
-            return "From a Library Providing Plugin"
-        }
 
         static List<LibraryProvidingPlugin> getLibraryProvidingPlugins(){
             return Jenkins.get().getExtensionList(LibraryProvidingPlugin.LibraryProvidingPluginDescriptor)
+        }
+
+        String getDisplayName(){
+            return "From a Library Providing Plugin"
         }
     }
 

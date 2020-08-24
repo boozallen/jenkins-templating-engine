@@ -1,16 +1,18 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-       http://www.apache.org/licenses/LICENSE-2.0
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+    Copyright 2018 Booz Allen Hamilton
 
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 package org.boozallen.plugins.jte.init.primitives.injectors
 
 import hudson.model.Result
@@ -49,7 +51,7 @@ class StageSpec extends Specification{
     def "validate stage executes single step"(){
         given:
         def run
-        WorkflowJob job = TestUtil.createAdHoc(jenkins, 
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
             config: """
             libraries{
                 gradle
@@ -64,12 +66,12 @@ class StageSpec extends Specification{
             template: "ci()"
         )
 
-        when: 
+        when:
         run = job.scheduleBuild2(0).get()
 
         then:
         jenkins.assertBuildStatusSuccess(run)
-        jenkins.assertLogContains("build step from test gradle library", run) 
+        jenkins.assertLogContains("build step from test gradle library", run)
     }
 
     def "validate stage logs its entrypoint"(){
@@ -90,7 +92,7 @@ class StageSpec extends Specification{
         )
 
         expect:
-        jenkins.assertLogContains("[Stage - ci]", job.scheduleBuild2(0).get()) 
+        jenkins.assertLogContains("[Stage - ci]", job.scheduleBuild2(0).get())
     }
 
     def "validate stage executes multiple steps"(){
@@ -112,7 +114,7 @@ class StageSpec extends Specification{
             template: "ci()"
         )
 
-        when: 
+        when:
         run = job.scheduleBuild2(0).get()
 
         then:
@@ -141,12 +143,12 @@ class StageSpec extends Specification{
             template: 'ci(x: "foo")'
         )
 
-        when: 
+        when:
         run = job.scheduleBuild2(0).get()
 
         then:
         jenkins.assertBuildStatusSuccess(run)
-        jenkins.assertLogContains("x=foo", run) 
+        jenkins.assertLogContains("x=foo", run)
     }
 
     def "validate override during initialization throws exception"(){
@@ -194,4 +196,5 @@ class StageSpec extends Specification{
         expect:
         jenkins.assertBuildStatus(Result.FAILURE, job.scheduleBuild2(0))
     }
+
 }

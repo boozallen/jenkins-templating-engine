@@ -21,29 +21,32 @@ import org.jenkinsci.plugins.workflow.cps.DSL
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 class TemplateBinding extends Binding implements Serializable{
-    public final String STEPS_VAR = "steps"
-    public Set<String> registry = new ArrayList()
+
+    private static final long serialVersionUID = 1L
+    private static final String STEPS = "steps"
+    @SuppressWarnings('PrivateFieldCouldBeFinal') // could be modified during pipeline execution
+    private Set<String> registry = []
     private Boolean locked = false
 
     TemplateBinding(FlowExecutionOwner owner){
-        setVariable(STEPS_VAR, new DSL(owner))
+        setVariable(STEPS, new DSL(owner))
     }
 
     void lock(){
         locked = true
     }
 
-    @Override
+    @Override @SuppressWarnings('NoDef')
     void setVariable(String name, Object value) {
         if (name in registry || ReservedVariableName.byName(name)){
             def thrower = ReservedVariableName.byName(name) ?: variables.get(name)
             if(!thrower){
                 throw new Exception("Something weird happened. Unable to determine source of binding collision.")
             }
-            if (!locked){
-                thrower.throwPreLockException()
-            }else{
+            if (locked){
                 thrower.throwPostLockException()
+            } else{
+                thrower.throwPreLockException()
             }
         }
         if (value in TemplatePrimitive){
@@ -53,35 +56,36 @@ class TemplateBinding extends Binding implements Serializable{
     }
 
     @Override
-    Object getVariable(String name){
-        if (!variables)
+    Object getVariable(String name) {
+        if (!variables) {
             throw new MissingPropertyException(name, this.getClass())
-
+        }
         Object result = variables.get(name)
 
-        if (!result && !variables.containsKey(name))
+        if (!result && !variables.containsKey(name)) {
             throw new MissingPropertyException(name, this.getClass())
+        }
 
-        if (result in TemplatePrimitive && InvokerHelper.getMetaClass(result).respondsTo(result, "getValue", (Object[]) null))
+        if (result in TemplatePrimitive && InvokerHelper.getMetaClass(result).respondsTo(result, "getValue", (Object[]) null)){
             result = result.getValue()
-
+        }
         return result
     }
 
     Boolean hasStep(String stepName){
         if (hasVariable(stepName)){
-            Class StepWrapper = StepWrapperFactory.getPrimitiveClass()
-            return getVariable(stepName).getClass().getName().equals(StepWrapper.getName())
-        } else{
-            return false
+            Class stepClass = StepWrapperFactory.getPrimitiveClass()
+            return getVariable(stepName).getClass().getName() == stepClass.getName()
         }
+        return false
     }
 
+    @SuppressWarnings(['NoDef', 'MethodReturnTypeRequired'])
     def getStep(String stepName){
         if (hasStep(stepName)){
             return getVariable(stepName)
-        } else {
-            throw new TemplateException("No step ${stepName} has been loaded")
         }
+        throw new TemplateException("No step ${stepName} has been loaded")
     }
+
 }

@@ -39,4 +39,5 @@ class SandboxWhitelist extends AbstractWhitelist {
     boolean permitsStaticMethod(Method method, Object[] args){
         return method.getDeclaringClass().getName() in permittedReceivers
     }
+
 }
