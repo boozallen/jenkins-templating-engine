@@ -76,17 +76,6 @@ jacocoTestReport {
     }
 }
 
-sourceSets{
-    main{
-        java{
-            srcDirs = [ ]
-        }
-        groovy{
-            srcDirs += [ "src/main/java" ]
-        }
-    }
-}
-
 spotless{
     groovy{
         target = fileTree("src/main/groovy") + fileTree(dir: "src/main/resources", include: "**/*.groovy")
@@ -114,4 +103,20 @@ codenarcTest{
 task codenarc {
     description = "Evaluate code against CodeNarc"
     dependsOn = [ 'codenarcMain', 'codenarcTest' ]
+}
+
+sourceSets {
+    main{
+        java{
+            srcDirs = []
+        }
+        groovy {
+            srcDirs = ["src/main/groovy", "src/main/java"]
+            exclude "**/package-info.groovy"
+        }
+    }
+}
+
+groovydoc{
+    source fileTree("src/main/groovy")
 }

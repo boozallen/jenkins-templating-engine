@@ -15,21 +15,21 @@
 */
 package org.boozallen.plugins.jte.init.primitives.injectors
 
-import org.boozallen.plugins.jte.init.dsl.TemplateConfigException
+import org.boozallen.plugins.jte.init.governance.config.dsl.TemplateConfigException
 import org.boozallen.plugins.jte.init.primitives.TemplateException
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitive
 
-/*
-    represents an immutable application environment.
-*/
-@SuppressWarnings(["PropertyName", "NoDef"])
+/**
+ * JTE primitive representing an application environment to capture environmental context
+ */
+@SuppressWarnings(["PropertyName", "FieldTypeRequired", "NoDef"])
 class ApplicationEnvironment extends TemplatePrimitive implements Serializable{
 
     private static final long serialVersionUID = 1L
     String varName
     String short_name
     String long_name
-    @SuppressWarnings("FieldTypeRequired") def config
+    def config
     ApplicationEnvironment previous
     ApplicationEnvironment next
 
@@ -53,7 +53,7 @@ class ApplicationEnvironment extends TemplatePrimitive implements Serializable{
             """.stripIndent())
         }
 
-        this.config = config - config.subMap(["short_name", "long_name"])
+        config = config - config.subMap(["short_name", "long_name"])
         /*
             TODO:
                 this makes it so that changing <inst>.config.whatever = <some value>

@@ -13,17 +13,11 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-package org.boozallen.plugins.jte.init.primitives.hooks
+package org.boozallen.plugins.jte.init.governance.config.dsl
 
-import static java.lang.annotation.RetentionPolicy.RUNTIME
-import java.lang.annotation.Retention
+import groovy.transform.InheritConstructors
 
 /**
- * Annotation marking a library step method to potentially execute after pipeline template execution
+ * thrown when there's an issue during pipeline configuration parsing
  */
-@Retention(RUNTIME)
-@interface CleanUp{
-
-    Class value() default { true }
-
-}
+@InheritConstructors class TemplateConfigException extends Exception{}

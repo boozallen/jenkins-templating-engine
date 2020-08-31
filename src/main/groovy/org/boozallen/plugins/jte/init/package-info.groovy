@@ -1,5 +1,5 @@
 /*
-    Copyright 2018 Booz Allen Hamilton
+    Copyright 2018-2020 Booz Allen Hamilton
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -13,17 +13,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-package org.boozallen.plugins.jte.init.primitives.hooks
-
-import static java.lang.annotation.RetentionPolicy.RUNTIME
-import java.lang.annotation.Retention
-
 /**
- * Annotation marking a library step method to potentially execute after pipeline template execution
+ * everything involved in initializing a pipeline prior to execution
  */
-@Retention(RUNTIME)
-@interface CleanUp{
-
-    Class value() default { true }
-
-}
+package org.boozallen.plugins.jte.init
