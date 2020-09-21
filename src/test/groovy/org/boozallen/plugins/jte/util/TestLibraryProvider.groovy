@@ -27,11 +27,13 @@ class TestLibraryProvider extends LibraryProvider{
     ArrayList<TestLibrary> libraries = []
 
     @SuppressWarnings('UnusedMethodParameter')
+    @Override
     Boolean hasLibrary(FlowExecutionOwner flowOwner, String libName){
         return getLibrary(libName) as boolean
     }
 
-    List loadLibrary(FlowExecutionOwner flowOwner, Binding binding, String libName, Map libConfig){
+    @Override
+    void loadLibrary(FlowExecutionOwner flowOwner, Binding binding, String libName, Map libConfig){
         FilePath buildRootDir = new FilePath(flowOwner.getRootDir())
         FilePath rootDir = buildRootDir.child("jte/${libName}")
         rootDir.mkdirs()
@@ -53,7 +55,11 @@ class TestLibraryProvider extends LibraryProvider{
                 binding.setVariable(name, s)
             }
         }
-        return []
+    }
+
+    @Override
+    String getLibrarySchema(FlowExecutionOwner flowOwner, String libName){
+        return hasLibrary(flowOwner, libName) ? getLibrary(libName).getConfig() : null
     }
 
     void addStep(String libName, String stepName, String stepText){
@@ -74,6 +80,15 @@ class TestLibraryProvider extends LibraryProvider{
         library.addResource(path, resourceText)
     }
 
+    void addConfig(String libName, String config){
+        TestLibrary library = getLibrary(libName)
+        if(!library){
+            library = new TestLibrary(name: libName)
+            libraries << library
+        }
+        library.addConfig(config)
+    }
+
     TestLibrary getLibrary(String libName){
         return libraries.find{ lib -> lib.name == libName }
     }
@@ -81,6 +96,7 @@ class TestLibraryProvider extends LibraryProvider{
     class TestLibrary {
 
         String name
+        String config
         LinkedHashMap steps = [:]
         LinkedHashMap resources = [:]
 
@@ -96,6 +112,10 @@ class TestLibraryProvider extends LibraryProvider{
                 throw new Exception("Test Library ${name} already has resource ${path}.")
             }
             resources[path] = text
+        }
+
+        void addConfig(String config){
+            this.config = config
         }
 
     }

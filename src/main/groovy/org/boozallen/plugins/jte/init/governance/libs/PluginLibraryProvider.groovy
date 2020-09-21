@@ -97,12 +97,17 @@ class PluginLibraryProvider extends LibraryProvider{
     }
 
     @Override
+    String getLibrarySchema(FlowExecutionOwner flowOwner, String libName){
+        return libraries[libName].config
+    }
+
+    @Override
     Boolean hasLibrary(FlowExecutionOwner flowOwner, String libName){
         return libName in libraries.keySet()
     }
 
     @Override
-    List loadLibrary(FlowExecutionOwner flowOwner, Binding binding, String libName, Map libConfig){
+    void loadLibrary(FlowExecutionOwner flowOwner, Binding binding, String libName, Map libConfig){
         TemplateLogger logger = new TemplateLogger(flowOwner.getListener())
 
         ArrayList msg = [
@@ -110,17 +115,6 @@ class PluginLibraryProvider extends LibraryProvider{
             "-- plugin: ${getPluginDisplayName() ?: "can't determine plugin"}"
         ]
         logger.print(msg.join("\n"))
-
-        // do library configuration
-        ArrayList libConfigErrors = []
-        if(libraries[libName]?.config){
-            libConfigErrors = doLibraryConfigValidation(flowOwner, libraries[libName].config, libConfig)
-            if(libConfigErrors){
-                return [ "${libName}:" ] + libConfigErrors.collect{ error -> " - ${error}" }
-            }
-        } else{
-            logger.printWarning("Library ${libName} does not have a configuration file.")
-        }
 
         // copy the library contents into the build dir
         FilePath buildRootDir = new FilePath(flowOwner.getRootDir())
@@ -142,7 +136,6 @@ class PluginLibraryProvider extends LibraryProvider{
                 libConfig
             ))
         }
-        return libConfigErrors
     }
 
     /*

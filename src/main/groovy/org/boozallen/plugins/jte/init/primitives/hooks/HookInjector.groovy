@@ -18,6 +18,7 @@ package org.boozallen.plugins.jte.init.primitives.hooks
 import hudson.Extension
 import jenkins.model.Jenkins
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
+import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
@@ -42,7 +43,7 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
     }
 
     @Override
-    void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
+    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
         Class hooksClass = getHooksClass()
         getAnnotatedMethodClass()
 

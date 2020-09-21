@@ -53,6 +53,7 @@ class ScmLibraryProvider extends LibraryProvider{
 
     SCM getScm(){ return scm }
 
+    @Override
     Boolean hasLibrary(FlowExecutionOwner flowOwner, String libName){
         SCMFileSystem fs = createFs(flowOwner)
         if (!fs){ return false }
@@ -60,9 +61,20 @@ class ScmLibraryProvider extends LibraryProvider{
         return lib.isDirectory()
     }
 
-    List loadLibrary(FlowExecutionOwner flowOwner, Binding binding, String libName, Map libConfig){
+    @Override
+    String getLibrarySchema(FlowExecutionOwner flowOwner, String libName){
         SCMFileSystem fs = createFs(flowOwner)
-        if (!fs){ return [] }
+        SCMFile lib = fs.child(prefixBaseDir(libName))
+        SCMFile libConfigFile = lib.child(CONFIG_FILE)
+        if(libConfigFile.exists() && libConfigFile.isFile()){
+            return libConfigFile.contentAsString()
+        }
+        return null
+    }
+
+    @Override
+    void loadLibrary(FlowExecutionOwner flowOwner, Binding binding, String libName, Map libConfig){
+        SCMFileSystem fs = createFs(flowOwner)
         TemplateLogger logger = new TemplateLogger(flowOwner.getListener())
         ArrayList msg = [
             "Loading Library ${libName}",
@@ -72,18 +84,6 @@ class ScmLibraryProvider extends LibraryProvider{
 
         // we already know this exists from hasLibrary()
         SCMFile lib = fs.child(prefixBaseDir(libName))
-
-        // do validation if the library configuration file is present
-        SCMFile libConfigFile = lib.child(CONFIG_FILE)
-        ArrayList libConfigErrors = []
-        if(libConfigFile.exists() && libConfigFile.isFile()){
-            libConfigErrors = doLibraryConfigValidation(flowOwner, libConfigFile.contentAsString(), libConfig)
-            if(libConfigErrors){
-                return [ "${libName}:" ] + libConfigErrors.collect{ error -> " - ${error}" }
-            }
-        } else{
-            logger.printWarning("Library ${libName} does not have a configuration file.")
-        }
 
         FilePath buildRootDir = new FilePath(flowOwner.getRootDir())
         FilePath rootDir = buildRootDir.child("jte/${libName}")
@@ -121,8 +121,6 @@ class ScmLibraryProvider extends LibraryProvider{
             FilePath resourceFile = rootDir.child(relativePath)
             resourceFile.write(file.contentAsString(), "UTF-8")
         }
-
-        return libConfigErrors
     }
 
     void recurseChildren(SCMFile file, Closure action){

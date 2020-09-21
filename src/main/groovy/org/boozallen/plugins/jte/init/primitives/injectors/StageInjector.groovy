@@ -18,7 +18,11 @@ package org.boozallen.plugins.jte.init.primitives.injectors
 import hudson.Extension
 import jenkins.model.Jenkins
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
+import org.boozallen.plugins.jte.init.primitives.RunAfter
+import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
+import org.boozallen.plugins.jte.util.JTEException
+import org.boozallen.plugins.jte.util.TemplateLogger
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 /**
@@ -34,12 +38,42 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
     }
 
     @Override
-    void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
+    @RunAfter([LibraryStepInjector, DefaultStepInjector, TemplateMethodInjector])
+    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
         Class stageClass = getPrimitiveClass()
         config.getConfig().stages.each{ name, steps ->
-            ArrayList<String> stepsList = []
-            steps.collect(stepsList){ step -> step.key }
-            binding.setVariable(name, stageClass.newInstance(binding, name, stepsList))
+            List<String> stepNames = steps.keySet() as List<String>
+            binding.setVariable(name, stageClass.newInstance(binding, name, stepNames))
+        }
+    }
+
+    @Override
+    void validateBinding(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
+        LinkedHashMap aggregatedConfig = config.getConfig()
+        LinkedHashMap stagesWithUndefinedSteps = [:]
+        aggregatedConfig.stages.each{ name, stageConfig ->
+            List<String> steps = stageConfig.keySet() as List<String>
+            List<String> undefinedSteps = []
+            steps.each{ step ->
+                if(!binding.hasStep(step)){
+                    undefinedSteps << step
+                }
+            }
+            if(undefinedSteps){
+                stagesWithUndefinedSteps[name] = undefinedSteps
+            }
+        }
+        if(stagesWithUndefinedSteps){
+            List<String> error = [
+                    "There are Stages defined that reference steps that do not exist.",
+                    "Consider adding step names to the template_methods block"
+            ]
+            stagesWithUndefinedSteps.each{ name, steps ->
+                error << "- ${name}: ${steps.join(", ")}".toString()
+            }
+            TemplateLogger logger = new TemplateLogger(flowOwner.getListener())
+            logger.printError(error.join("\n"))
+            throw new JTEException("There are Stages defined that require undefined steps")
         }
     }
 

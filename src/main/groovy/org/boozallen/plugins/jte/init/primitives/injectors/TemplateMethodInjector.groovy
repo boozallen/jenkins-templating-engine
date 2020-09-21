@@ -16,29 +16,28 @@
 package org.boozallen.plugins.jte.init.primitives.injectors
 
 import hudson.Extension
-import jenkins.model.Jenkins
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
+import org.boozallen.plugins.jte.init.primitives.RunAfter
 import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 /**
- * creates Keywords and populates the run's {@link org.boozallen.plugins.jte.init.primitives.TemplateBinding}
+ * Loads libraries from the pipeline configuration and injects StepWrapper's into the
+ * run's {@link org.boozallen.plugins.jte.init.primitives.TemplateBinding}
  */
-@Extension class KeywordInjector extends TemplatePrimitiveInjector {
+@Extension class TemplateMethodInjector extends TemplatePrimitiveInjector {
 
-    static Class getPrimitiveClass(){
-        ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
-        String self = this.getMetaClass().getTheClass().getName()
-        String classText = uberClassLoader.loadClass(self).getResource("Keyword.groovy").text
-        return parseClass(classText)
-    }
-
+    @SuppressWarnings("ParameterName")
     @Override
+    @RunAfter([LibraryStepInjector, DefaultStepInjector])
     void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
-        Class keywordClass = getPrimitiveClass()
-        config.getConfig().keywords.each{ key, value ->
-            binding.setVariable(key, keywordClass.newInstance(keyword: key, value: value))
+        LinkedHashMap aggregatedConfig = config.getConfig()
+        StepWrapperFactory stepFactory = new StepWrapperFactory(flowOwner)
+        aggregatedConfig.template_methods.each{ step, _ ->
+            if(!binding.hasStep(step)){
+                binding.setVariable(step, stepFactory.createNullStep(step, binding))
+            }
         }
     }
 

@@ -18,6 +18,7 @@ package org.boozallen.plugins.jte.init.primitives.injectors
 import hudson.Extension
 import jenkins.model.Jenkins
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
+import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
@@ -35,7 +36,7 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
     @SuppressWarnings('NoDef')
     @Override
-    void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){
+    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
         Class appEnvClass = getPrimitiveClass()
         ArrayList createdEnvs = []
         config.getConfig().application_environments.each{ name, appEnvConfig ->

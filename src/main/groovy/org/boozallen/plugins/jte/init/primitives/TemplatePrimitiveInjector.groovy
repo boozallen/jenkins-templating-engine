@@ -66,6 +66,13 @@ abstract class TemplatePrimitiveInjector implements ExtensionPoint{
     }
 
     /**
+     * Used to validate the pipeline configuration is structurally correct
+     * @param flowOwner the run's flowOwner
+     * @param config the aggregated pipeline configuration
+     */
+    void validateConfiguration(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){}
+
+    /**
      * parse the aggregated pipeline configuration to instantiate a {@link TemplatePrimitive} and store it in
      * the {@link TemplateBinding}
      *
@@ -73,7 +80,7 @@ abstract class TemplatePrimitiveInjector implements ExtensionPoint{
      * @param config the aggregated pipeline configuration
      * @param binding the run's common {@link TemplateBinding}
      */
-    void doInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){}
+    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){}
 
     /**
      * A second pass allowing the different injector's to inspect what is in the binding and respond accordingly
@@ -82,6 +89,6 @@ abstract class TemplatePrimitiveInjector implements ExtensionPoint{
      * @param config the aggregated pipeline configuration
      * @param binding the run's common {@link TemplateBinding}
      */
-    void doPostInject(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, Binding binding){}
+    void validateBinding(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){}
 
 }

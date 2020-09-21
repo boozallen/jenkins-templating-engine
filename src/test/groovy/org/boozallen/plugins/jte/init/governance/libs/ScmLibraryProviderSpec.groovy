@@ -26,7 +26,6 @@ import jenkins.scm.api.SCMFileSystem
 import org.boozallen.plugins.jte.init.primitives.injectors.StepWrapperFactory
 import org.boozallen.plugins.jte.util.FileSystemWrapper
 import org.boozallen.plugins.jte.util.TestFlowExecutionOwner
-import org.jenkinsci.plugins.workflow.cps.EnvActionImpl
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.junit.ClassRule
@@ -175,83 +174,6 @@ class ScmLibraryProviderSpec extends Specification{
 
         then:
         1 * logger.println("[JTE] Loading Library someLibrary")
-    }
-
-    def "loadLibrary logs if library does not have library configuration file"(){
-        given:
-        ScmLibraryProvider p = new ScmLibraryProvider()
-        String libraryName = "someLibrary"
-        repo.init()
-        repo.write("${libraryName}/someStep.groovy", "void call(){ println 'the step' }")
-        repo.git("add", "*")
-        repo.git("commit", "--message=init")
-        GitSCM scm = createSCM(repo)
-        p.setScm(scm)
-
-        WorkflowJob job = jenkins.createProject(WorkflowJob)
-        FilePath f = jenkins.getInstance().getWorkspaceFor(job)
-        owner.getRootDir() >> new File(f.getRemote())
-
-        GroovySpy(StepWrapperFactory, global:true)
-        new StepWrapperFactory(_) >>  Mock(StepWrapperFactory){
-            createFromFilePath(*_) >> { args ->
-                String name = args[0].getBaseName()
-                return new StepWrapper(name)
-            }
-        }
-
-        FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
-        fsw.fs = SCMFileSystem.of(job, scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
-
-        def binding = new Binding()
-
-        when:
-        p.loadLibrary(owner, binding, libraryName, [:])
-
-        then:
-        1 * logger.println("[JTE] Library someLibrary does not have a configuration file.")
-    }
-
-    def "loadLibrary invokes library configuration validation if lib config file present"(){
-        given:
-        ScmLibraryProvider p = new ScmLibraryProvider()
-
-        String libraryName = "someLibrary"
-        repo.init()
-        repo.write("${libraryName}/someStep.groovy", "void call(){ println 'the step' }")
-        repo.write("${libraryName}/library_config.groovy", """
-        fields{
-            required{
-                x = String
-            }
-        }
-        """)
-        repo.git("add", "*")
-        repo.git("commit", "--message=init")
-        GitSCM scm = createSCM(repo)
-        p.setScm(scm)
-
-        GroovySpy(EnvActionImpl, global: true)
-        EnvActionImpl.forRun(_) >> Mock(EnvActionImpl)
-
-        GroovySpy(StepWrapperFactory, global:true)
-        StepWrapperFactory.getPrimitiveClass() >> StepWrapper
-
-        FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
-        fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
-
-        def binding = new Binding()
-        def result
-
-        when:
-        result = p.loadLibrary(owner, binding, libraryName, [:])
-
-        then:
-        result == [ "${libraryName}:", " - Missing required field 'x'" ]
     }
 
     @Unroll

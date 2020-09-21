@@ -15,52 +15,8 @@
 */
 package org.boozallen.plugins.jte.init.governance.libs
 
-import org.boozallen.plugins.jte.util.TemplateLogger
-import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import spock.lang.Specification
-import spock.lang.Unroll
 
 class LibraryProviderSpec extends Specification{
-
-    @SuppressWarnings('UnusedMethodParameter')
-    class LibraryProviderImpl extends LibraryProvider{
-        @Override Boolean hasLibrary(FlowExecutionOwner owner, String library){ return false }
-        @Override ArrayList loadLibrary(FlowExecutionOwner owner, Binding binding, String s, Map c){
-            return []
-        }
-    }
-
-    @Unroll
-    def "when config value is '#actual' and expected type/value is #expected then result is #result"(){
-        setup:
-        LibraryProvider.ConfigChecker configChecker = new LibraryProvider.ConfigChecker()
-
-        expect:
-        configChecker.validateType(Mock(TemplateLogger), actual, expected) == result
-
-        where:
-        actual      |     expected      | result
-        true        |      boolean      | true
-        false       |      boolean      | true
-        true        |      Boolean      | true
-        false       |      Boolean      | true
-        "nope"      |      boolean      | false
-        "hey"       |      String       | true
-        "${4}"      |      String       | true
-        4           |      String       | false
-        4           |      Integer      | true
-        4           |      int          | true
-        4.2         |      Integer      | false
-        4.2         |      int          | false
-        1           |      Double       | false
-        1.0         |      Double       | true
-        1           |      Number       | true
-        1.0         |      Number       | true
-        "hey"       |     ~/.*he.*/     | true
-        "heyyy"     |     ~/^hey.*/     | true
-        "hi"        |     ~/^hey.*/     | false
-        "hi"        |    ["hi", "hey"]  | true
-        "opt3"      |  ["opt1", "opt2"] | false
-    }
 
 }
