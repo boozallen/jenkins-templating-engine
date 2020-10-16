@@ -28,7 +28,7 @@ class CustomClassFilterImpl implements CustomClassFilter {
 
     @SuppressWarnings('BooleanMethodReturnsNull')
     @Override Boolean permits(Class<?> c){
-        List<String> permitted = [ "org.boozallen.plugins.jte", "WorkflowScript" ]
+        List<String> permitted = [ "org.boozallen.plugins.jte", "WorkflowScript", "org.jenkinsci.plugins.docker.workflow", "Docker" ]
         return permitted.find{ p -> c.getName().startsWith(p) } ? true : null
     }
 

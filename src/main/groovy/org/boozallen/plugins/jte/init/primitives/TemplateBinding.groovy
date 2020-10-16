@@ -16,6 +16,7 @@
 package org.boozallen.plugins.jte.init.primitives
 
 import org.boozallen.plugins.jte.init.primitives.injectors.StepWrapperFactory
+import org.boozallen.plugins.jte.util.TemplateLogger
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.jenkinsci.plugins.workflow.cps.DSL
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
@@ -34,20 +35,31 @@ class TemplateBinding extends Binding implements Serializable{
     private static final long serialVersionUID = 1L
     private static final String STEPS = "steps"
     @SuppressWarnings('PrivateFieldCouldBeFinal') // could be modified during pipeline execution
-    private Set<String> registry = []
     private Boolean locked = false
+    private final TemplateBindingRegistry registry = new TemplateBindingRegistry()
 
     TemplateBinding(FlowExecutionOwner owner){
         setVariable(STEPS, new DSL(owner))
+        /**
+         * for jte namespace, we need to bypass the exception throwing logic
+         * that would be triggered by "jte" as a ReservedVariableName
+         */
+        variables.put(registry.getVariableName(), registry)
     }
 
-    void lock(){
+    void lock(FlowExecutionOwner flowOwner){
+        TemplateLogger logger = new TemplateLogger(flowOwner.getListener())
+        registry.printAllPrimitives(logger)
         locked = true
     }
 
     @Override @SuppressWarnings('NoDef')
     void setVariable(String name, Object value) {
-        if (name in registry || ReservedVariableName.byName(name)){
+        /**
+         * if the variable being set is already taken by a TemplatePrimitive or marked
+         * reserved by a ReservedVariableName, throw an exception
+         */
+        if (name in registry.getVariables() || ReservedVariableName.byName(name)){
             def thrower = ReservedVariableName.byName(name) ?: variables.get(name)
             if(!thrower){
                 throw new Exception("Something weird happened. Unable to determine source of binding collision.")
@@ -58,8 +70,12 @@ class TemplateBinding extends Binding implements Serializable{
                 thrower.throwPreLockException()
             }
         }
+        /**
+         * add all template primitives to the namespace when
+         * added to the binding
+         */
         if (value in TemplatePrimitive){
-            registry << name
+            registry.add(value as TemplatePrimitive)
         }
         super.setVariable(name, value)
     }
@@ -75,6 +91,11 @@ class TemplateBinding extends Binding implements Serializable{
             throw new MissingPropertyException(name, this.getClass())
         }
 
+        /**
+         * TemplatePrimitive's that implement getValue are able to specify an alternative value
+         * when accessed in the binding. This is helpful when the users should interact with a
+         * value encapsulated by the TemplatePrimitive, rather than the primitive object itself.
+         */
         if (result in TemplatePrimitive && InvokerHelper.getMetaClass(result).respondsTo(result, "getValue", (Object[]) null)){
             result = result.getValue()
         }
@@ -95,6 +116,14 @@ class TemplateBinding extends Binding implements Serializable{
             return getVariable(stepName)
         }
         throw new TemplateException("No step ${stepName} has been loaded")
+    }
+
+    /**
+     * retrieves all the primitives names/keys
+     * @return
+     */
+    Set<String> getPrimitiveNames(){
+        return this.registry.getVariables()
     }
 
 }

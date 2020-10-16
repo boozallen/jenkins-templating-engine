@@ -151,6 +151,30 @@ class StageSpec extends Specification{
         jenkins.assertLogContains("x=foo", run)
     }
 
+    def "validate namespaced stage arguments are passed through to steps"() {
+        given:
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins, config: """
+            libraries{
+                gradle
+            }
+
+            stages{
+                ci{
+                    printStageArgs
+                }
+            }
+            """, template: 'jte.stages.ci(x: "foo")'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatusSuccess(run)
+        jenkins.assertLogContains("x=foo", run)
+    }
+
     def "validate override during initialization throws exception"(){
         given:
         WorkflowJob job = TestUtil.createAdHoc(jenkins,

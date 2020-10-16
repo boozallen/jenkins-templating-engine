@@ -17,8 +17,11 @@ package org.boozallen.plugins.jte.init.primitives.injectors
 
 import hudson.Extension
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
+import org.boozallen.plugins.jte.init.primitives.PrimitiveNamespace
 import org.boozallen.plugins.jte.init.primitives.TemplateBinding
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitive
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
+import org.boozallen.plugins.jte.util.TemplateLogger
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 /**
@@ -28,6 +31,16 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 @Extension class PipelineConfigVariableInjector extends TemplatePrimitiveInjector {
 
     static final String VARIABLE = "pipelineConfig"
+    private static final String TYPE_DISPLAY_NAME = "Pipeline Config"
+    private static final String NAMESPACE_KEY = VARIABLE
+
+    static PrimitiveNamespace createNamespace(){
+        return new Namespace(name: getNamespaceKey(), typeDisplayName: TYPE_DISPLAY_NAME)
+    }
+
+    static String getNamespaceKey(){
+        return NAMESPACE_KEY
+    }
 
     @SuppressWarnings('NoDef')
     @Override
@@ -36,13 +49,36 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
         // add the pipelineConfig to the binding
         def pipelineConfig = keywordClass.newInstance(
-            keyword: VARIABLE,
+            name: VARIABLE,
             value: config.getConfig(),
+            injector: this.getClass(),
             preLockException: "Variable ${VARIABLE} reserved for accessing the aggregated pipeline configuration",
             postLockException: "Variable ${VARIABLE} reserved for accessing the aggregated pipeline configuration"
         )
 
         binding.setVariable(VARIABLE, pipelineConfig)
+    }
+
+    static class Namespace extends PrimitiveNamespace {
+        String name = VARIABLE
+        LinkedHashMap pipelineConfig
+        @Override void add(TemplatePrimitive primitive){
+            pipelineConfig = primitive.getValue()
+        }
+
+        @Override
+        Set<String> getVariables(){
+            return [ VARIABLE ]
+        }
+
+        @Override
+        void printAllPrimitives(TemplateLogger logger) {
+            // pipelineConfig is not communicated to users as a primitive
+        }
+
+        Object getProperty(String name){
+            return pipelineConfig[name]
+        }
     }
 
 }

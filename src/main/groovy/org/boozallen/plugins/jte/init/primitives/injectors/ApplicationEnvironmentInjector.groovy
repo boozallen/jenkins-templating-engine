@@ -18,6 +18,7 @@ package org.boozallen.plugins.jte.init.primitives.injectors
 import hudson.Extension
 import jenkins.model.Jenkins
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
+import org.boozallen.plugins.jte.init.primitives.PrimitiveNamespace
 import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
@@ -34,12 +35,25 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
         return parseClass(classText)
     }
 
+    static private final String KEY = "application_environments"
+    static private final String TYPE_DISPLAY_NAME =  "Application Environment"
+    static private final String NAMESPACE_KEY = KEY
+
+    static PrimitiveNamespace createNamespace(){
+        return new PrimitiveNamespace(name: getNamespaceKey(), typeDisplayName: TYPE_DISPLAY_NAME)
+    }
+
+    static String getNamespaceKey(){
+        return NAMESPACE_KEY
+    }
+
     @SuppressWarnings('NoDef')
     @Override
     void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
+        LinkedHashMap aggregatedConfig = config.getConfig()
         Class appEnvClass = getPrimitiveClass()
         ArrayList createdEnvs = []
-        config.getConfig().application_environments.each{ name, appEnvConfig ->
+        aggregatedConfig[KEY].each{ name, appEnvConfig ->
             def env = appEnvClass.newInstance(name, appEnvConfig)
             createdEnvs << env
             binding.setVariable(name, env)

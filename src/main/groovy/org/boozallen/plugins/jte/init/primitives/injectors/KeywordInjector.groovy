@@ -18,6 +18,7 @@ package org.boozallen.plugins.jte.init.primitives.injectors
 import hudson.Extension
 import jenkins.model.Jenkins
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
+import org.boozallen.plugins.jte.init.primitives.PrimitiveNamespace
 import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
@@ -34,11 +35,28 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
         return parseClass(classText)
     }
 
+    private static final String KEY = "keywords"
+    private static final String TYPE_DISPLAY_NAME = "Keyword"
+    private static final String NAMESPACE_KEY = KEY
+
+    static PrimitiveNamespace createNamespace(){
+        return new PrimitiveNamespace(name: getNamespaceKey(), typeDisplayName: TYPE_DISPLAY_NAME)
+    }
+
+    static String getNamespaceKey(){
+        return NAMESPACE_KEY
+    }
+
     @Override
     void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
         Class keywordClass = getPrimitiveClass()
-        config.getConfig().keywords.each{ key, value ->
-            binding.setVariable(key, keywordClass.newInstance(keyword: key, value: value))
+        LinkedHashMap aggregatedConfig = config.getConfig()
+        aggregatedConfig[KEY].each{ key, value ->
+            binding.setVariable(key, keywordClass.newInstance(
+                name: key,
+                value: value,
+                injector: this.getClass()
+            ))
         }
     }
 

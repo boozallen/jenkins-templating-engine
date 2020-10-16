@@ -20,7 +20,9 @@ import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfiguratio
 import org.boozallen.plugins.jte.init.governance.GovernanceTier
 import org.boozallen.plugins.jte.init.governance.libs.LibraryProvider
 import org.boozallen.plugins.jte.init.governance.libs.LibrarySource
+import org.boozallen.plugins.jte.init.primitives.PrimitiveNamespace
 import org.boozallen.plugins.jte.init.primitives.TemplateBinding
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitive
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.boozallen.plugins.jte.util.AggregateException
 import org.boozallen.plugins.jte.util.ConfigValidator
@@ -35,12 +37,25 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
  */
 @Extension class LibraryStepInjector extends TemplatePrimitiveInjector {
 
+    private static final String KEY = "libraries"
+    private static final String TYPE_DISPLAY_NAME = "Library"
+    private static final String NAMESPACE_KEY = KEY
+
+    static PrimitiveNamespace createNamespace(){
+        return new Namespace(name: getNamespaceKey(), typeDisplayName: TYPE_DISPLAY_NAME)
+    }
+
+    static String getNamespaceKey(){
+        return NAMESPACE_KEY
+    }
+
     @Override
     void validateConfiguration(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
+        LinkedHashMap aggregatedConfig = config.getConfig()
         AggregateException errors = new AggregateException()
         List<LibraryProvider> providers = getLibraryProviders(flowOwner)
         ConfigValidator validator = new ConfigValidator(flowOwner)
-        config.getConfig().libraries.each { libName, libConfig ->
+        aggregatedConfig[KEY].each { libName, libConfig ->
             LibraryProvider provider = providers.find{ provider ->
                 provider.hasLibrary(flowOwner, libName)
             }
@@ -70,8 +85,9 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
 
     @Override
     void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
+        LinkedHashMap aggregatedConfig = config.getConfig()
         List<LibraryProvider> providers = getLibraryProviders(flowOwner)
-        config.getConfig().libraries.each{ libName, libConfig ->
+        aggregatedConfig[KEY].each{ libName, libConfig ->
             LibraryProvider provider = providers.find{ provider ->
                 provider.hasLibrary(flowOwner, libName)
             }
@@ -89,6 +105,55 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
             source.getLibraryProvider()
         } - null
         return providers
+    }
+
+    static class Namespace extends PrimitiveNamespace {
+        String name = KEY
+        List<CallableNamespace> libraries = []
+
+        @Override
+        void printAllPrimitives(TemplateLogger logger){
+            logger.print( "created Library Steps:\n" + getFormattedVariables().join("\n") )
+        }
+
+        @Override void add(TemplatePrimitive primitive){
+            String libName = primitive.getLibrary()
+            CallableNamespace library = getLibrary(libName)
+            if(!library){
+                library = new CallableNamespace(name: libName)
+                libraries.push(library)
+            }
+            library.add(primitive)
+        }
+
+        @Override Set<String> getVariables(){
+            return libraries*.getVariables().flatten() as Set<String>
+        }
+
+        Set<String> getFormattedVariables(){
+            return libraries.collect{ lib ->
+                lib.getVariables().collect { var ->
+                    "${var} from the ${lib.name} Library"
+                }
+            }.flatten() as Set<String>
+        }
+
+        Object getProperty(String name){
+            MetaProperty meta = getClass().metaClass.getMetaProperty(name)
+            if(meta){
+                return meta.getProperty(this)
+            }
+
+            CallableNamespace library = getLibrary(name)
+            if(!library){
+                throw new JTEException("Library ${name} not found.")
+            }
+            return library
+        }
+        private CallableNamespace getLibrary(String name){
+            return libraries.find{ l -> l.getName() == name }
+        }
+
     }
 
 }

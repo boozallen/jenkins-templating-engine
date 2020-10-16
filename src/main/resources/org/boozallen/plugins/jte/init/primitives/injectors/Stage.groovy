@@ -15,8 +15,10 @@
 */
 package org.boozallen.plugins.jte.init.primitives.injectors
 
+import com.cloudbees.groovy.cps.NonCPS
 import org.boozallen.plugins.jte.init.primitives.TemplateException
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitive
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.boozallen.plugins.jte.init.primitives.injectors.StageInjector.StageContext
 import org.boozallen.plugins.jte.util.TemplateLogger
 
@@ -30,6 +32,7 @@ class Stage extends TemplatePrimitive implements Serializable{
     private static final long serialVersionUID = 1L
     Binding binding
     String name
+    Class<? extends TemplatePrimitiveInjector> injector
     ArrayList<String> steps
 
     Stage(){}
@@ -40,10 +43,20 @@ class Stage extends TemplatePrimitive implements Serializable{
         this.steps = steps
     }
 
+    @NonCPS @Override String getName(){ return name }
+    @NonCPS @Override Class<? extends TemplatePrimitiveInjector> getInjector(){ return injector }
+
     @SuppressWarnings("MethodParameterTypeRequired")
     void call(args) {
         TemplateLogger.createDuringRun().print "[Stage - ${name}]"
-        StageContext stageContext = new StageContext(name: name, args: args)
+        Map stageArgs
+        if( args instanceof Object[] && 0 < ((Object[])args).length){
+            stageArgs = ((Object[])args)[0]
+        } else {
+            stageArgs = args as Map
+        }
+
+        StageContext stageContext = new StageContext(name: name, args: stageArgs)
         steps.each{ step ->
             def clone = binding.getStep(step).clone()
             clone.setStageContext(stageContext)

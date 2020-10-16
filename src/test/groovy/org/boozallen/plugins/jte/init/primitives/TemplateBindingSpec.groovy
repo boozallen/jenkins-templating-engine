@@ -15,6 +15,8 @@
 */
 package org.boozallen.plugins.jte.init.primitives
 
+import com.cloudbees.groovy.cps.NonCPS
+import hudson.model.TaskListener
 import org.boozallen.plugins.jte.init.primitives.injectors.StepWrapperFactory
 import org.boozallen.plugins.jte.job.AdHocTemplateFlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
@@ -34,7 +36,13 @@ class TemplateBindingSpec extends Specification{
     /**
      * fake primitive for testing
      */
-    class TestPrimitive extends TemplatePrimitive{
+    static class TestPrimitive extends TemplatePrimitive{
+        String name
+        Class<? extends TemplatePrimitiveInjector> injector
+
+        @NonCPS @Override String getName(){ return name }
+        @NonCPS @Override Class<? extends TemplatePrimitiveInjector> getInjector(){ return injector }
+
         void throwPreLockException(){
             throw new TemplateException ("pre-lock exception")
         }
@@ -42,14 +50,31 @@ class TemplateBindingSpec extends Specification{
         void throwPostLockException(){
             throw new TemplateException ("post-lock exception")
         }
+
+    }
+
+    static class TestInjector extends TemplatePrimitiveInjector{
+
+    }
+
+    static class LocalKeywordInjector extends TemplatePrimitiveInjector{
+
+    }
+
+    static class LocalStepInjector extends TemplatePrimitiveInjector{
     }
 
     /**
      * mock Keyword primitive for test
      */
-    class Keyword extends TestPrimitive{
+    static class LocalKeyword extends TestPrimitive{
         String getValue(){
             return "dummy value"
+        }
+
+        @Override
+        Class<? extends TemplatePrimitiveInjector> getInjector() {
+            return LocalKeywordInjector
         }
     }
 
@@ -82,7 +107,7 @@ class TemplateBindingSpec extends Specification{
         String name = "x"
 
         when:
-        binding.setVariable(name, new TestPrimitive())
+        binding.setVariable(name, new LocalKeyword(name:name))
 
         then:
         name in binding.registry
@@ -90,9 +115,10 @@ class TemplateBindingSpec extends Specification{
 
     @WithoutJenkins
     def "binding collision pre-lock throws pre-lock exception"(){
+        def name = "x"
         when:
-        binding.setVariable("x", new TestPrimitive())
-        binding.setVariable("x", 3)
+        binding.setVariable(name, new LocalKeyword(name: name))
+        binding.setVariable(name, 3)
 
         then:
         TemplateException ex = thrown()
@@ -101,10 +127,15 @@ class TemplateBindingSpec extends Specification{
 
     @WithoutJenkins
     def "binding collision post-lock throws post-lock exception"(){
+        def name = "x"
+        def run = Mock(FlowExecutionOwner)
+        def listener = Mock(TaskListener)
+        listener.getLogger() >> Mock(PrintStream)
+        run.getListener() >> listener
         when:
-        binding.setVariable("x", new TestPrimitive())
-        binding.lock()
-        binding.setVariable("x", 3)
+        binding.setVariable(name, new LocalKeyword(name: name))
+        binding.lock(run)
+        binding.setVariable(name, 3)
 
         then:
         TemplateException ex = thrown()
@@ -123,7 +154,7 @@ class TemplateBindingSpec extends Specification{
     @WithoutJenkins
     def "getValue overrides actual value set"(){
         when:
-        binding.setVariable("x", new Keyword())
+        binding.setVariable("x", new LocalKeyword())
 
         then:
         binding.getVariable("x") == "dummy value"
@@ -131,14 +162,15 @@ class TemplateBindingSpec extends Specification{
 
     @WithoutJenkins
     def "primitive with no getValue returns same object set"(){
+        def name = "x"
         setup:
-        TestPrimitive test = new TestPrimitive()
+        TestPrimitive test = new TestPrimitive(name: name, injector: TestInjector)
 
         when:
-        binding.setVariable("x", test)
+        binding.setVariable(name, test)
 
         then:
-        binding.getVariable("x") == test
+        binding.getVariable(name) == test
     }
 
     @WithoutJenkins
@@ -152,12 +184,13 @@ class TemplateBindingSpec extends Specification{
 
     @WithoutJenkins
     def "hasStep returns true when variable exists and is a StepWrapper"(){
+        def name = "test_step"
         setup:
         GroovySpy(StepWrapperFactory, global:true)
         StepWrapperFactory.getPrimitiveClass() >> { return StepWrapper }
 
         when:
-        StepWrapper s = new StepWrapper()
+        StepWrapper s = new StepWrapper(name: name, injector: LocalStepInjector)
         binding.setVariable("test_step", s)
 
         then:
@@ -181,16 +214,17 @@ class TemplateBindingSpec extends Specification{
 
     @WithoutJenkins
     def "getStep returns step when variable exists and is StepWrapper"(){
+        def name = "test_step"
         setup:
         GroovySpy(StepWrapperFactory, global:true)
         StepWrapperFactory.getPrimitiveClass() >> { return StepWrapper }
-        StepWrapper step = new StepWrapper()
+        StepWrapper step = new StepWrapper(name: name, injector: LocalStepInjector)
 
         when:
-        binding.setVariable("test_step", step)
+        binding.setVariable(name, step)
 
         then:
-        binding.getStep("test_step") == step
+        binding.getStep(name) == step
     }
 
     @WithoutJenkins

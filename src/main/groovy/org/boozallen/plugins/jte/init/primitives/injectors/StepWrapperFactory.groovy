@@ -150,28 +150,6 @@ class StepWrapperFactory{
     }
 
     /**
-     * Produces a StepWrapper
-     *
-     * @param stepText the source code text of the to-be step
-     * @param binding the template binding
-     * @param name the name of the step to be created
-     * @param library the library that has contributed the step
-     * @param libConfig the library configuration that will be resolvable via #CONFIG during execution
-     * @return a StepWrapper representing the stepText
-     */
-    def createFromString(String sourceText, Binding binding, String name, String library, Map config){
-        Class stepWrapper = getPrimitiveClass()
-        return stepWrapper.newInstance(
-            name: name,
-            library: library,
-            config: config,
-            sourceText: sourceText,
-            // parse to fail fast for step compilation issues
-            script: prepareScript(library, name, sourceText, binding, config)
-        )
-    }
-
-    /**
      * takes a FilePath holding the source text for the step and
      * creates a StepWrapper instance
      *
@@ -188,6 +166,7 @@ class StepWrapperFactory{
         return stepWrapper.newInstance(
             name: name,
             library: library,
+            injector: LibraryStepInjector,
             config: config,
             sourceFile: filePath.absolutize().getRemote(),
             // parse to fail fast for step compilation issues
@@ -204,12 +183,21 @@ class StepWrapperFactory{
      * @return a StepWrapper instance
      */
     def createDefaultStep(Binding binding, String name, Map stepConfig){
+        Class stepWrapper = getPrimitiveClass()
         ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
         String self = this.getMetaClass().getTheClass().getName()
         String defaultStep = uberClassLoader.loadClass(self).getResource("defaultStepImplementation.groovy").text
         // will be nice to eventually use the ?= operator when groovy version gets upgraded
         stepConfig.name = stepConfig.name ?: name
-        return createFromString(defaultStep, binding, name, "Default Step Implementation", stepConfig)
+        return stepWrapper.newInstance(
+            name: name,
+            library: null,
+            injector: DefaultStepInjector,
+            config: stepConfig,
+            sourceText: defaultStep,
+            // parse to fail fast for step compilation issues
+            script: prepareScript("Default Step Implementation", name, defaultStep, binding, stepConfig)
+        )
     }
 
     /**
@@ -219,8 +207,18 @@ class StepWrapperFactory{
      * @return a no-op StepWrapper
      */
     def createNullStep(String stepName, Binding binding){
-        String nullStep = "def call(){ println \"Step ${stepName} is not implemented.\" }"
-        return createFromString(nullStep, binding, stepName, null, [:])
+        Class stepWrapper = getPrimitiveClass()
+        String nullStep = "def call(Object[] args){ println \"Step ${stepName} is not implemented.\" }"
+        LinkedHashMap config = [:]
+        return stepWrapper.newInstance(
+            name: stepName,
+            library: null,
+            injector: TemplateMethodInjector,
+            config: config,
+            sourceText: nullStep,
+            // parse to fail fast for step compilation issues
+            script: prepareScript(null, stepName, nullStep, binding, config)
+        )
     }
 
 }

@@ -21,6 +21,7 @@ import org.boozallen.plugins.jte.init.PipelineDecorator
 import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplateException
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitive
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.boozallen.plugins.jte.init.primitives.hooks.Hooks
 import org.boozallen.plugins.jte.init.primitives.hooks.HookContext
 import org.boozallen.plugins.jte.init.primitives.hooks.BeforeStep
@@ -45,13 +46,17 @@ class StepWrapper extends TemplatePrimitive implements Serializable, Cloneable{
     /**
      * The name of the step
      */
-    private String name
+    String name
 
     /**
      * The name of the library that's contributed the step
      */
-    private String library
+    String library
 
+    /**
+     * The injector that created this step
+     */
+    Class<? extends TemplatePrimitiveInjector> injector
     /**
      * The library configuration
      */
@@ -86,14 +91,16 @@ class StepWrapper extends TemplatePrimitive implements Serializable, Cloneable{
      */
     private HookContext hookContext
 
-    @NonCPS String getName(){ return name }
+    @NonCPS @Override String getName(){ return name }
     @NonCPS String getLibrary(){ return library }
+    @NonCPS @Override Class<? extends TemplatePrimitiveInjector> getInjector(){ return injector }
 
     /**
      * clones this StepWrapper
      *
      * @return An equivalent StepWrapper instance
      */
+    @SuppressWarnings("UnnecessaryObjectReferences")
     Object clone(){
         Object that = super.clone()
         that.name = this.name
@@ -101,6 +108,7 @@ class StepWrapper extends TemplatePrimitive implements Serializable, Cloneable{
         that.sourceText = this.sourceText
         that.sourceFile = this.sourceFile
         that.config = this.config
+        that.injector = this.injector
         return that
     }
 

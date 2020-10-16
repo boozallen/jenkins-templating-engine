@@ -17,6 +17,8 @@ package org.boozallen.plugins.jte.util
 
 import hudson.Extension
 import org.jenkinsci.plugins.scriptsecurity.sandbox.whitelists.AbstractWhitelist
+import org.boozallen.plugins.jte.init.primitives.TemplateBindingRegistry
+import org.boozallen.plugins.jte.init.primitives.PrimitiveNamespace
 
 import java.lang.reflect.Method
 
@@ -25,21 +27,31 @@ import java.lang.reflect.Method
  */
 @Extension class SandboxWhitelist extends AbstractWhitelist {
 
-    private final ArrayList permittedReceivers = [
+    private final List<String> permittedReceiverStrings = [
         "org.boozallen.plugins.jte.init.primitives.injectors.ApplicationEnvironment",
         "org.boozallen.plugins.jte.init.primitives.injectors.StepWrapper",
         "org.boozallen.plugins.jte.init.primitives.injectors.Stage",
         "org.boozallen.plugins.jte.init.primitives.hooks.Hooks"
     ]
 
+    private final List<Class> permittedReceivers = [
+            TemplateBindingRegistry,
+            PrimitiveNamespace,
+    ]
+
     @Override
     boolean permitsMethod(Method method, Object receiver, Object[] args) {
-        return receiver.getClass().getName() in permittedReceivers
+        boolean a = permittedReceivers.collect{ r -> receiver in r }.contains(true)
+        boolean b = receiver.getClass().getName() in permittedReceiverStrings
+        return (a || b)
     }
 
     @Override
     boolean permitsStaticMethod(Method method, Object[] args){
-        return method.getDeclaringClass().getName() in permittedReceivers
+        Class receiver = method.getDeclaringClass()
+        boolean a = permittedReceivers.collect{ r -> receiver in r }.contains(true)
+        boolean b = receiver.getName() in permittedReceiverStrings
+        return (a || b)
     }
 
 }

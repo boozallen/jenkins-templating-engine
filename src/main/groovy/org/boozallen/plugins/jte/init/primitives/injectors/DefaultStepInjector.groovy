@@ -17,6 +17,7 @@ package org.boozallen.plugins.jte.init.primitives.injectors
 
 import hudson.Extension
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
+import org.boozallen.plugins.jte.init.primitives.PrimitiveNamespace
 import org.boozallen.plugins.jte.init.primitives.RunAfter
 import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
@@ -29,13 +30,25 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
  */
 @Extension class DefaultStepInjector extends TemplatePrimitiveInjector {
 
+    private static final String KEY = "steps"
+    private static final String TYPE_DISPLAY_NAME = "Default Step"
+    private static final String NAMESPACE_KEY = KEY
+
+    static PrimitiveNamespace createNamespace(){
+        return new CallableNamespace(name: getNamespaceKey(), typeDisplayName: TYPE_DISPLAY_NAME)
+    }
+
+    static String getNamespaceKey(){
+        return NAMESPACE_KEY
+    }
+
     @Override
     @RunAfter(LibraryStepInjector)
     void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
         LinkedHashMap aggregatedConfig = config.getConfig()
         TemplateLogger logger = new TemplateLogger(flowOwner.getListener())
         StepWrapperFactory stepFactory = new StepWrapperFactory(flowOwner)
-        aggregatedConfig.steps.each{ stepName, stepConfig ->
+        aggregatedConfig[KEY].each{ stepName, stepConfig ->
             // if step already exists, print warning
             if (binding.hasStep(stepName)){
                 ArrayList msg = [

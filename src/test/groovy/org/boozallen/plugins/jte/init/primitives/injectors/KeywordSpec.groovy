@@ -49,6 +49,17 @@ class KeywordSpec extends Specification{
         jenkins.buildAndAssertSuccess(job)
     }
 
+    def "retrieving namespaced keyword from binding results in value"(){
+        given:
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+                config: 'keywords{ x = "foo" }',
+                template: 'assert jte.keywords.x == "foo"'
+        )
+
+        expect:
+        jenkins.buildAndAssertSuccess(job)
+    }
+
     def "inject multiple keywords"(){
         given:
         WorkflowJob job = TestUtil.createAdHoc(jenkins,
@@ -61,6 +72,24 @@ class KeywordSpec extends Specification{
             template: """
             assert x == "foo"
             assert y == "bar"
+            """
+        )
+
+        expect:
+        jenkins.buildAndAssertSuccess(job)
+    }
+
+    def "inject multiple keywords namespaced and not"(){
+        given:
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+                config: """
+            keywords{
+                x = "foo"
+                y = "bar"
+            }
+            """, template: """
+            assert x == "foo"
+            assert jte.keywords.y == "bar"
             """
         )
 

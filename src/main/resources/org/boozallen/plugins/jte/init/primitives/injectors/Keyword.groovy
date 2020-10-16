@@ -15,8 +15,10 @@
 */
 package org.boozallen.plugins.jte.init.primitives.injectors
 
+import com.cloudbees.groovy.cps.NonCPS
 import org.boozallen.plugins.jte.init.primitives.TemplateException
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitive
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 
 /**
  * JTE primitive that represents a pre-populated variable
@@ -24,12 +26,16 @@ import org.boozallen.plugins.jte.init.primitives.TemplatePrimitive
 class Keyword extends TemplatePrimitive implements Serializable{
 
     private static final long serialVersionUID = 1L
-    String keyword
+    String name
+    Class<? extends TemplatePrimitiveInjector> injector
     Object value
-    String preLockException = "Variable ${keyword} already exists as a Keyword."
-    String postLockException = "Variable ${keyword} is reserved as a template Keyword."
+    String preLockException = "Variable ${name} already exists as a Keyword."
+    String postLockException = "Variable ${name} is reserved as a template Keyword."
 
-    Object getValue(){
+    @NonCPS @Override String getName(){ return name }
+    @NonCPS @Override Class<? extends TemplatePrimitiveInjector> getInjector(){ return injector }
+
+    @NonCPS Object getValue(){
         return value
     }
 

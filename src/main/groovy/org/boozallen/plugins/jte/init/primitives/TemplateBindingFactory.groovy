@@ -19,6 +19,7 @@ import hudson.ExtensionList
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
 import org.boozallen.plugins.jte.util.AggregateException
 import org.boozallen.plugins.jte.util.JTEException
+import org.boozallen.plugins.jte.util.TemplateLogger
 import org.codehaus.groovy.reflection.CachedMethod
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jgrapht.Graph
@@ -36,11 +37,11 @@ import java.lang.reflect.Method
 class TemplateBindingFactory {
 
     static TemplateBinding create(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
-        TemplateBinding templateBinding = new TemplateBinding(flowOwner)
         invoke("validateConfiguration", flowOwner, config)
+        TemplateBinding templateBinding = new TemplateBinding(flowOwner)
         invoke("injectPrimitives", flowOwner, config, templateBinding)
         invoke("validateBinding", flowOwner, config, templateBinding)
-        templateBinding.lock()
+        templateBinding.lock(flowOwner)
         return templateBinding
     }
 
@@ -56,6 +57,9 @@ class TemplateBindingFactory {
                     injector.invokeMethod(phase, args)
                 }
             } catch(any){
+                TemplateLogger logger = new TemplateLogger(args[0].getListener())
+                String msg = [ any.getMessage(), any.getStackTrace()*.toString() ].flatten().join("\n")
+                logger.printError(msg)
                 errors.add(any)
                 failedInjectors << injectorClazz
             }

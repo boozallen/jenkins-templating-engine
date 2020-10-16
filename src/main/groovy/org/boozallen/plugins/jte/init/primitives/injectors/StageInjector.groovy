@@ -18,6 +18,7 @@ package org.boozallen.plugins.jte.init.primitives.injectors
 import hudson.Extension
 import jenkins.model.Jenkins
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
+import org.boozallen.plugins.jte.init.primitives.PrimitiveNamespace
 import org.boozallen.plugins.jte.init.primitives.RunAfter
 import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
@@ -37,13 +38,31 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
         return parseClass(classText)
     }
 
+    private static final String KEY = "stages"
+    private static final String TYPE_DISPLAY_NAME = "Stage"
+    private static final String NAMESPACE_KEY = KEY
+
+    static PrimitiveNamespace createNamespace(){
+        return new CallableNamespace(name: getNamespaceKey(), typeDisplayName: TYPE_DISPLAY_NAME)
+    }
+
+    static String getNamespaceKey(){
+        return NAMESPACE_KEY
+    }
+
     @Override
     @RunAfter([LibraryStepInjector, DefaultStepInjector, TemplateMethodInjector])
     void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
         Class stageClass = getPrimitiveClass()
-        config.getConfig().stages.each{ name, steps ->
+        LinkedHashMap aggregatedConfig = config.getConfig()
+        aggregatedConfig[KEY].each{ name, steps ->
             List<String> stepNames = steps.keySet() as List<String>
-            binding.setVariable(name, stageClass.newInstance(binding, name, stepNames))
+            binding.setVariable(name, stageClass.newInstance(
+                binding: binding,
+                name: name,
+                steps: stepNames,
+                injector: this.getClass()
+            ))
         }
     }
 
@@ -51,7 +70,7 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
     void validateBinding(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
         LinkedHashMap aggregatedConfig = config.getConfig()
         LinkedHashMap stagesWithUndefinedSteps = [:]
-        aggregatedConfig.stages.each{ name, stageConfig ->
+        aggregatedConfig[KEY].each{ name, stageConfig ->
             List<String> steps = stageConfig.keySet() as List<String>
             List<String> undefinedSteps = []
             steps.each{ step ->
