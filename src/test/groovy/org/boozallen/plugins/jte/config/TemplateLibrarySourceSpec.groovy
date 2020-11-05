@@ -56,7 +56,7 @@ class TemplateLibrarySourceSpec extends Specification{
 
         GitSCM scm = new GitSCM(
             GitSCM.createRepoList(repo.toString(), null),
-            Collections.singletonList(new BranchSpec("*/master")),
+            Collections.singletonList(new BranchSpec("*/main")),
             false,
             Collections.<SubmoduleConfig>emptyList(),
             null,
