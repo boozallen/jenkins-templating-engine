@@ -115,7 +115,7 @@ class ScmSpec extends Specification {
         // create Governance Tier
         scm = new GitSCM(
                 GitSCM.createRepoList(sampleRepo.toString(), null),
-                Collections.singletonList(new BranchSpec("*/master")),
+                Collections.singletonList(new BranchSpec("*/main")),
                 false,
                 Collections.<SubmoduleConfig>emptyList(),
                 null,
