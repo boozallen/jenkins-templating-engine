@@ -24,7 +24,6 @@ import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplateBindingFactory
 import org.boozallen.plugins.jte.job.AdHocTemplateFlowDefinition
 import org.boozallen.plugins.jte.util.FileSystemWrapper
-import org.boozallen.plugins.jte.util.JTEException
 import org.boozallen.plugins.jte.util.TemplateLogger
 import org.jenkinsci.plugins.workflow.flow.FlowDefinition
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
@@ -118,7 +117,7 @@ class PipelineDecorator extends InvisibleAction {
         LinkedHashMap pipelineConfig = config.getConfig()
         WorkflowJob job = getJob()
         FlowDefinition flowDefinition = job.getDefinition()
-        JteBlockWrapper jteBlockWrapper = new JteBlockWrapper(pipelineConfig.jte ?: [:])
+        JteBlockWrapper jteBlockWrapper = (pipelineConfig.jte ?: [:]) as JteBlockWrapper
         if (flowDefinition instanceof AdHocTemplateFlowDefinition){
             String template = flowDefinition.getTemplate()
             if(template){
@@ -180,17 +179,18 @@ class PipelineDecorator extends InvisibleAction {
          */
         String pipeline_template = null
         Boolean allow_scm_jenkinsfile = true
-        JteBlockWrapper(final LinkedHashMap config){
-            List<String> fields = this.getMetaClass().properties*.getName()
-            fields.each{ field ->
-                if(config.containsKey(field)){
-                    this.setProperty(field, config[field])
-                }
-            }
-            LinkedHashMap notFound = config - config.subMap(fields)
-            if(notFound){
-                throw new JTEException("the following configurations are not supported in the JTE block: ${notFound.keySet()}")
-            }
+        Boolean permissive_initialization = false
+
+        static LinkedHashMap getSchema(){
+            return [
+                fields: [
+                    optional: [
+                        allow_scm_jenkinsfile: Boolean,
+                        pipeline_template: String,
+                        permissive_initialization: Boolean
+                    ]
+                ]
+            ]
         }
     }
 
