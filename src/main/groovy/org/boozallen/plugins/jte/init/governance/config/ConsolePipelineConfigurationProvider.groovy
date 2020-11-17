@@ -16,7 +16,6 @@
 package org.boozallen.plugins.jte.init.governance.config
 
 import hudson.Extension
-import hudson.Util
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationDsl
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
@@ -30,56 +29,48 @@ import org.kohsuke.stapler.DataBoundConstructor
  */
 class ConsolePipelineConfigurationProvider extends PipelineConfigurationProvider{
 
-    boolean providePipelineConfig
-    String pipelineConfig
-    boolean provideDefaultTemplate
-    String defaultTemplate
-    List<ConsolePipelineTemplate> pipelineCatalog
+    ConsolePipelineConfiguration pipelineConfig
+    ConsoleDefaultPipelineTemplate defaultTemplate
+    List<ConsoleNamedPipelineTemplate> pipelineCatalog
 
     @DataBoundConstructor
-    ConsolePipelineConfigurationProvider(boolean providePipelineConfig, String pipelineConfig,
-                                         boolean provideDefaultTemplate, String defaultTemplate,
-                                         List<ConsolePipelineTemplate> pipelineCatalog){
-        this.providePipelineConfig = providePipelineConfig
-        this.pipelineConfig = providePipelineConfig ? Util.fixEmptyAndTrim(pipelineConfig) : null
-        this.provideDefaultTemplate = provideDefaultTemplate
-        this.defaultTemplate = provideDefaultTemplate ? Util.fixEmptyAndTrim(defaultTemplate) : null
+    ConsolePipelineConfigurationProvider(
+        ConsoleDefaultPipelineTemplate defaultTemplate,
+        ConsolePipelineConfiguration pipelineConfig,
+        List<ConsoleNamedPipelineTemplate> pipelineCatalog
+    ){
+        this.defaultTemplate = defaultTemplate
+        this.pipelineConfig = pipelineConfig
         this.pipelineCatalog = pipelineCatalog
     }
 
-    boolean getProvidePipelineConfig(){
-        return providePipelineConfig
-    }
-
-    String getPipelineConfig(){
+    ConsolePipelineConfiguration getPipelineConfig(){
         return pipelineConfig
     }
 
-    boolean getProvideDefaultTemplate(){
-        return provideDefaultTemplate
-    }
-
-    String getDefaultTemplate(){
+    ConsoleDefaultPipelineTemplate getDefaultTemplate(){
         return defaultTemplate
     }
 
-    List<ConsolePipelineTemplate> getPipelineCatalog(){
+    List<ConsoleNamedPipelineTemplate> getPipelineCatalog(){
         return pipelineCatalog
     }
 
     @Override
     PipelineConfigurationObject getConfig(FlowExecutionOwner owner){
-        return pipelineConfig ? new PipelineConfigurationDsl(owner).parse(pipelineConfig) : null
+        return  pipelineConfig.getProvidePipelineConfig() ?
+                new PipelineConfigurationDsl(owner).parse(pipelineConfig.getPipelineConfig()) :
+                null
     }
 
     @Override
     String getJenkinsfile(FlowExecutionOwner owner){
-        return defaultTemplate
+        return defaultTemplate.getDefaultTemplate()
     }
 
     @Override
     String getTemplate(FlowExecutionOwner owner, String templateName){
-        ConsolePipelineTemplate template = pipelineCatalog.find{ item -> item.getName() == templateName }
+        ConsoleNamedPipelineTemplate template = pipelineCatalog.find{ item -> item.getName() == templateName }
         return template ? template.getTemplate() : null
     }
 

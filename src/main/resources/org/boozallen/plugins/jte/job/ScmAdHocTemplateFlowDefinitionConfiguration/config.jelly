@@ -24,7 +24,11 @@
   -->
 
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:st="jelly:stapler" xmlns:wfe="/org/jenkinsci/plugins/workflow/editor">
-    <f:dropdownDescriptorSelector field="configProvider"
-                                  title="Pipeline Configuration"
-                                  default="${descriptor.defaultConfigurationProvider}"/>
+    <f:dropdownDescriptorSelector field="scm" title="Source Location" descriptors="${descriptor.applicableDescriptors}"/>
+    <f:entry field="pipelineConfigurationPath" title="Pipeline Configuration Path">
+        <f:textbox default="pipeline_config.groovy"/>
+    </f:entry>
+    <f:entry field="pipelineTemplatePath" title="Pipeline Template Path">
+        <f:textbox default="Jenkinsfile"/>
+    </f:entry>
 </j:jelly>

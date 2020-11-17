@@ -16,10 +16,15 @@
 package org.boozallen.plugins.jte.job
 
 import hudson.Extension
-import hudson.Util
+import hudson.init.InitMilestone
+import hudson.init.Initializer
 import hudson.model.Descriptor
 import hudson.model.DescriptorVisibilityFilter
+import hudson.model.Items
+import jenkins.model.Jenkins
+import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
 import org.jenkinsci.plugins.workflow.flow.FlowDefinitionDescriptor
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
 import org.kohsuke.stapler.DataBoundConstructor
@@ -27,39 +32,63 @@ import org.kohsuke.stapler.DataBoundConstructor
 /**
  * Allows JTE to be used in a Pipeline Job
  */
-class AdHocTemplateFlowDefinition extends TemplateFlowDefinition {
+class AdHocTemplateFlowDefinition extends TemplateFlowDefinition implements Serializable {
 
-    private final boolean providePipelineTemplate
-    private final String template
-    private final boolean providePipelineConfig
-    private final String pipelineConfig
+    private static final long serialVersionUID = 1L;
+    private transient boolean providePipelineTemplate
+    private transient String template
+    private transient boolean providePipelineConfig
+    private transient String pipelineConfig
+
+    AdHocTemplateFlowDefinitionConfiguration configProvider
 
     @DataBoundConstructor
-    AdHocTemplateFlowDefinition(boolean providePipelineTemplate, String template, boolean providePipelineConfig, String pipelineConfig){
-        this.providePipelineTemplate = providePipelineTemplate
-        this.template = providePipelineTemplate ? Util.fixEmptyAndTrim(template) : null
-        this.providePipelineConfig = providePipelineConfig
-        this.pipelineConfig = providePipelineConfig ? Util.fixEmptyAndTrim(pipelineConfig) : null
+    AdHocTemplateFlowDefinition(AdHocTemplateFlowDefinitionConfiguration configProvider){
+        this.configProvider = configProvider
     }
 
-    boolean getProvidePipelineTemplate(){ return providePipelineTemplate }
+    AdHocTemplateFlowDefinitionConfiguration getConfigProvider(){
+        return configProvider
+    }
 
-    String getTemplate() { return template }
+    PipelineConfigurationObject getPipelineConfiguration(FlowExecutionOwner flowOwner){
+        return configProvider.hasConfig(flowOwner) ? configProvider.getConfig(flowOwner) : null
+    }
 
-    boolean getProvidePipelineConfig(){ return providePipelineConfig }
+    String getTemplate(FlowExecutionOwner flowOwner){
+        return configProvider.hasTemplate(flowOwner) ? configProvider.getTemplate(flowOwner) : null
+    }
 
-    String getPipelineConfig(){ return pipelineConfig }
+    protected Object readResolve(){
+        if( configProvider == null ){
+            this.configProvider = ConsoleAdHocTemplateFlowDefinitionConfiguration.create(
+                    this.providePipelineTemplate, this.template, this.providePipelineConfig, this.pipelineConfig
+            )
+        }
+
+        return this
+    }
 
     @Extension
     static class DescriptorImpl extends FlowDefinitionDescriptor {
+        @Initializer(before = InitMilestone.PLUGINS_STARTED)
+        static void addAliases() {
+            Items.XSTREAM2.addCompatibilityAlias("org.boozallen.plugins.jte.job.TemplateFlowDefinition", org.boozallen.plugins.jte.job.AdHocTemplateFlowDefinition)
+        }
+
         @Override
         String getDisplayName() {
             return "Jenkins Templating Engine"
+        }
+
+        Descriptor getDefaultConfigurationProvider(){
+            return Jenkins.get().getDescriptor(ConsoleAdHocTemplateFlowDefinitionConfiguration)
         }
     }
 
     @Extension
     static class HideMeElsewhere extends DescriptorVisibilityFilter {
+
         @Override
         boolean filter(Object context, Descriptor descriptor) {
             if (descriptor instanceof DescriptorImpl) {
@@ -67,6 +96,7 @@ class AdHocTemplateFlowDefinition extends TemplateFlowDefinition {
             }
             return true
         }
+
     }
 
 }

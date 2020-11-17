@@ -88,15 +88,7 @@ class PipelineDecorator extends InvisibleAction {
         PipelineConfigurationObject jobConfig = null
         FlowDefinition flowDefinition = job.getDefinition()
         if(flowDefinition instanceof AdHocTemplateFlowDefinition){
-            String jobConfigString = flowDefinition.getPipelineConfig()
-            if(jobConfigString){
-                try{
-                    jobConfig = new PipelineConfigurationDsl(flowOwner).parse(jobConfigString)
-                } catch(any){
-                    getLogger().printError("Error parsing ${job.getName()}'s configuration file.")
-                    throw any
-                }
-            }
+            jobConfig = flowDefinition.getPipelineConfiguration(flowOwner)
         } else {
             // get job config if present
             FileSystemWrapper fsw = FileSystemWrapper.createFromJob(flowOwner)
@@ -119,7 +111,7 @@ class PipelineDecorator extends InvisibleAction {
         FlowDefinition flowDefinition = job.getDefinition()
         JteBlockWrapper jteBlockWrapper = (pipelineConfig.jte ?: [:]) as JteBlockWrapper
         if (flowDefinition instanceof AdHocTemplateFlowDefinition){
-            String template = flowDefinition.getTemplate()
+            String template = flowDefinition.getTemplate(flowOwner)
             if(template){
                 getLogger().print "Obtained Pipeline Template from job configuration"
                 return template
