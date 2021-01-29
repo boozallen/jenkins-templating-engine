@@ -15,12 +15,16 @@
 */
 package org.boozallen.plugins.jte.init.primitives
 
+import org.boozallen.plugins.jte.init.PipelineDecorator
 import org.boozallen.plugins.jte.init.primitives.injectors.StepWrapperFactory
 import org.boozallen.plugins.jte.util.JTEException
 import org.boozallen.plugins.jte.util.TemplateLogger
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.jenkinsci.plugins.workflow.cps.DSL
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
+import org.jenkinsci.plugins.workflow.cps.CpsThread
+import org.jenkinsci.plugins.workflow.flow.FlowExecution
+import org.jenkinsci.plugins.workflow.job.WorkflowRun
 
 /**
  * Stores a run's primitives
@@ -48,6 +52,15 @@ class TemplateBinding extends Binding implements Serializable{
          * that would be triggered by "jte" as a ReservedVariableName
          */
         variables.put(registry.getVariableName(), registry)
+    }
+
+    static TemplateBinding fetchDuringRun(){
+        CpsThread thread = CpsThread.current()
+        FlowExecution execution = thread?.getExecution()
+        FlowExecutionOwner owner = execution?.getOwner()
+        WorkflowRun run = owner.run()
+        PipelineDecorator decorator = run.getAction(PipelineDecorator)
+        return decorator.getBinding()
     }
 
     void lock(FlowExecutionOwner flowOwner){
