@@ -15,11 +15,8 @@
 */
 package org.boozallen.plugins.jte.init.primitives.injectors
 
-import com.cloudbees.groovy.cps.NonCPS
 import org.boozallen.plugins.jte.init.governance.config.dsl.TemplateConfigException
-import org.boozallen.plugins.jte.init.primitives.TemplateException
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitive
-import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 
 /**
  * JTE primitive representing an application environment to capture environmental context
@@ -29,7 +26,6 @@ class ApplicationEnvironment extends TemplatePrimitive implements Serializable{
 
     private static final long serialVersionUID = 1L
     String name
-    Class<? extends TemplatePrimitiveInjector> injector
     String short_name
     String long_name
     def config
@@ -57,18 +53,10 @@ class ApplicationEnvironment extends TemplatePrimitive implements Serializable{
         }
 
         config = config - config.subMap(["short_name", "long_name"])
-        /*
-            TODO:
-                this makes it so that changing <inst>.config.whatever = <some value>
-                will throw an UnsupportedOperationException.  Need to figure out how to
-                throw TemplateConfigException instead for the sake of logging.
-        */
         this.config = config.asImmutable()
     }
 
-    @NonCPS @Override String getDescription(){ return "Application Environment '${name}'" }
-    @NonCPS @Override String getName(){ return name }
-    @NonCPS @Override Class<? extends TemplatePrimitiveInjector> getInjector(){ return ApplicationEnvironmentInjector }
+    @Override String getName(){ return name }
 
     Object getProperty(String name){
         def meta = ApplicationEnvironment.metaClass.getMetaProperty(name)
@@ -80,15 +68,8 @@ class ApplicationEnvironment extends TemplatePrimitive implements Serializable{
         throw new TemplateConfigException("Can't modify Application Environment '${long_name}'. Application Environments are immutable.")
     }
 
-    @NonCPS
-    void throwPreLockException(String msg){
-        msg += "Application Environment ${name} already defined."
-        throw new TemplateException(msg)
-    }
-
-    void throwPostLockException(String msg){
-        msg += "Variable ${name} is reserved as an Application Environment."
-        throw new TemplateException(msg)
+    @Override String toString(){
+        return "Application Environment '${name}'"
     }
 
 }

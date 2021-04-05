@@ -15,12 +15,12 @@
 */
 package org.boozallen.plugins.jte.init.primitives.injectors
 
+import hudson.FilePath
 import org.boozallen.plugins.jte.init.PipelineDecorator
 import org.boozallen.plugins.jte.init.governance.GovernanceTier
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
 import org.boozallen.plugins.jte.init.governance.libs.LibraryProvider
 import org.boozallen.plugins.jte.init.governance.libs.LibrarySource
-import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.util.AggregateException
 import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
@@ -31,10 +31,12 @@ import org.jvnet.hudson.test.WithoutJenkins
 import spock.lang.Shared
 import spock.lang.Specification
 
-class LibraryStepInjectorSpec extends Specification{
+class LibraryStepInjectorSpec extends Specification {
 
     class JobChild {
-        WorkflowJob getParent(){ return null }
+
+        WorkflowJob getParent() { return null }
+
     }
 
     @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
@@ -43,25 +45,25 @@ class LibraryStepInjectorSpec extends Specification{
 
     WorkflowJob job = GroovyMock()
     LibraryStepInjector injector = new LibraryStepInjector()
-    FlowExecutionOwner flowExecutionOwner = GroovyMock{
-        run() >> GroovyMock(JobChild){
+    FlowExecutionOwner flowExecutionOwner = GroovyMock {
+        run() >> GroovyMock(JobChild) {
             getParent() >> job
         }
+        getRootDir() >> new File('.')
     }
 
-    TemplateBinding templateBinding = Mock()
     LinkedHashMap config = [
             jte: [:],
             libraries: [:]
     ]
 
-    PipelineConfigurationObject pipelineConfigurationObject = pipelineConfigurationObject = Mock{
+    PipelineConfigurationObject pipelineConfigurationObject = pipelineConfigurationObject = Mock {
         getConfig() >> config
 
         getJteBlockWrapper() >> { return config.jte as PipelineDecorator.JteBlockWrapper }
     }
 
-    class MockLibraryProvider extends LibraryProvider{
+    class MockLibraryProvider extends LibraryProvider {
 
         @Override
         Boolean hasLibrary(FlowExecutionOwner flowOwner, String libraryName) {
@@ -74,254 +76,213 @@ class LibraryStepInjectorSpec extends Specification{
         }
 
         @Override
-        void logLibraryLoading(FlowExecutionOwner flowOwner, String libName){}
-
-        @Override
-        void loadLibraryClasses(FlowExecutionOwner flowOwner, String libName){}
-
-        @Override
-        void loadLibrarySteps(FlowExecutionOwner flowOwner, Binding binding, String libName, Map libConfig) {}
+        void loadLibrary(FlowExecutionOwner flowOwner, String libName, FilePath srcDir, FilePath libDir) { }
 
     }
 
     @WithoutJenkins
-    def "when library source has library, loadLibrary is called"(){
+    def "when library source has library, loadLibrary is called"() {
         setup:
-        String libraryName = "libA"
-        config.libraries["libA"] = [:]
+        String libraryName = 'libA'
+        config.libraries['libA'] = [:]
 
-        MockLibraryProvider p1 = Mock{
+        MockLibraryProvider p1 = Mock {
             hasLibrary(flowExecutionOwner, libraryName) >> true
         }
 
-        LibrarySource s1 = Mock{
+        LibrarySource s1 = Mock {
             getLibraryProvider() >> p1
         }
 
-        GovernanceTier t1 = GroovyMock(global:true){
+        GovernanceTier t1 = GroovyMock(global:true) {
             getLibrarySources() >> [ s1 ]
         }
 
         GovernanceTier.getHierarchy(_) >> [ t1 ]
 
         when:
-        injector.injectPrimitives(flowExecutionOwner, pipelineConfigurationObject, templateBinding)
+        injector.injectPrimitives(flowExecutionOwner, pipelineConfigurationObject)
 
         then:
-        1 * p1.loadLibrarySteps(flowExecutionOwner, templateBinding, libraryName, _)
+        1 * p1.loadLibrary(*_)
     }
 
     @WithoutJenkins
-    def "Libraries can be loaded across library sources in a governance tier"(){
+    def "Libraries can be loaded across library sources in a governance tier"() {
         setup:
-        config.libraries["libA"] = [:]
-        config.libraries["libB"] = [:]
+        config.libraries['libA'] = [:]
+        config.libraries['libB'] = [:]
 
-        MockLibraryProvider p1 = Mock{
-            hasLibrary(flowExecutionOwner, "libA") >> true
+        MockLibraryProvider p1 = Mock {
+            hasLibrary(flowExecutionOwner, 'libA') >> true
         }
-        MockLibraryProvider p2 = Mock{
-            hasLibrary(flowExecutionOwner, "libB") >> true
+        MockLibraryProvider p2 = Mock {
+            hasLibrary(flowExecutionOwner, 'libB') >> true
         }
 
-        LibrarySource s1 = Mock{
+        LibrarySource s1 = Mock {
             getLibraryProvider() >> p1
         }
-        LibrarySource s2 = Mock{
+        LibrarySource s2 = Mock {
             getLibraryProvider() >> p2
         }
 
-        GovernanceTier t1 = GroovyMock(global:true){
+        GovernanceTier t1 = GroovyMock(global:true) {
             getLibrarySources() >> [ s1, s2 ]
         }
 
         GovernanceTier.getHierarchy(_) >> [ t1 ]
 
         when:
-        injector.injectPrimitives(flowExecutionOwner, pipelineConfigurationObject, templateBinding)
+        injector.injectPrimitives(flowExecutionOwner, pipelineConfigurationObject)
 
         then:
-        1 * p1.loadLibrarySteps(flowExecutionOwner, templateBinding, "libA", _)
-        0 * p1.loadLibrarySteps(flowExecutionOwner, templateBinding, "libB", _)
-        1 * p2.loadLibrarySteps(flowExecutionOwner, templateBinding, "libB", _)
-        0 * p2.loadLibrarySteps(flowExecutionOwner, templateBinding, "libA", _)
+        1 * p1.loadLibrary(_, 'libA', _, _)
+        0 * p1.loadLibrary(_, 'libB', _, _)
+        1 * p2.loadLibrary(_, 'libB', _, _)
+        0 * p2.loadLibrary(_, 'libA', _, _)
     }
 
     @WithoutJenkins
-    def "Libraries can be loaded across library sources in different governance tiers"(){
+    def "Libraries can be loaded across library sources in different governance tiers"() {
         setup:
-        config.libraries["libA"] = [:]
-        config.libraries["libB"] = [:]
+        config.libraries['libA'] = [:]
+        config.libraries['libB'] = [:]
 
-        MockLibraryProvider p1 = Mock{
-            hasLibrary(flowExecutionOwner, "libA") >> true
+        MockLibraryProvider p1 = Mock {
+            hasLibrary(flowExecutionOwner, 'libA') >> true
         }
-        MockLibraryProvider p2 = Mock{
-            hasLibrary(flowExecutionOwner, "libB") >> true
+        MockLibraryProvider p2 = Mock {
+            hasLibrary(flowExecutionOwner, 'libB') >> true
         }
 
-        LibrarySource s1 = Mock{
+        LibrarySource s1 = Mock {
             getLibraryProvider() >> p1
         }
-        LibrarySource s2 = Mock{
+        LibrarySource s2 = Mock {
             getLibraryProvider() >> p2
         }
 
-        GovernanceTier tier1 = Mock{
+        GovernanceTier tier1 = Mock {
             getLibrarySources() >> [ s1, s2 ]
         }
 
-        GovernanceTier tier2 = GroovyMock(global:true){
+        GovernanceTier tier2 = GroovyMock(global:true) {
             getLibrarySources() >> [ s1, s2 ]
         }
 
         GovernanceTier.getHierarchy(_) >> [ tier1, tier2 ]
 
         when:
-        injector.injectPrimitives(flowExecutionOwner, pipelineConfigurationObject, templateBinding)
+        injector.injectPrimitives(flowExecutionOwner, pipelineConfigurationObject)
 
         then:
-        1 * p1.loadLibrarySteps(flowExecutionOwner, templateBinding, "libA", _)
-        0 * p1.loadLibrarySteps(flowExecutionOwner, templateBinding, "libB", _)
-        0 * p2.loadLibrarySteps(flowExecutionOwner, templateBinding, "libA", _)
-        1 * p2.loadLibrarySteps(flowExecutionOwner, templateBinding, "libB", _)
+        1 * p1.loadLibrary(flowExecutionOwner, 'libA', _, _)
+        0 * p1.loadLibrary(flowExecutionOwner, 'libB', _, _)
+        0 * p2.loadLibrary(flowExecutionOwner, 'libA', _, _)
+        1 * p2.loadLibrary(flowExecutionOwner, 'libB', _, _)
     }
 
     @WithoutJenkins
-    def "library on more granular governance tier gets loaded"(){
+    def "library on more granular governance tier gets loaded"() {
         setup:
-        config.libraries["libA"] = [:]
+        config.libraries['libA'] = [:]
 
-        MockLibraryProvider p1 = Mock{
-            hasLibrary(flowExecutionOwner, "libA") >> true
+        MockLibraryProvider p1 = Mock {
+            hasLibrary(flowExecutionOwner, 'libA') >> true
         }
-        MockLibraryProvider p2 = Mock{
-            hasLibrary(flowExecutionOwner, "libA") >> true
+        MockLibraryProvider p2 = Mock {
+            hasLibrary(flowExecutionOwner, 'libA') >> true
         }
 
-        LibrarySource s1 = Mock{
+        LibrarySource s1 = Mock {
             getLibraryProvider() >> p1
         }
-        LibrarySource s2 = Mock{
+        LibrarySource s2 = Mock {
             getLibraryProvider() >> p2
         }
 
-        GovernanceTier tier1 = Mock{
+        GovernanceTier tier1 = Mock {
             getLibrarySources() >> [ s1 ]
         }
 
-        GovernanceTier tier2 = GroovyMock(global:true){
+        GovernanceTier tier2 = GroovyMock(global:true) {
             getLibrarySources() >> [ s2 ]
         }
 
         GovernanceTier.getHierarchy(_) >> [ tier1, tier2 ]
 
         when:
-        injector.injectPrimitives(flowExecutionOwner, pipelineConfigurationObject, templateBinding)
+        injector.injectPrimitives(flowExecutionOwner, pipelineConfigurationObject)
 
         then:
-        1 * p1.loadLibrarySteps(flowExecutionOwner, templateBinding, "libA", _)
-        0 * p2.loadLibrarySteps(flowExecutionOwner, templateBinding, "libA", _)
+        1 * p1.loadLibrary(flowExecutionOwner, 'libA', _, _)
+        0 * p2.loadLibrary(flowExecutionOwner, 'libA', _, _)
     }
 
     @WithoutJenkins
-    def "library on higher governance tier (last in hierarchy array) gets loaded if library override set to false"(){
+    def "library on higher governance tier (last in hierarchy array) gets loaded if library override set to false"() {
         setup:
         config.jte['reverse_library_resolution'] = true
-        config.libraries["libA"] = [:]
+        config.libraries['libA'] = [:]
 
-        MockLibraryProvider p1 = Mock{
-            hasLibrary(flowExecutionOwner, "libA") >> true
+        MockLibraryProvider p1 = Mock {
+            hasLibrary(flowExecutionOwner, 'libA') >> true
         }
-        MockLibraryProvider p2 = Mock{
-            hasLibrary(flowExecutionOwner, "libA") >> true
+        MockLibraryProvider p2 = Mock {
+            hasLibrary(flowExecutionOwner, 'libA') >> true
         }
 
-        LibrarySource s1 = Mock{
+        LibrarySource s1 = Mock {
             getLibraryProvider() >> p1
         }
-        LibrarySource s2 = Mock{
+        LibrarySource s2 = Mock {
             getLibraryProvider() >> p2
         }
 
-        GovernanceTier t1 = Mock{
+        GovernanceTier t1 = Mock {
             getLibrarySources() >> [ s1 ]
         }
 
-        GovernanceTier t2 = GroovyMock(global:true){
+        GovernanceTier t2 = GroovyMock(global:true) {
             getLibrarySources() >> [ s2 ]
         }
 
         GovernanceTier.getHierarchy(_) >> [ t1, t2 ]
 
         when:
-        injector.injectPrimitives(flowExecutionOwner, pipelineConfigurationObject, templateBinding)
+        injector.injectPrimitives(flowExecutionOwner, pipelineConfigurationObject)
 
         then:
-        0 * p1.loadLibrarySteps(flowExecutionOwner, templateBinding, "libA", _)
-        1 * p2.loadLibrarySteps(flowExecutionOwner, templateBinding, "libA", _)
+        0 * p1.loadLibrary(_, 'libA', _, _)
+        1 * p2.loadLibrary(_, 'libA', _, _)
     }
 
     @WithoutJenkins
-    def "library loader correctly passes step config"(){
-        setup:
-        config.libraries = [
-                libA: [
-                        fieldA: "A"
-                ],
-                libB: [
-                        fieldB: "B"
-                ]
-        ]
-
-        MockLibraryProvider p1 = Mock{
-            hasLibrary(flowExecutionOwner, "libA") >> true
-            hasLibrary(flowExecutionOwner, "libB") >> true
-        }
-
-        LibrarySource s1 = Mock{
-            getLibraryProvider() >> p1
-        }
-
-        GovernanceTier t1 = GroovyMock(global:true){
-            getLibrarySources() >> [ s1 ]
-        }
-
-        GovernanceTier.getHierarchy(_) >> [ t1 ]
-
-        when:
-        injector.injectPrimitives(flowExecutionOwner, pipelineConfigurationObject, templateBinding)
-
-        then:
-        1 * p1.loadLibrarySteps(flowExecutionOwner, templateBinding, "libA", [fieldA: "A"])
-        1 * p1.loadLibrarySteps(flowExecutionOwner, templateBinding, "libB", [fieldB: "B"])
-    }
-
-    @WithoutJenkins
-    def "Missing library throws exception"(){
+    def "Missing library throws exception"() {
         // now, when a library isn't found, we push a message onto the `libConfigErrors` array
         // and throw the exception later after validating all the libraries.
         // so this test represents making sure that an exception is thrown if a library does not exist.
         setup:
         config.libraries = [
                 libA: [
-                        fieldA: "A"
+                        fieldA: 'A'
                 ],
                 libB: [
-                        fieldB: "B"
+                        fieldB: 'B'
                 ]
         ]
 
-        MockLibraryProvider p = Mock{
-            1 * hasLibrary(flowExecutionOwner, "libA") >> true
-            1 * hasLibrary(flowExecutionOwner, "libB") >> false
+        MockLibraryProvider p = Mock {
+            1 * hasLibrary(flowExecutionOwner, 'libA') >> true
+            1 * hasLibrary(flowExecutionOwner, 'libB') >> false
         }
 
-        LibrarySource s = Mock{
+        LibrarySource s = Mock {
             getLibraryProvider() >> p
         }
 
-        GovernanceTier tier = GroovyMock(global:true){
+        GovernanceTier tier = GroovyMock(global:true) {
             getLibrarySources() >> [ s ]
         }
 

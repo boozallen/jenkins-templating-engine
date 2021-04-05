@@ -20,8 +20,8 @@ import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfiguratio
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
 import org.boozallen.plugins.jte.init.governance.GovernanceTier
 import org.boozallen.plugins.jte.init.governance.config.ScmPipelineConfigurationProvider
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.boozallen.plugins.jte.init.primitives.TemplateBinding
-import org.boozallen.plugins.jte.init.primitives.TemplateBindingFactory
 import org.boozallen.plugins.jte.job.AdHocTemplateFlowDefinition
 import org.boozallen.plugins.jte.util.FileSystemWrapper
 import org.boozallen.plugins.jte.util.TemplateLogger
@@ -39,18 +39,19 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
  * <li> determine the pipeline template for this run
  * </ol>
  * <p>
- * Created from {@link org.boozallen.plugins.jte.job.TemplateFlowDefinition}
- * <p>
- * Action consumed by {@link GroovyShellDecoratorImpl} to attach the run's {@link org.boozallen.plugins.jte.init.primitives.TemplateBinding} to template execution
+ * note: this is only still extends InvisibleAction and implements Serializable
+ * for backwords compatibility to avoid exceptions when trying to load
+ * builds on a previous version of the plugin.
+ *
+ * TODO: remove InvisibleAction extends Serializable when appropriate
  */
-class PipelineDecorator extends InvisibleAction implements Serializable {
+class PipelineDecorator extends InvisibleAction implements Serializable{
 
     private static final long serialVersionUID = 1L
-
     FlowExecutionOwner flowOwner
     PipelineConfigurationObject config
-    TemplateBinding binding
     String template
+    transient TemplateBinding binding
 
     PipelineDecorator(FlowExecutionOwner flowOwner) {
         this.flowOwner = flowOwner
@@ -58,7 +59,7 @@ class PipelineDecorator extends InvisibleAction implements Serializable {
 
     void initialize(){
         config   = aggregatePipelineConfigurations()
-        binding  = TemplateBindingFactory.create(flowOwner, config)
+        TemplatePrimitiveInjector.orchestrate(flowOwner, config)
         template = determinePipelineTemplate()
     }
 

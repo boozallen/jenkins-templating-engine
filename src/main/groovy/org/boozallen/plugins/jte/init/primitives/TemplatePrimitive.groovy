@@ -16,57 +16,67 @@
 package org.boozallen.plugins.jte.init.primitives
 
 import com.cloudbees.groovy.cps.NonCPS
+import org.boozallen.plugins.jte.util.JTEException
+import org.boozallen.plugins.jte.util.TemplateLogger
+import org.jenkinsci.plugins.workflow.cps.CpsScript
+import org.jenkinsci.plugins.workflow.cps.GlobalVariable
+
+import javax.annotation.Nonnull
 
 /**
- * Objects whose class extends TemplatePrimitive will be protected in the {@link TemplateBinding} from
- * being inadvertently overridden
+ * Framework constructs that make templates easier to write.
+ * Typically created by parsing the Pipeline Configuration.
  */
-abstract class TemplatePrimitive implements Serializable{
+abstract class TemplatePrimitive extends GlobalVariable implements Serializable{
 
     private static final long serialVersionUID = 1L
 
-    Class<? extends TemplatePrimitiveInjector> injector
+    /**
+     * The GlobalCollisionValidator will populate this list with all
+     * TemplatePrimitives sharing the same name if there is
+     * more than 1.
+     */
+    protected List<TemplatePrimitive> overloaded = []
+
     String name
+    TemplatePrimitiveNamespace parent
 
+    @Override
     @NonCPS
-    Object getValue(){ return this }
+    Object getValue(@Nonnull CpsScript script) throws Exception {
+        isOverloaded()
+        return this
+    }
 
-    /**
-     * Invoked if an object with this class were to be overridden in the {@link TemplateBinding} during initialization
-     */
-    abstract void throwPreLockException(String preface)
+    void setOverloaded(List<TemplatePrimitive> overloaded){
+        this.overloaded = overloaded
+    }
 
-    /**
-     * Invoked if an object with this class were to be overridden in the {@link TemplateBinding} after initialization
-     */
-    abstract void throwPostLockException(String preface)
+    String getParentChain(){
+        List<String> parts = [ getName() ]
+        TemplatePrimitiveNamespace parent = getParent()
+        while(parent){
+            parts.push(parent.getName())
+            parent = parent.getParent()
+        }
+        parts.push(TemplatePrimitiveCollector.JTEVar.KEY)
+        return parts.reverse().join(".")
+    }
 
-    /**
-     * Returns the injector that creates the primitive
-     * <p>
-     * implementing classes must mark this method @NonCPS lest a CpsCallableInvocation be thrown
-     * during initialization
-     * @return
-     */
-    abstract Class<? extends TemplatePrimitiveInjector> getInjector()
-
-    /**
-     * Returns the variable name for this primitive in the binding
-     * <p>
-     * implementing classes must mark this method @NonCPS lest a CpsCallableInvocation be thrown
-     * during initialization
-     * @return
-     */
-    abstract String getName()
-
-    /**
-     * Returns the user-facing description of what this primitive is
-     * <p>
-     *     examples:
-     *     - Library Step 'build' from the 'maven' library
-     *     - Stage 'continuous_integration'
-     * @return the user-facing description of the primitive
-     */
-    abstract String getDescription()
+    protected void isOverloaded(){
+        if(!overloaded.isEmpty()){
+            TemplateLogger logger = TemplateLogger.createDuringRun()
+            List<String> msg = [
+                    "Attempted to access an overloaded primitive:  ${getName()}",
+                    "Please use fully qualified names to access the primitives.",
+                    "options: "
+            ]
+            overloaded.each{ primitive ->
+                msg.push("- ${primitive.getParentChain()}")
+            }
+            logger.printError(msg.join("\n"))
+            throw new JTEException("Attempted to access an overloaded primitive: ${getName()}")
+        }
+    }
 
 }

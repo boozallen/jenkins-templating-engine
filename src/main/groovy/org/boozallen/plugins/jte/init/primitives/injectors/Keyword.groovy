@@ -15,13 +15,23 @@
 */
 package org.boozallen.plugins.jte.init.primitives.injectors
 
-import org.junit.ClassRule
-import org.jvnet.hudson.test.JenkinsRule
-import spock.lang.Shared
-import spock.lang.Specification
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitive
+import org.jenkinsci.plugins.workflow.cps.CpsScript
 
-class PipelineConfigVariableSpec extends Specification {
+/**
+ * JTE primitive that represents a pre-populated variable
+ */
+class Keyword extends TemplatePrimitive{
 
-    @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
+    private static final long serialVersionUID = 1L
+    String name
+    Object value
+
+    @Override String getName(){ return name }
+    @Override String toString(){ return "Keyword '${name}'" }
+    @Override Object getValue(CpsScript script){
+        isOverloaded()
+        return value
+    }
 
 }

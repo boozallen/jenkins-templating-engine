@@ -15,361 +15,272 @@
 */
 package org.boozallen.plugins.jte.init.primitives
 
-import com.cloudbees.groovy.cps.NonCPS
 import hudson.model.Result
-import hudson.model.TaskListener
-import org.boozallen.plugins.jte.init.primitives.injectors.StepWrapperFactory
-import org.boozallen.plugins.jte.util.JTEException
-import org.boozallen.plugins.jte.util.TemplateLogger
+import org.boozallen.plugins.jte.init.governance.libs.TestLibraryProvider
+import org.boozallen.plugins.jte.init.primitives.injectors.ApplicationEnvironment
+import org.boozallen.plugins.jte.init.primitives.injectors.Keyword
+import org.boozallen.plugins.jte.init.primitives.injectors.Stage
+import org.boozallen.plugins.jte.init.primitives.injectors.StepWrapper
 import org.boozallen.plugins.jte.util.TestUtil
-import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.junit.ClassRule
 import org.jvnet.hudson.test.JenkinsRule
-import org.jvnet.hudson.test.WithoutJenkins
 import spock.lang.Shared
 import spock.lang.Specification
 
-class TemplateBindingSpec extends Specification{
+class TemplateBindingSpec extends Specification {
 
     @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
 
-    TemplateBinding binding = new TemplateBinding(Mock(FlowExecutionOwner), false)
-
-    /**
-     * fake primitive for testing
-     */
-    static class TestPrimitive extends TemplatePrimitive{
-        String name
-        Class<? extends TemplatePrimitiveInjector> injector
-
-        @NonCPS @Override String getDescription(){ return "Test Primitive ${name}" }
-        @NonCPS @Override String getName(){ return name }
-        @NonCPS @Override Class<? extends TemplatePrimitiveInjector> getInjector(){ return injector }
-
-        @SuppressWarnings("UnusedMethodParameter")
-        void throwPreLockException(String msg){
-            throw new TemplateException ("pre-lock exception")
-        }
-
-        @SuppressWarnings("UnusedMethodParameter")
-        void throwPostLockException(String msg){
-            throw new TemplateException ("post-lock exception")
-        }
-
+    void cleanup() {
+        TestLibraryProvider.wipeAllLibrarySources()
     }
 
-    static class TestInjector extends TemplatePrimitiveInjector{
-        static String getNamespaceKey(){ return 't' }
-    }
-
-    static class LocalKeywordInjector extends TemplatePrimitiveInjector{
-        static String getNamespaceKey(){ return 'lk' }
-    }
-
-    static class LocalStepInjector extends TemplatePrimitiveInjector{
-    }
-
-    /**
-     * mock Keyword primitive for test
-     */
-    static class LocalKeyword extends TestPrimitive{
-        String value = "dummy value"
-        String getValue(){
-            return value
-        }
-
-        @Override
-        Class<? extends TemplatePrimitiveInjector> getInjector() {
-            return LocalKeywordInjector
-        }
-    }
-
-    /**
-     * mock StepWrapper primitive for test
-     */
-    class StepWrapper extends TestPrimitive{}
-
-    TemplateBinding permissiveBinding
-    def setup(){
-        permissiveBinding = new TemplateBinding(Mock(FlowExecutionOwner), true)
-    }
-
-    @WithoutJenkins
-    def "non-primitive variable set in binding maintains value"(){
-        when:
-        binding.setVariable("x", 3)
-
-        then:
-        binding.getVariable("x") == 3
-    }
-
-    @WithoutJenkins
-    def "Normal variable does not get inserted into registry"(){
-        when:
-        binding.setVariable("x", 3)
-
-        then:
-        !("x" in binding.registry)
-    }
-
-    @WithoutJenkins
-    def "template primitive inserted into registry"(){
+    /****************************
+     * Keyword overriding
+     ****************************/
+    def "Overriding a keyword in the binding from a template throws exception"() {
         given:
-        String name = "x"
-
-        when:
-        binding.setVariable(name, new LocalKeyword(name:name))
-
-        then:
-        name in binding.registry
-    }
-
-    @WithoutJenkins
-    def "binding collision pre-lock throws pre-lock exception, if not permissive"(){
-        def name = "x"
-        when:
-        binding.setVariable(name, new LocalKeyword(name: name))
-        binding.setVariable(name, 3)
-
-        then:
-        TemplateException ex = thrown(TemplateException)
-        assert ex.message == "pre-lock exception"
-    }
-
-    @WithoutJenkins
-    def "permissive mode binding collision does not throws pre-lock exception"(){
-        def name = "x"
-        when:
-        permissiveBinding.setVariable(name, new LocalKeyword(name: name))
-        permissiveBinding.setVariable(name, 3)
-
-        then:
-        noExceptionThrown()
-    }
-
-    @WithoutJenkins
-    def "getVariable with permissive double assignment throws exception after lock"(){
-        def run = Mock(FlowExecutionOwner)
-        def listener = Mock(TaskListener)
-        listener.getLogger() >> Mock(PrintStream)
-        run.getListener() >> listener
-
-        GroovyMock(TemplateLogger, global: true)
-        TemplateLogger.createDuringRun() >> Mock(TemplateLogger)
-
-        when:
-        permissiveBinding.setVariable("x", new LocalKeyword(name: 'x'))
-        permissiveBinding.setVariable("x", new TestPrimitive(name: 'x', injector: TestInjector))
-        permissiveBinding.lock(run)
-        permissiveBinding.getVariable('x')
-
-        then:
-        JTEException e = thrown(JTEException)
-        e.message.contains("Attempted to access an overloaded primitive: x")
-    }
-
-    @WithoutJenkins
-    def "binding collision post-lock throws post-lock exception"(){
-        def name = "x"
-        def run = Mock(FlowExecutionOwner)
-        def listener = Mock(TaskListener)
-        listener.getLogger() >> Mock(PrintStream)
-        run.getListener() >> listener
-        when:
-        binding.setVariable(name, new LocalKeyword(name: name))
-        binding.lock(run)
-        binding.setVariable(name, 3)
-
-        then:
-        TemplateException ex = thrown()
-        assert ex.message == "post-lock exception"
-    }
-
-    @WithoutJenkins
-    def "missing variable throws MissingPropertyException"(){
-        when:
-        binding.getVariable("doesntexist")
-
-        then:
-        thrown MissingPropertyException
-    }
-
-    @WithoutJenkins
-    def "getValue overrides actual value set"(){
-        when:
-        binding.setVariable("x", new LocalKeyword())
-
-        then:
-        binding.getVariable("x") == "dummy value"
-    }
-
-    @WithoutJenkins
-    def "primitive with no getValue returns same object set"(){
-        def name = "x"
-        setup:
-        TestPrimitive test = new TestPrimitive(name: name, injector: TestInjector)
-
-        when:
-        binding.setVariable(name, test)
-
-        then:
-        binding.getVariable(name) == test
-    }
-
-    @WithoutJenkins
-    def "can't overwrite library config variable"(){
-        when:
-        binding.setVariable(StepWrapperFactory.CONFIG_VAR, "test")
-
-        then:
-        thrown Exception
-    }
-
-    @WithoutJenkins
-    def "hasStep returns true when variable exists and is a StepWrapper"(){
-        def name = "test_step"
-        setup:
-        GroovySpy(StepWrapperFactory, global:true)
-        StepWrapperFactory.getPrimitiveClass() >> { return StepWrapper }
-
-        when:
-        StepWrapper s = new StepWrapper(name: name, injector: LocalStepInjector)
-        binding.setVariable("test_step", s)
-
-        then:
-        binding.hasStep("test_step")
-    }
-
-    @WithoutJenkins
-    def "hasStep returns false when variable exists but is not a StepWrapper"(){
-        setup:
-        binding.setVariable("test_step", 1)
-
-        expect:
-        !binding.hasStep("test_step")
-    }
-
-    @WithoutJenkins
-    def "hasStep returns false when variable does not exist"(){
-        expect:
-        !binding.hasStep("test_step")
-    }
-
-    @WithoutJenkins
-    def "getStep returns step when variable exists and is StepWrapper"(){
-        def name = "test_step"
-        setup:
-        GroovySpy(StepWrapperFactory, global:true)
-        StepWrapperFactory.getPrimitiveClass() >> { return StepWrapper }
-        StepWrapper step = new StepWrapper(name: name, injector: LocalStepInjector)
-
-        when:
-        binding.setVariable(name, step)
-
-        then:
-        binding.getStep(name) == step
-    }
-
-    @WithoutJenkins
-    def "getStep throws exception when variable exists but is not StepWrapper"(){
-        setup:
-        binding.setVariable("test_step", 1)
-
-        when:
-        binding.getStep("test_step")
-
-        then:
-        TemplateException ex = thrown()
-        ex.message == "No step test_step has been loaded"
-    }
-
-    @WithoutJenkins
-    def "getStep throws exception when variable does not exist"(){
-        when:
-        binding.getStep("test_step")
-
-        then:
-        TemplateException ex = thrown()
-        ex.message == "No step test_step has been loaded"
-    }
-
-    def "validate TemplateBinding sets 'steps' var"(){
-        given:
+        def run
         WorkflowJob job = TestUtil.createAdHoc(jenkins,
-                template: "node{ sh 'echo hello' }"
+            config: ' keywords{ x = true }',
+            template: 'x = false'
         )
 
-        expect:
-        jenkins.assertLogContains("hello", jenkins.buildAndAssertSuccess(job))
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("Failed to set variable 'x'", run)
     }
-
-    def "application env as argument for stage context"(){
+    def "Overriding a keyword in the binding from a library step throws exception"() {
         given:
-        String template = """
-        broadway dev
-        """
-        String config = """
-        jte{
-          permissive_initialization = true
-        }
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('exampleLibrary', 'someStep', 'void call(){ x = false }')
+        libProvider.addGlobally()
 
-        application_environments {
-          dev{
-            long_name = "development"
-          }
-        }
-
-        stages{
-          broadway{
-            temp_meth1
-          }
-        }
-
-        template_methods{
-          temp_meth1
-        }
-        """
-
+        def run
         WorkflowJob job = TestUtil.createAdHoc(jenkins,
-            template: template,
-            config: config
+            config: '''
+                libraries{ exampleLibrary }
+                keywords{ x = true }
+            ''',
+            template: 'someStep()'
         )
 
-        expect:
-        jenkins.buildAndAssertStatus(Result.SUCCESS, job)
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("Failed to set variable 'x'", run)
+    }
+    def "Access an overloaded keyword results in exception"() {
+        given:
+        Keyword keyword = Spy()
+        when:
+        keyword.getValue(null)
+        then:
+        1 * keyword.isOverloaded()
     }
 
-    def "permissive mode binding collision with ReservedVariable (stageContext) pre-lock throws pre-lock exception"(){
+    /****************************
+     * Step overriding
+     ****************************/
+    def "Overriding a step in the binding from a template throws exception"() {
         given:
-        String template = "broadway"
-        String config = """
-        jte{
-          permissive_initialization = true
-        }
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('exampleLibrary', 'someStep', 'void call(){ x = false }')
+        libProvider.addGlobally()
 
-        stages{
-          broadway{
-            temp_meth1
-          }
-        }
-
-        keywords{
-          stageContext = "x"
-        }
-
-        template_methods{
-          temp_meth1
-        }
-        """
-
+        def run
         WorkflowJob job = TestUtil.createAdHoc(jenkins,
-            template: template,
-            config: config
+            config: 'libraries{ exampleLibrary }',
+            template: 'someStep = false '
         )
 
-        expect:
-        jenkins.assertLogContains("is reserved for steps to access their stage context", jenkins.buildAndAssertStatus(Result.FAILURE, job))
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("Failed to set variable 'someStep'", run)
+    }
+    def "Overriding a step in the binding from a library step throws exception"() {
+        given:
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('exampleLibrary', 'someStep', 'void call(){}')
+        libProvider.addStep('exampleLibrary', 'x', 'void call(){ someStep = false }')
+        libProvider.addGlobally()
+
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: 'libraries{ exampleLibrary }',
+            template: 'x()'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("Failed to set variable 'someStep'", run)
+    }
+    def "Access an overloaded step results in exception"() {
+        given:
+        StepWrapper step = Spy()
+        when:
+        step.getValue(null)
+        then:
+        thrown(IllegalStateException) // CpsThread not present. doesn't matter for this test.
+        1 * step.isOverloaded()
+    }
+
+    /****************************
+     * Stage overriding
+     ****************************/
+    def "Overriding a stage in the binding from a template throws exception"() {
+        given:
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('exampleLibrary', 'someStep', 'void call(){ x = false }')
+        libProvider.addGlobally()
+
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: '''
+                libraries{ exampleLibrary }
+                stages{ ci{ someStep } }
+            ''',
+                template: 'ci = false'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("Failed to set variable 'ci'", run)
+    }
+    def "Overriding a stage in the binding from a library step throws exception"() {
+        given:
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('exampleLibrary', 'someStep', 'void call(){ ci = false }')
+        libProvider.addGlobally()
+
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: '''
+                libraries{ exampleLibrary }
+                stages{ ci{ someStep } }
+            ''',
+                template: 'someStep()'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("Failed to set variable 'ci'", run)
+    }
+    def "Access an overloaded stage results in exception"() {
+        given:
+        Stage stage = Spy()
+        when:
+        stage.getValue(null)
+        then:
+        1 * stage.isOverloaded()
+    }
+
+    /****************************
+     * Application Environment overriding
+     ****************************/
+    def "Overriding a application environment in the binding from a template throws exception"() {
+        given:
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: 'application_environments{ dev }',
+            template: 'dev = false'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("Failed to set variable 'dev'", run)
+    }
+    def "Overriding a application environment in the binding from a library step throws exception"() {
+        given:
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('exampleLibrary', 'someStep', '''
+        void call(){
+            dev = false
+        }
+        ''')
+        libProvider.addGlobally()
+
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: '''
+                libraries{ exampleLibrary }
+                application_environments{ dev }
+            ''',
+                template: 'someStep()'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("Failed to set variable 'dev'", run)
+    }
+    def "Access an overloaded application environment results in exception"() {
+        given:
+        ApplicationEnvironment appEnv = Spy()
+        when:
+        appEnv.getValue(null)
+        then:
+        1 * appEnv.isOverloaded()
+    }
+
+    /****************************
+     * Reserved Variable Name overriding
+     ****************************/
+    def "Overriding a reserved variable name in the binding from a template throws exception"() {
+        given:
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            template: 'hookContext = false'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("Failed to set variable 'hookContext'", run)
+    }
+    def "Overriding a reserved variable name in the binding from a library step throws exception"() {
+        given:
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('exampleLibrary', 'someStep', 'void call(){ hookContext = false }')
+        libProvider.addGlobally()
+
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: 'libraries{ exampleLibrary }',
+            template: 'someStep()'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("Failed to set variable 'hookContext'", run)
     }
 
 }

@@ -16,47 +16,36 @@
 package org.boozallen.plugins.jte.init.primitives.injectors
 
 import hudson.Extension
-import jenkins.model.Jenkins
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
-import org.boozallen.plugins.jte.init.primitives.PrimitiveNamespace
-import org.boozallen.plugins.jte.init.primitives.TemplateBinding
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveCollector
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveNamespace
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 /**
- * creates Keywords and populates the run's {@link org.boozallen.plugins.jte.init.primitives.TemplateBinding}
+ * creates Keywords
  */
 @Extension class KeywordInjector extends TemplatePrimitiveInjector {
 
-    static Class getPrimitiveClass(){
-        ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
-        String self = this.getMetaClass().getTheClass().getName()
-        String classText = uberClassLoader.loadClass(self).getResource("Keyword.groovy").text
-        return parseClass(classText)
-    }
-
     private static final String KEY = "keywords"
-    private static final String TYPE_DISPLAY_NAME = "Keyword"
-    private static final String NAMESPACE_KEY = KEY
-
-    static PrimitiveNamespace createNamespace(){
-        return new PrimitiveNamespace(name: getNamespaceKey(), typeDisplayName: TYPE_DISPLAY_NAME)
-    }
-
-    static String getNamespaceKey(){
-        return NAMESPACE_KEY
-    }
 
     @Override
-    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
-        Class keywordClass = getPrimitiveClass()
+    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
+        TemplatePrimitiveNamespace keywords = new TemplatePrimitiveNamespace(name: KEY)
+
+        // populate namespace with keywords from pipeline config
         LinkedHashMap aggregatedConfig = config.getConfig()
         aggregatedConfig[KEY].each{ key, value ->
-            binding.setVariable(key, keywordClass.newInstance(
-                name: key,
-                value: value,
-                injector: this.getClass()
-            ))
+            Keyword keyword = new Keyword(name: key, value: value)
+            keyword.setParent(keywords)
+            keywords.add(keyword)
+        }
+
+        // add the namespace to the collector and save it on the run
+        if(keywords.getPrimitives()) {
+            TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(flowOwner)
+            primitiveCollector.addNamespace(keywords)
+            flowOwner.run().addOrReplaceAction(primitiveCollector)
         }
     }
 

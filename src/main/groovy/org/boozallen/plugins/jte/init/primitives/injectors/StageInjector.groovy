@@ -16,64 +16,55 @@
 package org.boozallen.plugins.jte.init.primitives.injectors
 
 import hudson.Extension
-import jenkins.model.Jenkins
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
-import org.boozallen.plugins.jte.init.primitives.PrimitiveNamespace
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveCollector
 import org.boozallen.plugins.jte.init.primitives.RunAfter
-import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveNamespace
 import org.boozallen.plugins.jte.util.JTEException
 import org.boozallen.plugins.jte.util.TemplateLogger
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 /**
- * creates Stages and populates the run's {@link org.boozallen.plugins.jte.init.primitives.TemplateBinding}
+ * creates Stages
  */
 @Extension class StageInjector extends TemplatePrimitiveInjector {
 
-    static Class getPrimitiveClass(){
-        ClassLoader uberClassLoader = Jenkins.get().pluginManager.uberClassLoader
-        String self = this.getMetaClass().getTheClass().getName()
-        String classText = uberClassLoader.loadClass(self).getResource("Stage.groovy").text
-        return parseClass(classText)
-    }
-
     private static final String KEY = "stages"
-    private static final String TYPE_DISPLAY_NAME = "Stage"
-    private static final String NAMESPACE_KEY = KEY
-
-    static PrimitiveNamespace createNamespace(){
-        return new CallableNamespace(name: getNamespaceKey(), typeDisplayName: TYPE_DISPLAY_NAME)
-    }
-
-    static String getNamespaceKey(){
-        return NAMESPACE_KEY
-    }
 
     @Override
     @RunAfter([LibraryStepInjector, DefaultStepInjector, TemplateMethodInjector])
-    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
-        Class stageClass = getPrimitiveClass()
+    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
+        TemplatePrimitiveNamespace stages = new TemplatePrimitiveNamespace(name: KEY)
+
+        // populate namespace with stages from pipeline config
         LinkedHashMap aggregatedConfig = config.getConfig()
         aggregatedConfig[KEY].each{ name, steps ->
             List<String> stepNames = steps.keySet() as List<String>
-            binding.setVariable(name, stageClass.newInstance(
-                name: name,
-                steps: stepNames,
-                injector: this.getClass()
-            ))
+            Stage stage = new Stage(name, stepNames)
+            stage.setParent(stages)
+            stages.add(stage)
+        }
+
+        // add namespace to collector if there are primitives
+        if(stages.getPrimitives()){
+            // add the namespace to the collector and save it on the run
+            TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(flowOwner)
+            primitiveCollector.addNamespace(stages)
+            flowOwner.run().addOrReplaceAction(primitiveCollector)
         }
     }
 
     @Override
-    void validateBinding(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
+    void validatePrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
+        TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(flowOwner)
         LinkedHashMap aggregatedConfig = config.getConfig()
         LinkedHashMap stagesWithUndefinedSteps = [:]
         aggregatedConfig[KEY].each{ name, stageConfig ->
             List<String> steps = stageConfig.keySet() as List<String>
             List<String> undefinedSteps = []
             steps.each{ step ->
-                if(!binding.hasStep(step)){
+                if(!primitiveCollector.hasStep(step)){
                     undefinedSteps << step
                 }
             }

@@ -17,67 +17,50 @@ package org.boozallen.plugins.jte.init.primitives.injectors
 
 import hudson.Extension
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
-import org.boozallen.plugins.jte.init.primitives.PrimitiveNamespace
-import org.boozallen.plugins.jte.init.primitives.TemplateBinding
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitive
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveCollector
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
-import org.boozallen.plugins.jte.util.TemplateLogger
+import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveNamespace
+import org.jenkinsci.plugins.workflow.cps.CpsScript
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
+import javax.annotation.Nonnull
+
 /**
- * injects the aggregated pipeline configuration as a variable called pipelineConfig into the
- * run's {@link org.boozallen.plugins.jte.init.primitives.TemplateBinding}
+ * Exposes the aggregated pipeline configuration as a variable called 'pipelineConfig'
  */
 @Extension class PipelineConfigVariableInjector extends TemplatePrimitiveInjector {
 
-    static final String VARIABLE = "pipelineConfig"
-    private static final String TYPE_DISPLAY_NAME = "Pipeline Config"
-    private static final String NAMESPACE_KEY = VARIABLE
-
-    static PrimitiveNamespace createNamespace(){
-        return new Namespace(name: getNamespaceKey(), typeDisplayName: TYPE_DISPLAY_NAME)
-    }
-
-    static String getNamespaceKey(){
-        return NAMESPACE_KEY
-    }
+    static final String KEY = "pipelineConfig"
 
     @SuppressWarnings('NoDef')
     @Override
-    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config, TemplateBinding binding){
-        Class keywordClass = KeywordInjector.getPrimitiveClass()
+    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
+        PipelineConfigGlobalVariable pipelineConfig = new PipelineConfigGlobalVariable(config.getConfig())
+        TemplatePrimitiveNamespace pipelineConfigNamespace = new TemplatePrimitiveNamespace(name: KEY)
+        pipelineConfig.setParent(pipelineConfigNamespace)
+        pipelineConfigNamespace.add(pipelineConfig)
 
-        // add the pipelineConfig to the binding
-        def pipelineConfig = keywordClass.newInstance(
-            name: VARIABLE,
-            value: config.getConfig(),
-            injector: this.getClass(),
-            preLockException: "Variable ${VARIABLE} reserved for accessing the aggregated pipeline configuration",
-            postLockException: "Variable ${VARIABLE} reserved for accessing the aggregated pipeline configuration"
-        )
-
-        binding.setVariable(VARIABLE, pipelineConfig)
+        // add the namespace to the collector and save it on the run
+        TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(flowOwner)
+        primitiveCollector.addNamespace(pipelineConfigNamespace)
+        flowOwner.run().addOrReplaceAction(primitiveCollector)
     }
 
-    static class Namespace extends PrimitiveNamespace {
-        String name = VARIABLE
-        LinkedHashMap pipelineConfig
-        @Override void add(TemplatePrimitive primitive){
-            pipelineConfig = primitive.getValue()
+    class PipelineConfigGlobalVariable extends TemplatePrimitive{
+        Map config
+
+        PipelineConfigGlobalVariable(Map config){
+            this.config = config
+        }
+
+        String getName(){
+            return KEY
         }
 
         @Override
-        Set<String> getVariables(){
-            return [ VARIABLE ]
-        }
-
-        @Override
-        void printAllPrimitives(TemplateLogger logger) {
-            // pipelineConfig is not communicated to users as a primitive
-        }
-
-        Object getProperty(String name){
-            return pipelineConfig[name]
+        Object getValue(@Nonnull CpsScript script) throws Exception {
+            return config
         }
     }
 

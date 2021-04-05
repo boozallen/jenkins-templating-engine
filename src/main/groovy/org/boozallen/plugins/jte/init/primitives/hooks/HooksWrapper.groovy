@@ -13,15 +13,19 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-package org.boozallen.plugins.jte.init.primitives.injectors
+package org.boozallen.plugins.jte.init.primitives.hooks
 
-import org.junit.ClassRule
-import org.jvnet.hudson.test.JenkinsRule
-import spock.lang.Shared
-import spock.lang.Specification
+import java.lang.annotation.Annotation
 
-class PipelineConfigVariableSpec extends Specification {
+/**
+ * This class is used from {@see GroovyShellDecoratorImpl} to
+ * invoke Lifecycle hooks in template
+ */
+class HooksWrapper implements Serializable{
 
-    @Shared @ClassRule JenkinsRule jenkins = new JenkinsRule()
+    private static final long serialVersionUID = 1L
+    static void invoke(Class<? extends Annotation> annotation){
+        HookInjector.getHooksClass().invoke(annotation)
+    }
 
 }

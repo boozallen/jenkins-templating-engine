@@ -15,174 +15,51 @@
 */
 package org.boozallen.plugins.jte.init.primitives
 
-import org.boozallen.plugins.jte.init.PipelineDecorator
-import org.boozallen.plugins.jte.init.primitives.injectors.StepWrapperFactory
-import org.boozallen.plugins.jte.util.CustomClassFilterImpl
 import org.boozallen.plugins.jte.util.JTEException
 import org.boozallen.plugins.jte.util.TemplateLogger
-import org.codehaus.groovy.runtime.InvokerHelper
-import org.jenkinsci.plugins.workflow.cps.DSL
-import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
-import org.jenkinsci.plugins.workflow.cps.CpsThread
-import org.jenkinsci.plugins.workflow.flow.FlowExecution
-import org.jenkinsci.plugins.workflow.job.WorkflowRun
 
 /**
- * Stores a run's primitives
- * <p>
- * A common TemplateBinding is used throughout the pipeline run. The same TemplateBinding instance is attached to the
- * pipeline template and each library step.
- * <p>
- * This binding implementation tracks the {@link org.boozallen.plugins.jte.init.primitives.TemplatePrimitive's} that
- * have been stored and prevents them from being overridden.
+ * A custom binding that prevents users from inadvertently
+ * overriding TemplatePrimitives or ReservedVariables
  */
-class TemplateBinding extends Binding implements Serializable{
+class TemplateBinding extends Binding{
 
-    private static final long serialVersionUID = 1L
-    private static final String STEPS = "steps"
-    @SuppressWarnings('PrivateFieldCouldBeFinal') // could be modified during pipeline execution
-    private Boolean locked = false
-    private final TemplateBindingRegistry registry = new TemplateBindingRegistry()
-    private final Boolean permissiveInitialization
-
-    TemplateBinding(FlowExecutionOwner owner, Boolean permissiveInitialization){
-        this.permissiveInitialization = permissiveInitialization
-        setVariable(STEPS, new DSL(owner))
-        /**
-         * for jte namespace, we need to bypass the exception throwing logic
-         * that would be triggered by "jte" as a ReservedVariableName which is
-         * why we use `variables.put()` instead of `setVariable()`
-         */
-        variables.put(registry.getVariableName(), registry)
-    }
-
-    static TemplateBinding fetchDuringRun(){
-        CpsThread thread = CpsThread.current()
-        FlowExecution execution = thread?.getExecution()
-        FlowExecutionOwner owner = execution?.getOwner()
-        WorkflowRun run = owner.run()
-        PipelineDecorator decorator = run.getAction(PipelineDecorator)
-        return decorator.getBinding()
-    }
-
-    void lock(FlowExecutionOwner flowOwner){
-        TemplateLogger logger = new TemplateLogger(flowOwner.getListener())
-        registry.printAllPrimitives(logger)
-        locked = true
-    }
-
-    @Override @SuppressWarnings('NoDef')
-    void setVariable(String name, Object value) {
-        // HACK: avoid JEP-200 by maintaining a list of all objects
-        //       going to the binding that'll be stored on the
-        //       PipelineDecorator Action
-        CustomClassFilterImpl.pushPermittedClass(value)
-        /**
-         * if the variable being set is already taken by a TemplatePrimitive or marked
-         * reserved by a ReservedVariableName, throw an exception
-         */
-        ReservedVariableName reservedVar = ReservedVariableName.byName(name)
-        if (name in registry.getVariables() || reservedVar) {
-            def collisionTarget = reservedVar ?: variables.get(name)
-            if (!collisionTarget) {
-                throw new JTEException("Something weird happened. Unable to determine source of binding collision.")
-            }
-            String preface
-            if(value in TemplatePrimitive){
-                preface = "Failed to create ${value.getDescription()}. "
-            } else {
-                preface = "Failed to create variable '${name}' with value ${value}. "
-            }
-            if (locked) {
-                // during pipeline execution:
-                //   always throw exceptions if overriding during pipeline execution
-                //   i.e., a template or library inadvertently create a variable
-                //   that collides
-                collisionTarget.throwPostLockException(preface)
-            } else if (!permissiveInitialization || reservedVar) {
-                // during initialization:
-                // throw an exception if the initialization mode is strict
-                // always throw exception if the collision target is a reserved variable
-                collisionTarget.throwPreLockException(preface)
-            }
-        }
-
-        /**
-         * add all template primitives to the namespace when
-         * added to the binding
-         */
-        if (value in TemplatePrimitive){
-            registry.add(value as TemplatePrimitive)
-        }
+    @Override
+    void setVariable(String name, Object value){
+        checkPrimitiveCollision(name)
+        checkReservedVariables(name)
         super.setVariable(name, value)
     }
 
-    @Override
-    Object getVariable(String name) {
-        if (!variables) {
-            throw new MissingPropertyException(name, this.getClass())
+    void checkPrimitiveCollision(String name){
+        TemplatePrimitiveCollector collector = TemplatePrimitiveCollector.currentNoException()
+        // build may not have started yet in the case of CpsScript.$initialize()
+        if(collector == null){
+            return
         }
-
-        /**
-         * The registry tracks TemplatePrimitives that have been
-         * put into the binding. When `jte.permissive_initialization` is
-         * set to true, there may be multiple primitives with the same
-         * name.  When that's the case, JTE requires that each primitive
-         * be accessed via its long-name using primitive namespacing.
-         */
-        List<String> primitives = registry.getPrimitivesByName(name)
-        if(primitives.size() >= 2 && locked){
-            List<String> msg = [
-                "Attempted to access an overloaded primitive:  ${name}",
-                "Please use fully qualified names to access the primitives.",
-                "options: "
-            ]
-            primitives.each{ p ->
-                msg.push("  - ${p}")
+        List<TemplatePrimitive> collisions = collector.findAll{ TemplatePrimitive primitive ->
+            primitive.getName() == name
+        }
+        if(!collisions.isEmpty()){
+            TemplateLogger logger = TemplateLogger.createDuringRun()
+            logger.printError "Failed to set variable '${name}'."
+            if(collisions.size() == 1){
+                logger.printError "This would override the ${collisions.first().toString()}"
+            } else {
+                logger.printError "This would override the following JTE primitives: "
+                collisions.eachWithIndex { TemplatePrimitive primitive, int idx ->
+                    logger.printError "  ${idx + 1}. ${primitive.toString()}"
+                }
             }
-            TemplateLogger.createDuringRun().printError(msg.join("\n"))
-            throw new JTEException("Attempted to access an overloaded primitive: ${name}")
+            throw new JTEException("Binding collision with JTE template primitive")
         }
-
-        Object result = variables.get(name)
-
-        if (!result && !variables.containsKey(name)) {
-            throw new MissingPropertyException(name, this.getClass())
-        }
-
-        /**
-         * TemplatePrimitive's that implement getValue are able to specify an alternative value
-         * when accessed in the binding. This is helpful when the users should interact with a
-         * value encapsulated by the TemplatePrimitive, rather than the primitive object itself.
-         */
-        if (result in TemplatePrimitive && InvokerHelper.getMetaClass(result).respondsTo(result, "getValue", (Object[]) null)){
-            result = result.getValue()
-        }
-        return result
     }
 
-    Boolean hasStep(String stepName){
-        if (hasVariable(stepName)){
-            Class stepClass = StepWrapperFactory.getPrimitiveClass()
-            return getVariable(stepName).getClass().getName() == stepClass.getName()
+    void checkReservedVariables(String name){
+        ReservedVariableName reservedVar = ReservedVariableName.byName(name)
+        if(reservedVar != null){
+            throw new JTEException("Failed to set variable '${name}'. This is a reserved variable name in the JTE framework.")
         }
-        return false
-    }
-
-    @SuppressWarnings(['NoDef', 'MethodReturnTypeRequired'])
-    def getStep(String stepName){
-        if (hasStep(stepName)){
-            return getVariable(stepName)
-        }
-        throw new TemplateException("No step ${stepName} has been loaded")
-    }
-
-    /**
-     * retrieves all the primitives names/keys
-     * @return
-     */
-    Set<String> getPrimitiveNames(){
-        return this.registry.getVariables()
     }
 
 }
