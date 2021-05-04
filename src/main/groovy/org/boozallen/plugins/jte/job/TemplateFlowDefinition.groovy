@@ -31,6 +31,7 @@ import org.jenkinsci.plugins.workflow.flow.FlowDurabilityHint
 import org.jenkinsci.plugins.workflow.flow.DurabilityHintProvider
 import org.jenkinsci.plugins.workflow.flow.GlobalDefaultFlowDurabilityLevel
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
+import org.jenkinsci.plugins.workflow.cps.CpsFlowFactoryAction2
 
 /**
  * A custom {@link FlowDefinition} that initializes the pipeline using the {@link PipelineDecorator} prior to returning
@@ -50,8 +51,14 @@ abstract class TemplateFlowDefinition extends FlowDefinition {
 
     @Override
     FlowExecution create(FlowExecutionOwner owner, TaskListener listener, List<? extends Action> actions) throws Exception {
+        for (Action a : actions) {
+            if (a instanceof CpsFlowFactoryAction2) {
+                return ((CpsFlowFactoryAction2) a).create(this, owner, actions)
+            }
+        }
         FlowDurabilityHint hint = determineFlowDurabilityHint(owner)
         String template = initializeJTE(owner)
+
         return new CpsFlowExecution(template, true, owner, hint)
     }
 
