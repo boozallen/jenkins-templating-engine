@@ -29,6 +29,8 @@ import java.util.LinkedHashMap;
 
 /**
  * The base script used during step execution
+ *
+ * context fields are set at runtime in StepWrapperCPS
  */
 public abstract class StepWrapperScript extends CpsScript {
 
@@ -48,11 +50,17 @@ public abstract class StepWrapperScript extends CpsScript {
     StageContext stageContext = new StageContext();
 
     /**
+     * The step context
+     */
+    StepContext stepContext = new StepContext();
+
+    /**
      * The FilePath within the build directory from which
      * resources can be fetched
      */
     private String resourcesPath;
     private String buildRootDir;
+
 
     public StepWrapperScript() throws IOException { super(); }
 
@@ -101,6 +109,24 @@ public abstract class StepWrapperScript extends CpsScript {
         }
     }
 
+    public void setStepContext(StepContext stepContext){
+        this.stepContext = stepContext;
+    }
+
+    public StepContext getStepContext(){
+        return this.stepContext;
+    }
+
+    /**
+     * reserves the config var from being overridden in the binding
+     */
+    @Extension public static class StepContextReservedVariable extends ReservedVariableName {
+        public String getName(){ return "stepContext"; }
+        @Override public String getDescription(){
+            return String.format("Variable name %s is reserved for steps to access their step context", getName());
+        }
+    }
+
     public void setBuildRootDir(File rootDir){
         this.buildRootDir = rootDir.getPath();
     }
@@ -108,7 +134,6 @@ public abstract class StepWrapperScript extends CpsScript {
     public void setResourcesPath(String resourcesPath){
         this.resourcesPath = resourcesPath;
     }
-
 
     /**
      * Used within steps to access library resources
@@ -145,4 +170,5 @@ public abstract class StepWrapperScript extends CpsScript {
             return String.format("Variable name %s is reserved for steps to access library resources", getName());
         }
     }
+
 }

@@ -58,9 +58,9 @@ class StepWrapperFactory{
     StepWrapper createFromFilePath(FilePath filePath, String library, Map config){
         String name = filePath.getBaseName()
         String sourceText = filePath.readToString()
+        StepContext stepContext = new StepContext(library: library, name: name, isAlias: false)
         StepWrapper step = new StepWrapper(
-            name: name,
-            library: library,
+            stepContext: stepContext,
             config: config,
             sourceFile: filePath.absolutize().getRemote(),
             isLibraryStep: true
@@ -94,10 +94,9 @@ class StepWrapperFactory{
             logger.printWarning("Overriding the name of a default step implementation is deprecated and will be removed in a future release.")
         }
         stepConfig.name = stepConfig.name ?: name
-
+        StepContext stepContext = new StepContext(library: null, name: name, isAlias: false)
         StepWrapper step = new StepWrapper(
-            name: name,
-            library: null,
+            stepContext: stepContext,
             config: stepConfig,
             sourceText: defaultStep,
             isDefaultStep: true
@@ -105,7 +104,6 @@ class StepWrapperFactory{
 
         StepWrapperScript script = prepareScript(step, defaultStep)
         step.setScript(script)
-
         return step
     }
 
@@ -117,17 +115,15 @@ class StepWrapperFactory{
     StepWrapper createNullStep(String stepName){
         String nullStep = "def call(Object[] args){ println \"Step ${stepName} is not implemented.\" }"
         LinkedHashMap config = [:]
+        StepContext stepContext = new StepContext(library: null, name: stepName, isAlias: false)
         StepWrapper step = new StepWrapper(
-            name: stepName,
-            library: null,
+            stepContext: stepContext,
             config: config,
             sourceText: nullStep,
             isTemplateStep: true
         )
-
         StepWrapperScript script = prepareScript(step, nullStep)
         step.setScript(script)
-
         return step
     }
 
@@ -143,7 +139,6 @@ class StepWrapperFactory{
      * @param optional {@link HookContext}
      * @return an executable and wired executable script
      */
-    @SuppressWarnings("ParameterCount")
     StepWrapperScript prepareScript(StepWrapper step, String sourceText){
         StepWrapperScript script
         /*
@@ -172,13 +167,13 @@ class StepWrapperFactory{
          * 4. an optional StageContext
          * 5. an optional HookContext
          */
-        script.setBinding(new TemplateBinding())
-        script.$initialize()
-        script.setConfig(step.config)
-        script.setBuildRootDir(flowOwner.getRootDir())
-        script.setResourcesPath("jte/${step.library}/resources")
-        step.stageContext && script.setStageContext(step.stageContext)
-        step.hookContext  && script.setHookContext(step.hookContext)
+        script.with{
+            setBinding(new TemplateBinding())
+            $initialize()
+            setConfig(step.config)
+            setBuildRootDir(flowOwner.getRootDir())
+            setResourcesPath("jte/${step.library}/resources")
+        }
         return script
     }
 
@@ -198,19 +193,27 @@ class StepWrapperFactory{
         private static final String FLAG = "JTE_STEP"
 
         /**
-         * Customizes th
+         * Sets the base script of library step files
          * @param execution the run's execution
          * @param cc the compiler configuration used to compile the step
          */
         @Override
         void configureCompiler(@CheckForNull final CpsFlowExecution execution, CompilerConfiguration cc) {
             if(execution.hasProperty(FLAG)){
-                // auto import lifecycle hook annotations within steps
-                ImportCustomizer ic = new ImportCustomizer()
-                ic.addStarImports("org.boozallen.plugins.jte.init.primitives.hooks")
-                cc.addCompilationCustomizers(ic)
-                // set script base class to our own
                 cc.setScriptBaseClass(StepWrapperScript.name)
+            }
+        }
+
+        /**
+         * Automagically adds imports to library step files
+         * @param execution
+         * @param ic
+         */
+        @Override
+        void customizeImports(CpsFlowExecution execution, ImportCustomizer ic){
+            if(execution.hasProperty(FLAG)) {
+                ic.addStarImports("org.boozallen.plugins.jte.init.primitives.hooks")
+                ic.addImport(StepAlias.getName())
             }
         }
 
