@@ -1,7 +1,9 @@
 plugins {
-  id 'org.jenkins-ci.jpi' version '0.27.0'
-  id 'jacoco' 
-  id 'application'
+  id 'groovy'
+  id 'org.jenkins-ci.jpi' version '0.43.0'
+  id 'jacoco'
+  id "com.diffplug.gradle.spotless" version "3.29.0"
+  id 'codenarc'
 }
 
 repositories {
@@ -12,15 +14,15 @@ repositories {
 }
 
 group = 'org.jenkins-ci.plugins'
-version = '1.2' 
-description = 'Allows users to create tool-agnostic, templated pipelines to be shared by multiple teams' 
+version = '2.2'
+description = 'Allows users to create tool-agnostic, templated pipelines to be shared by multiple teams'
 
 jenkinsPlugin {
-    coreVersion = '2.121.3'
+    coreVersion = '2.263.1'
     shortName = 'templating-engine'
     displayName = 'Templating Engine'
-    url = 'https://wiki.jenkins.io/display/JENKINS/Templating+Engine+Plugin'
-    disabledTestInjection = true
+    url = 'https://github.com/jenkinsci/templating-engine-plugin'
+    disabledTestInjection = false
     localizerOutputDir = "${project.buildDir}/generated-src/localizer"
     configureRepositories = false
     configurePublishing = true
@@ -32,55 +34,105 @@ jenkinsPlugin {
         }
         developer {
             id 'carlosokieffebah'
-            name 'Carlos Okieffe' 
-            email 'okieffe_carlos@bah.com' 
+            name 'Carlos Okieffe'
+            email 'okieffe_carlos@bah.com'
         }
     }
 }
 
-dependencies {    
+dependencies {
     // plugin dependencies
-    jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-multibranch:2.20"
-    jenkinsPlugins "org.jenkins-ci.plugins.workflow:workflow-api:2.28"
-    jenkinsPlugins "org.jenkins-ci.plugins:branch-api:2.0.20"
-    jenkinsPlugins "org.jenkins-ci.plugins:scm-api:2.2.7"
-    jenkinsPlugins "org.jenkins-ci.plugins:junit:1.24"
-    jenkinsPlugins "org.jenkins-ci.plugins:github-branch-source:2.5.1"
+    implementation 'org.jenkins-ci.plugins.workflow:workflow-multibranch:2.20'
+    implementation 'org.jenkins-ci.plugins.workflow:workflow-api:2.28'
+    implementation 'org.jenkins-ci.plugins:branch-api:2.0.20'
+    implementation 'org.jenkins-ci.plugins:scm-api:2.2.7'
+    implementation 'org.jenkins-ci.plugins:junit:1.24'
+    implementation 'org.jenkins-ci.plugins:script-security:1.76'
+    implementation 'org.jenkinsci.plugins:pipeline-model-definition:1.8.4' // version declarative started supporting JTE
+    implementation 'org.jgrapht:jgrapht-core:1.4.0'
 
-    // unit test deps 
-    testCompile 'org.spockframework:spock-core:1.2-groovy-2.4'
-    testCompile 'junit:junit:4.12'
-    testCompile 'cglib:cglib-nodep:3.2.5'       // used by Spock
-    testCompile 'org.objenesis:objenesis:2.5.1' // used by Spock
-
-    // test plugins 
-    jenkinsTest(group: "org.jenkins-ci.plugins", name: "scm-api", version: "2.3.0", classifier: "tests")
-    jenkinsTest(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3') {
+    // unit test dependencies
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.spockframework:spock-core:1.3-groovy-2.4'
+    testImplementation 'net.bytebuddy:byte-buddy:1.10.7' // used by Spock
+    testImplementation 'org.objenesis:objenesis:3.1'     // used by Spock
+    testImplementation(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3', classifier:'tests') {
         exclude(module: 'httpclient')
         exclude(module: 'annotation-indexer')
     }
-    testCompile(group: 'org.jenkins-ci.plugins', name: 'git', version:'3.9.3', classifier:'tests') {
+
+    testImplementation(group: "org.jenkins-ci.main", name: "jenkins-test-harness", version: "2.71")
+
+    // test plugins
+    testImplementation(group: "org.jenkins-ci.plugins.workflow", name: "workflow-support", classifier: "tests")
+    testImplementation(group: "org.jenkins-ci.plugins", name: "scm-api", version: "2.3.0", classifier: "tests")
+    testImplementation(group: 'org.jenkins-ci.plugins', name: 'git', version:'4.7.1') {
         exclude(module: 'httpclient')
         exclude(module: 'annotation-indexer')
     }
-    jenkinsTest "org.jenkins-ci.plugins.workflow:workflow-aggregator:2.6"
+    testImplementation 'org.jenkins-ci.plugins:token-macro:2.13'
+    testImplementation 'org.jenkins-ci.plugins:matrix-project:1.18'
+    testImplementation 'org.jenkins-ci.plugins.workflow:workflow-aggregator:2.6'
+    testImplementation 'org.jenkins-ci.plugins.workflow:workflow-step-api:2.19'
 }
 
-jacocoTestReport{
-    reports{
-        html.enabled true 
+jacocoTestReport {
+    reports {
+        html.enabled true
     }
 }
 
-task testStable(type: Test) {
-    useJUnit {
-        excludeCategories 'org.boozallen.plugins.jte.testcategories.Unstable'
-        excludeCategories 'org.boozallen.plugins.jte.testcategories.InProgress'
+spotless{
+    groovy{
+        target = fileTree("src/main/groovy") + fileTree(dir: "src/main/resources", include: "**/*.groovy") + fileTree("src/test/groovy")
+        trimTrailingWhitespace()
+        indentWithSpaces()
+        endWithNewline()
+        licenseHeaderFile 'groovy.header'
     }
 }
 
-task testIntegration(type: Test) {
-    useJUnit {
-        includeCategories 'org.boozallen.plugins.jte.testcategories.Integration'
+codenarc {
+    toolVersion = '1.6.1'
+    configFile = file('./config/codenarc/rules.groovy')
+
+}
+
+codenarcMain{
+    source = fileTree("src/main/groovy") + fileTree(dir: "src/main/resources", include: "**/*.groovy")
+}
+
+codenarcTest{
+    configFile = file('./config/codenarc/rulesTest.groovy')
+}
+
+task codenarc {
+    description = "Evaluate code against CodeNarc"
+    dependsOn = [ 'codenarcMain', 'codenarcTest' ]
+}
+
+sourceSets {
+    main{
+        java{
+            srcDirs = []
+        }
+        groovy {
+            srcDirs = ["src/main/groovy", "src/main/java"]
+            exclude "**/package-info.groovy"
+        }
     }
+}
+
+groovydoc{
+    source fileTree("src/main/groovy")
+}
+
+/**
+ * this is necessary so that the groovydocs show up as the javadocs
+ * on the jenkins plugin site
+ */
+task javadocJar(type: Jar) {
+    description "An archive of the JavaDocs for Maven Central"
+    classifier "javadoc"
+    from groovydoc
 }

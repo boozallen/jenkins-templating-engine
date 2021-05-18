@@ -1,45 +1,79 @@
 /*
-   Copyright 2018 Booz Allen Hamilton
+    Copyright 2018 Booz Allen Hamilton
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
-
 package org.boozallen.plugins.jte.job
 
 import hudson.Extension
-import hudson.model.ItemGroup
-import hudson.model.TaskListener
 import hudson.model.Action
+import hudson.model.ItemGroup
+import hudson.model.Item
+import hudson.model.TaskListener
+import jenkins.branch.MultiBranchProject
 import jenkins.branch.MultiBranchProjectFactory
 import jenkins.branch.MultiBranchProjectFactoryDescriptor
-import org.kohsuke.stapler.DataBoundConstructor
-import org.jenkinsci.plugins.workflow.multibranch.AbstractWorkflowBranchProjectFactory
-import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
-import jenkins.branch.MultiBranchProject
 import jenkins.branch.OrganizationFolder
 import jenkins.model.TransientActionFactory
 import jenkins.scm.api.SCMSource
 import jenkins.scm.api.SCMSourceCriteria
 import org.jenkinsci.plugins.workflow.cps.Snippetizer
+import org.jenkinsci.plugins.workflow.multibranch.AbstractWorkflowBranchProjectFactory
+import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
+import org.kohsuke.stapler.DataBoundConstructor
+import org.kohsuke.stapler.DataBoundSetter
 
-public class TemplateMultiBranchProjectFactory extends MultiBranchProjectFactory.BySCMSourceCriteria {
+/**
+ * registers {@link MultibranchTemplateFlowDefinition} as an option for Organization jobs
+ * <p>
+ * Organization jobs typically represent a group of source code repositories
+ */
+class TemplateMultiBranchProjectFactory extends MultiBranchProjectFactory.BySCMSourceCriteria {
 
-    @DataBoundConstructor public TemplateMultiBranchProjectFactory() { }
+    Boolean filterBranches
 
-    public Object readResolve() { return this }
+    // jenkins requires this be here
+    @SuppressWarnings('UnnecessaryConstructor')
+    @DataBoundConstructor
+    TemplateMultiBranchProjectFactory(){}
+
+    Object readResolve() {
+        if (this.filterBranches == null) {
+            this.filterBranches = false
+        }
+        return this
+    }
+
+    @DataBoundSetter
+    void setFilterBranches(Boolean filterBranches){
+        this.filterBranches = filterBranches
+    }
+
+    Boolean getFilterBranches(){
+        return filterBranches
+    }
+
+    @Override
+    final void updateExistingProject(MultiBranchProject<?, ?> project, Map<String, Object> attributes, TaskListener listener) throws IOException, InterruptedException {
+        if (project instanceof WorkflowMultiBranchProject) {
+            customize((WorkflowMultiBranchProject) project)
+        } // otherwise got recognized by something else before, oh well
+    }
 
     private AbstractWorkflowBranchProjectFactory newProjectFactory() {
-        return new TemplateBranchProjectFactory()
+        TemplateBranchProjectFactory factory = new TemplateBranchProjectFactory()
+        factory.setFilterBranches(this.filterBranches)
+        return factory
     }
 
     protected void customize(WorkflowMultiBranchProject project){
@@ -52,50 +86,42 @@ public class TemplateMultiBranchProjectFactory extends MultiBranchProjectFactory
         return project
     }
 
-    @Override public final void updateExistingProject(MultiBranchProject<?, ?> project, Map<String, Object> attributes, TaskListener listener) throws IOException, InterruptedException {
-        if (project instanceof WorkflowMultiBranchProject) {
-            customize((WorkflowMultiBranchProject) project)
-        } // otherwise got recognized by something else before, oh well
-    }
-
     @Override protected SCMSourceCriteria getSCMSourceCriteria(SCMSource source) {
-        return new SCMSourceCriteria() {
-            private static final long serialVersionUID = 1L
-
-			@Override
-            public boolean isHead(Probe probe, TaskListener listener) throws IOException {
-                return true
-            }
-        }
+        return newProjectFactory().getSCMSourceCriteria(source)
     }
 
-    @Extension public static class PerFolderAdder extends TransientActionFactory<OrganizationFolder> {
+    @Extension
+    static class PerFolderAdder extends TransientActionFactory<OrganizationFolder> {
 
-        @Override public Class<OrganizationFolder> type() {
-            return OrganizationFolder.class
+        @Override
+        Class<OrganizationFolder> type() {
+            return OrganizationFolder
         }
 
-        @Override public Collection<? extends Action> createFor(OrganizationFolder target) {
-            if (target.getProjectFactories().get(TemplateMultiBranchProjectFactory.class) != null && target.hasPermission(Item.EXTENDED_READ)) {
+        @Override
+        Collection<? extends Action> createFor(OrganizationFolder target) {
+            if (target.getProjectFactories().get(TemplateMultiBranchProjectFactory) != null && target.hasPermission(Item.EXTENDED_READ)) {
                 return Collections.singleton(new Snippetizer.LocalAction())
-            } else {
-                return Collections.emptySet()
             }
+            return Collections.emptySet()
         }
 
     }
 
-    @Extension public static class DescriptorImpl extends MultiBranchProjectFactoryDescriptor {
+    @Extension
+    static class DescriptorImpl extends MultiBranchProjectFactoryDescriptor {
 
-        /* 
+        /*
             returning the factory will result in this option being
             selected by default in multibranch factory jobs (github org job)
         */
-        @Override public MultiBranchProjectFactory newInstance() {
-            return null 
+        @Override
+        MultiBranchProjectFactory newInstance() {
+            return null
         }
 
-        @Override public String getDisplayName() {
+        @Override
+        String getDisplayName() {
             return "Jenkins Templating Engine"
         }
 
