@@ -2,10 +2,10 @@ name: "🐛 Bug report"
 title: "[Bug]: "
 labels: [bug]
 body:
-  - type: markdown
-    attributes: 
-      value: |
-        Thank you for taking the time to let us know!
+- type: markdown
+  attributes: 
+    value: |
+      Thank you for taking the time to let us know!
 #   - type: input
 #     id: jenkins-version
 #     attributes:
