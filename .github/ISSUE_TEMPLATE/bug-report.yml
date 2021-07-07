@@ -6,13 +6,13 @@ body:
   attributes: 
     value: |
       Thank you for taking the time to let us know!
-#   - type: input
-#     id: jenkins-version
-#     attributes:
-#       label: Jenkins Version
-#       description: On what version of Jenkins did you experience this bug?
-#     validations:
-#       required: true
+- type: input
+  id: jenkins-version
+  attributes:
+    label: Jenkins Version
+    description: On what version of Jenkins did you experience this bug?
+  validations:
+    required: true
 #   - type: dropdown
 #     id: jte-version
 #     attributes:
