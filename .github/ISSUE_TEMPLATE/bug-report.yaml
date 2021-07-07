@@ -43,6 +43,8 @@ body:
       - 1.1.1
       - 1.1
       - 1.0
+    validatons:
+      required: true
 - type: textarea
   id: bug-description
   attributes:
