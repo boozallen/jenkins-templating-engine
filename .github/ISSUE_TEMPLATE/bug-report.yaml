@@ -1,7 +1,7 @@
 name: "🐛 Bug report"
 title: "[Bug]: "
 labels: [bug]
-description: "a bug report"
+description: Please let us know about an issue you're seeing
 body:
 - type: markdown
   attributes: 
