@@ -9,5 +9,6 @@ jobs:
     if: github.repository == 'jenkinsci/templating-engine-plugin'
     steps:
       - uses: actions/checkout@v2
+      - uses: extractions/setup-just@v1
       - name: "Deploy the Docs"
         run: just update-docs
