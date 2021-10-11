@@ -1,9 +1,7 @@
 # when false, disables code coverage
 coverage := "true"
 # the output directory for the documentation
-docsDir  := "docs/html"
-# the Antora playbook file to use when building docs
-playbook := "docs/antora-playbook-local.yml"
+docsDir  := "site"
 # variables for running containerized jenkins
 container := "jenkins" # the name of the container
 port      := "8080"    # the port to forward Jenkins to
@@ -25,46 +23,84 @@ test class="*":
   ./gradlew test --tests '{{class}}' $coverage
 
 # Run spotless & codenarc
-lint: 
+lint-code: 
   ./gradlew spotlessApply codenarc
 
 # Build the JPI
 jpi: 
   ./gradlew clean jpi 
 
+############################
+# Documentation Recipes
+############################
+
+# builds the jte docs builder image
+docsImage := "jte-docs-builder"
+buildDocsImage:
+  docker build docs -t {{docsImage}}
+
+# Build the jte documentation
+docs: buildDocsImage
+  docker run --rm -v $(pwd):/docs {{docsImage}} build
+
+# serve the docs locally for development
+serve: buildDocsImage
+  docker run --rm -p 8000:8000 -v $(pwd):/docs {{docsImage}} serve -a 0.0.0.0:8000
+
+lint-docs: lint-prose lint-markdown
+
+# use Vale to lint the prose of the documentation
+lint-prose:
+  docker run -v $(pwd):/app -w /app jdkato/vale docs
+
+# use markdownlit to lint the docs
+lint-markdown: 
+  docker run -v $(pwd):/app -w /app davidanson/markdownlint-cli2:0.3.1 "docs/**/*.md"
+
+# update current docs
+update-docs: buildDocsImage
+    #!/usr/bin/env bash
+    version=$(./gradlew -q printJTEVersion)
+    docker run --rm -v ~/.git-credentials:/root/.git-credentials -v $(pwd):/app -w /app --entrypoint=mike jte-docs-builder deploy -f --push $version
+    echo "INFO     -  Published version '$version' to GitHub Pages"
+
+###################
+# Aggregate Tasks
+###################
+
+# Lint code and docs
+lint: lint-code lint-docs
+
 # executes the CI checks (test lint jpi)
 ci: test lint jpi
-
-# Build the local Antora documentation
-docs: 
-  docker run \
-  -it --rm \
-  -v ~/.git-credentials:/home/antora/.git-credentials \
-  -v $(pwd):/app -w /app \
-  docker.pkg.github.com/boozallen/sdp-docs/builder \
-  generate --generator booz-allen-site-generator \
-  --to-dir {{docsDir}} \
-  {{playbook}}
 
 # publishes the jpi
 release version branch=`git branch --show-current`: 
   #!/usr/bin/env bash
+  # validate currently on main
   if [[ ! "{{branch}}" == "main" ]]; then 
     echo "You can only cut a release from the 'main' branch."
     echo "Currently on branch '{{branch}}'"
     exit 1
   fi
+
+  # update build.gradle on main
+  sed -ie "s/^version.*/version = '{{version}}'/g" build.gradle
+  git add build.gradle
+  git commit -m "bump version to {{version}}"
+  git push
+
   # cut a release branch
   git checkout -B release/{{version}}
-  # bump the version in relevant places
-  sed -ie "s/^version.*/version = '{{version}}'/g" build.gradle
-  sed -ie "s/^version:.*/version: '{{version}}'/g" docs/antora.yml
-  git add build.gradle docs/antora.yml
-  git commit -m "bump version to {{version}}"
   git push --set-upstream origin release/{{version}}
+
   # push a tag for this release
   git tag {{version}}
   git push origin refs/tags/{{version}}
+
+  # publish the docs
+  docker run --rm -v ~/.git-credentials:/root/.git-credentials -v $(pwd):/app -w /app --entrypoint=mike jte-docs-builder deploy --push --update-aliases {{version}} latest
+
   # publish the JPI
   ./gradlew publish
 
