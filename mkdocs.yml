@@ -8,7 +8,6 @@ theme:
     - navigation.tabs
     - navigation.sections
     - navigation.top
-    - navigation.indexes
 
 repo_url: https://github.com/jenkinsci/templating-engine-plugin
 
