@@ -1,0 +1,16 @@
+name: "Feature request"
+title: "[feature]: "
+labels: [enhancement]
+description: Please let us know what you like added
+body:
+- type: markdown
+  attributes: 
+    value: |
+      Thank you for taking the time to let us know!
+- type: textarea
+  id: feature-description
+  attributes:
+    label: Feature Description
+    description: Please describe your request
+  validations:
+    required: true
