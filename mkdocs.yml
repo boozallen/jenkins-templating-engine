@@ -1,0 +1,133 @@
+site_name: Jenkins Templating Engine
+theme:
+  name: material
+  palette:
+    primary: teal
+  features: 
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.annotate
+
+repo_url: https://github.com/jenkinsci/templating-engine-plugin
+
+edit_uri: edit/main/docs/
+
+plugins:
+  - search: {}
+  - gen-files:
+      scripts:
+        - 'docs/add_glossary.py'
+
+extra_css:
+  - css/extra.css
+
+extra:
+  generator: false
+  social: 
+    - icon: fontawesome/brands/github
+      link: https://github.com/jenkinsci/templating-engine-plugin
+    - icon: fontawesome/brands/gitter
+      link: https://gitter.im/jenkinsci/templating-engine-plugin
+  version:
+    provider: mike
+    default: latest
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_ID
+
+markdown_extensions:
+  - admonition
+  - abbr
+  - footnotes
+  - attr_list
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+  - pymdownx.snippets:
+      base_path: "docs"
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+# Page Tree
+nav:
+  - Home: 'index.md'
+  - Concepts:
+    - Framework Overview:
+      - 'concepts/framework-overview/overview.md'
+      - 'concepts/framework-overview/bottom-up.md'
+      - 'concepts/framework-overview/top-down.md'
+      - 'concepts/framework-overview/key-benefits.md'
+    - Pipeline Templates:
+      - 'concepts/pipeline-templates/overview.md'
+      - 'concepts/pipeline-templates/pipeline-catalog.md'
+      - 'concepts/pipeline-templates/declarative-syntax.md'
+    - Pipeline Configuration:
+      - 'concepts/pipeline-configuration/overview.md'
+      - 'concepts/pipeline-configuration/configuration-dsl.md'
+      - 'concepts/pipeline-configuration/merging-configs.md'
+    - Pipeline Primitives:
+      - 'concepts/pipeline-primitives/overview.md'
+      - 'concepts/pipeline-primitives/steps.md'
+      - 'concepts/pipeline-primitives/stages.md'
+      - 'concepts/pipeline-primitives/application-environments.md'
+      - 'concepts/pipeline-primitives/keywords.md'
+      - 'concepts/pipeline-primitives/primitive-namespace.md'
+    - Library Development:
+      - 'concepts/library-development/overview.md'
+      - 'concepts/library-development/library-structure.md'
+      - 'concepts/library-development/library-steps.md'
+      - 'concepts/library-development/library-resources.md'
+      - 'concepts/library-development/library-classes.md'
+      - 'concepts/library-development/parameterizing-libraries.md'
+      - 'concepts/library-development/library-configuration-file.md'
+      - 'concepts/library-development/library-source.md'
+      - 'concepts/library-development/lifecycle-hooks.md'
+      - 'concepts/library-development/multi-method-steps.md'
+      - 'concepts/library-development/step-aliasing.md'
+    - Pipeline Governance:
+      - 'concepts/pipeline-governance/overview.md'
+      - 'concepts/pipeline-governance/configuration-hierarchy.md'
+      - 'concepts/pipeline-governance/governance-tier.md'
+      - 'concepts/pipeline-governance/pipeline-template-selection.md'
+      - 'concepts/pipeline-governance/library-resolution.md'
+    - Advanced Topics:
+      - 'concepts/advanced/pipeline-initialization.md'
+      - 'concepts/advanced/overloading-steps.md'
+  - Reference:
+    - 'reference/overview.md'
+    - 'reference/pipeline-configuration-schema.md'
+    - 'reference/autowired-variables.md'
+    - 'reference/library-configuration-schema.md'
+    - 'reference/governance-tier.md'
+  - Tutorials:
+    - 'tutorials/overview.md'
+  - How-To Guides: 
+    - 'how-to/overview.md'
+    - 'how-to/upgrade-2.0/index.md'
+  - Contributing:
+    - 'contributing/overview.md'
+    - 'contributing/fork-based.md'
+    - Documentation:
+      - 'contributing/docs/getting-started.md'
+      - 'contributing/docs/documentation-structure.md'
+      - 'contributing/docs/local-development.md'
+      - 'contributing/docs/markdown-lint.md'
+      - 'contributing/docs/vale.md'
+      - 'contributing/docs/add-or-remove-pages.md'
+      - 'contributing/docs/acronyms.md'
+      - 'contributing/docs/markdown-cheatsheet.md'
+    - Developer Docs:
+      - 'contributing/developer/overview.md'
+      - 'contributing/developer/running-tests.md'
+      - 'contributing/developer/building.md'
+      - 'contributing/developer/linting.md'
+      - 'contributing/developer/local-jenkins.md'
+      - 'contributing/developer/releasing.md'

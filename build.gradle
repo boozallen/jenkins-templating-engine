@@ -136,3 +136,9 @@ task javadocJar(type: Jar) {
     classifier "javadoc"
     from groovydoc
 }
+
+tasks.register('printJTEVersion'){
+  doLast{
+    println version
+  }
+}
