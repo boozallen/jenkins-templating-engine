@@ -235,22 +235,6 @@ class GlobalCollisionValidatorSpec extends Specification {
         1 * logger.printWarning(_)
     }
 
-    @Ignore('functionality works. not sure why JenkinsRule is freezing the test')
-    def "checkForJenkinsStepCollisions: No Collisions = No Logs"() {
-        given:
-        primitivesByName = [
-            build: [new DummyPrimitive(name: 'build') ]
-        ]
-
-        when:
-        validator.checkForJenkinsStepCollisions(primitivesByName, logger)
-
-        then:
-        noExceptionThrown()
-        0 * logger./.*/(*_) // no methods invoked on the logger
-    }
-
-    @Ignore('Functionality works. not sure why JenkinsRule is freezing the test')
     def "checkForJenkinsStepCollisions: Collisions are logged"() {
         given:
         primitivesByName = [
@@ -281,6 +265,21 @@ class GlobalCollisionValidatorSpec extends Specification {
 
         then:
         noExceptionThrown()
+    }
+
+    @WithoutJenkins
+    def "checkForJenkinsStepCollisions: No Collisions = No Logs"() {
+        given:
+        primitivesByName = [
+                build: [new DummyPrimitive(name: 'build') ]
+        ]
+
+        when:
+        validator.checkForJenkinsStepCollisions(primitivesByName, logger)
+
+        then:
+        noExceptionThrown()
+        0 * logger./.*/(*_) // no methods invoked on the logger
     }
 
 }
