@@ -25,6 +25,7 @@ import jenkins.plugins.git.GitSampleRepoRule
 import jenkins.scm.api.SCMFileSystem
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationDsl
 import org.boozallen.plugins.jte.util.FileSystemWrapper
+import org.boozallen.plugins.jte.util.FileSystemWrapperFactory
 import org.boozallen.plugins.jte.util.TestFlowExecutionOwner
 import org.jenkinsci.plugins.workflow.cps.EnvActionImpl
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
@@ -89,8 +90,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getConfig(owner) == null
@@ -111,8 +112,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getConfig(owner).config == [x: 1]
@@ -131,8 +132,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getConfig(owner) == null
@@ -156,8 +157,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getConfig(owner).config == [x: 1]
@@ -171,8 +172,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
         FileSystemWrapper fsw = Mock {
             getFileContents(*_) >> 'mock file contents'
         }
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(*_) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(*_) >> fsw
 
         PipelineConfigurationDsl dsl = Mock {
             parse(_) >> { throw new Exception('oops') }
@@ -219,8 +220,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getJenkinsfile(owner) == null
@@ -238,8 +239,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getJenkinsfile(owner) == 'the jenkinsfile'
@@ -259,8 +260,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getJenkinsfile(owner) == 'the jenkinsfile'
@@ -277,8 +278,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getJenkinsfile(owner) == null
@@ -314,8 +315,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getTemplate(owner, 'someTemplate') == null
@@ -333,8 +334,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getTemplate(owner, 'someTemplate') == 'the template'
@@ -354,8 +355,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getTemplate(owner, 'someTemplate') == 'the template'
@@ -372,8 +373,8 @@ class ScmPipelineConfigurationProviderSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: owner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(owner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(owner, scm) >> fsw
 
         expect:
         p.getTemplate(owner, 'someTemplate') == null

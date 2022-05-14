@@ -25,6 +25,7 @@ import jenkins.plugins.git.GitSampleRepoRule
 import jenkins.scm.api.SCMFileSystem
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
 import org.boozallen.plugins.jte.util.FileSystemWrapper
+import org.boozallen.plugins.jte.util.FileSystemWrapperFactory
 import org.boozallen.plugins.jte.util.TestFlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
@@ -91,8 +92,8 @@ class AdHocTemplateFlowDefinitionSpec extends Specification {
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: flowOwner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(flowOwner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(flowOwner, scm) >> fsw
 
         def definition = new AdHocTemplateFlowDefinition(flowDefConfig)
 
@@ -128,8 +129,8 @@ keywords{
 
         FileSystemWrapper fsw = new FileSystemWrapper(owner: flowOwner)
         fsw.fs = SCMFileSystem.of(jenkins.createProject(WorkflowJob), scm)
-        GroovySpy(FileSystemWrapper, global: true)
-        FileSystemWrapper.createFromSCM(flowOwner, scm) >> fsw
+        GroovySpy(FileSystemWrapperFactory, global: true)
+        FileSystemWrapperFactory.create(flowOwner, scm) >> fsw
 
         def definition = new AdHocTemplateFlowDefinition(flowDefConfig)
         when:
