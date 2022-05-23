@@ -316,4 +316,200 @@ class HookSpec extends Specification {
         '@CleanUp'    | false
     }
 
+    def "@CleanUp hooksContext.exceptionThrown is true when pipeline is going to fail"() {
+        given:
+        def run
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('hooksLibrary', 'theHooks', """
+        @CleanUp
+        void call(){
+          println "exception thrown = \${hookContext.exceptionThrown}"
+        }
+        """)
+        libProvider.addGlobally()
+
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: '''
+            libraries{
+                hooksLibrary
+            }
+            ''',
+            template: 'error "oops"'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("exception thrown = true", run)
+    }
+
+    def "@CleanUp hooksContext.exceptionThrown is false when pipeline is going to pass"() {
+        given:
+        def run
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('hooksLibrary', 'theHooks', """
+        @CleanUp
+        void call(){
+          println "exception thrown = \${hookContext.exceptionThrown}"
+        }
+        """)
+        libProvider.addGlobally()
+
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+                config: '''
+            libraries{
+                hooksLibrary
+            }
+            ''',
+                template: 'println "No error"'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatusSuccess(run)
+        jenkins.assertLogContains("exception thrown = false", run)
+    }
+
+    def "@AfterStep hooksContext.exceptionThrown is true when step fails"() {
+        given:
+        def run
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('hooksLibrary', 'theHooks', """
+        @AfterStep
+        void call(){
+          println "exception thrown = \${hookContext.exceptionThrown}"
+        }
+        """)
+        libProvider.addStep('hooksLibrary', 'sampleStep', """
+        void call(){
+          error "oops"
+        }
+        """)
+        libProvider.addGlobally()
+
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: '''
+            libraries{
+                hooksLibrary
+            }
+            ''',
+            template: 'sampleStep()'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("exception thrown = true", run)
+    }
+
+    def "@AfterStep hooksContext.exceptionThrown is false when step passes"() {
+        given:
+        def run
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('hooksLibrary', 'theHooks', """
+        @AfterStep
+        void call(){
+          println "exception thrown = \${hookContext.exceptionThrown}"
+        }
+        """)
+        libProvider.addStep('hooksLibrary', 'sampleStep', """
+        void call(){
+          println "no error"
+        }
+        """)
+        libProvider.addGlobally()
+
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: '''
+            libraries{
+                hooksLibrary
+            }
+            ''',
+                template: 'sampleStep()'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatusSuccess(run)
+        jenkins.assertLogContains("exception thrown = false", run)
+    }
+
+    def "@Notify after step failure runs once"() {
+        given:
+        def run
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('hooksLibrary', 'theHooks', """
+        @Notify({ hookContext.step && hookContext.exceptionThrown })
+        void call(){
+          println "step \${hookContext.step} threw exception"
+        }
+        """)
+        libProvider.addStep('hooksLibrary', 'sampleStep', """
+        void call(){
+          error('oops')
+        }
+        """)
+        libProvider.addGlobally()
+
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: '''
+            libraries{
+                hooksLibrary
+            }
+            ''',
+            template: 'sampleStep()'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("step sampleStep threw exception", run)
+        jenkins.assertLogNotContains("step null threw exception", run)
+    }
+
+    def "@Notify after pipeline failure runs once"() {
+        given:
+        def run
+        TestLibraryProvider libProvider = new TestLibraryProvider()
+        libProvider.addStep('hooksLibrary', 'theHooks', """
+        @Notify({ !hookContext.step && hookContext.exceptionThrown })
+        void call(){
+          println "step \${hookContext.step} threw exception"
+        }
+        """)
+        libProvider.addStep('hooksLibrary', 'sampleStep', """
+        void call(){
+          error('oops')
+        }
+        """)
+        libProvider.addGlobally()
+
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: '''
+            libraries{
+                hooksLibrary
+            }
+            ''',
+                template: 'sampleStep()'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatus(Result.FAILURE, run)
+        jenkins.assertLogContains("step null threw exception", run)
+        jenkins.assertLogNotContains("step sampleStep threw exception", run)
+    }
+
 }

@@ -92,9 +92,10 @@ class PipelineTemplateCompiler extends GroovyShellDecorator {
      * template execution.
      */
     @Override
+    @SuppressWarnings("MethodSize")
     void configureCompiler(@CheckForNull final CpsFlowExecution execution, CompilerConfiguration cc) {
         if (isFromJTE(execution)) {
-            cc.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.SEMANTIC_ANALYSIS) {
+            cc.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CONVERSION) {
 
                 @Override
                 void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
@@ -107,20 +108,24 @@ class PipelineTemplateCompiler extends GroovyShellDecorator {
 
                     /* We want to seamlessly wrap the template in code for hooks like:
                      *
+                     *   _JTE_hookContext_exceptionThrown = false
                      *   try{
                      *     Hooks.invoke(Validation)
                      *     Hooks.invoke(Init)
                      *     --> Insert Template Code Here <--
+                     *   } catch(Exception e){
+                     *     _JTE_hookContext_exceptionThrown = true
+                     *     throw e
                      *   } finally {
-                     *     Hooks.invoke(CleanUp)
-                     *     Hooks.invoke(Notify)
+                     *     Hooks.invoke(CleanUp, _JTE_hookContext_exceptionThrown)
+                     *     Hooks.invoke(Notify, _JTE_hookContext_exceptionThrown)
                      *   }
                      */
 
                     // 1. get the AST for the code in the comment above without the template
                     BlockStatement wrapper = getTemplateWrapperAST()
                     // 2. inject the user's pipeline template statements
-                    wrapper.getStatements().first().getTryStatement().addStatements(statements)
+                    wrapper.getStatements()[1].getTryStatement().addStatements(statements)
                     // 3. replace the compiled template with our new AST
                     statements.clear()
                     statements.add(0, wrapper)
@@ -129,6 +134,13 @@ class PipelineTemplateCompiler extends GroovyShellDecorator {
                 BlockStatement getTemplateWrapperAST() {
                     List<ASTNode> statements = new AstBuilder().buildFromSpec {
                         block {
+                            expression{
+                                declaration{
+                                    variable "_JTE_hookContext_exceptionThrown"
+                                    token "="
+                                    constant false
+                                }
+                            }
                             tryCatch {
                                 block {
                                     expression {
@@ -152,6 +164,7 @@ class PipelineTemplateCompiler extends GroovyShellDecorator {
                                             staticMethodCall(HooksWrapper, 'invoke') {
                                                 argumentList {
                                                     classExpression CleanUp
+                                                    variable "_JTE_hookContext_exceptionThrown"
                                                 }
                                             }
                                         }
@@ -159,8 +172,24 @@ class PipelineTemplateCompiler extends GroovyShellDecorator {
                                             staticMethodCall(HooksWrapper, 'invoke') {
                                                 argumentList {
                                                     classExpression Notify
+                                                    variable "_JTE_hookContext_exceptionThrown"
                                                 }
                                             }
+                                        }
+                                    }
+                                }
+                                catchStatement {
+                                    parameter 'e': Exception
+                                    block{
+                                        expression{
+                                            binary{
+                                                variable "_JTE_hookContext_exceptionThrown"
+                                                token "="
+                                                constant true
+                                            }
+                                        }
+                                        throwStatement {
+                                            variable 'e'
                                         }
                                     }
                                 }
