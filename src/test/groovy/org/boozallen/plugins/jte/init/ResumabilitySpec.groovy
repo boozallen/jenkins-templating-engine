@@ -17,8 +17,8 @@ package org.boozallen.plugins.jte.init
 
 import org.junit.Rule
 import org.jvnet.hudson.test.RestartableJenkinsRule
+import spock.lang.Issue
 import spock.lang.Specification
-import spock.lang.Ignore
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.boozallen.plugins.jte.util.TestUtil
@@ -39,6 +39,12 @@ class ResumabilitySpec extends Specification {
             }
         }
         ''')
+        libProvider.addStep('gradle', 'sleepInStep', '''
+        void call(){
+            println "running before sleep"
+            semaphore "wait"
+            println "running after sleep"
+        }''')
         story.then { jenkins -> libProvider.addGlobally() }
     }
 
@@ -97,7 +103,6 @@ class ResumabilitySpec extends Specification {
         }
     }
 
-    @Ignore
     def "Steps succeed after pipeline graceful restart"() {
         when:
         story.then { jenkins ->
@@ -122,7 +127,32 @@ class ResumabilitySpec extends Specification {
             WorkflowJob p = jenkins.getInstance().getItemByFullName('p', WorkflowJob)
             WorkflowRun b = p.getLastBuild()
             jenkins.waitForCompletion(b)
+            jenkins.assertBuildStatusSuccess(b)
             jenkins.assertLogContains('build step from test gradle library', b)
+        }
+    }
+
+    @Issue("https://github.com/jenkinsci/templating-engine-plugin/issues/191")
+    def "Restart mid-step resumes successfully"() {
+        when:
+        story.then { jenkins ->
+            WorkflowJob p = TestUtil.createAdHoc(
+                config: 'libraries{ gradle }',
+                template: 'sleepInStep()',
+                jenkins, 'p'
+            )
+            WorkflowRun b = p.scheduleBuild2(0).waitForStart()
+            SemaphoreStep.waitForStart('wait/1', b)
+        }
+
+        then:
+        story.then { jenkins ->
+            SemaphoreStep.success('wait/1', true)
+            WorkflowJob p = jenkins.getInstance().getItemByFullName('p', WorkflowJob)
+            WorkflowRun b = p.getLastBuild()
+            jenkins.waitForCompletion(b)
+            jenkins.assertBuildStatusSuccess(b)
+            jenkins.assertLogContains('running after sleep', b)
         }
     }
 

@@ -102,8 +102,8 @@ class StepWrapper extends TemplatePrimitive implements Serializable{
      * memoized getter.
      * impl will be null after a pipeline is resumed following an ungraceful shut down
      */
-    StepWrapperScript getScript(){
-        script = script ?: parseSource()
+    StepWrapperScript getScript(FlowExecutionOwner flowOwner = null){
+        script = script ?: parseSource(flowOwner)
         return script
     }
 
@@ -132,12 +132,7 @@ class StepWrapper extends TemplatePrimitive implements Serializable{
      * Jenkins has ungracefully restarted and the pipeline is resuming
      * @return
      */
-    StepWrapperScript parseSource(){
-        CpsThread thread = CpsThread.current()
-        if(!thread){
-            throw new IllegalStateException("CpsThread not present.")
-        }
-
+    StepWrapperScript parseSource(FlowExecutionOwner flowOwner = null){
         String source
         if(sourceFile){
             FilePath f = new FilePath(new File(sourceFile))
@@ -152,8 +147,15 @@ class StepWrapper extends TemplatePrimitive implements Serializable{
             throw new IllegalStateException("Unable to determine StepWrapper[library: ${library}, name: ${name}] source.")
         }
 
-        FlowExecutionOwner flowOwner = thread.getExecution().getOwner()
-        StepWrapperFactory factory = new StepWrapperFactory(flowOwner)
+        FlowExecutionOwner owner = flowOwner
+        if(owner == null){
+            CpsThread thread = CpsThread.current()
+            if(!thread){
+                throw new IllegalStateException("CpsThread not present.")
+            }
+            owner = thread.getExecution().getOwner()
+        }
+        StepWrapperFactory factory = new StepWrapperFactory(owner)
         return factory.prepareScript(this, source)
     }
 
