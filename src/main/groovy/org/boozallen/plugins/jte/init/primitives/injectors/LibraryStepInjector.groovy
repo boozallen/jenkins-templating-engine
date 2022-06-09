@@ -30,6 +30,7 @@ import org.boozallen.plugins.jte.util.JTEException
 import org.boozallen.plugins.jte.util.TemplateLogger
 import org.codehaus.groovy.runtime.GStringImpl
 import org.codehaus.groovy.runtime.NullObject
+import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 
@@ -41,7 +42,8 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
     private static final String KEY = "libraries"
 
     @Override
-    void validateConfiguration(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
+    void validateConfiguration(CpsFlowExecution exec, PipelineConfigurationObject config){
+        FlowExecutionOwner flowOwner = exec.getOwner()
         LinkedHashMap aggregatedConfig = config.getConfig()
         AggregateException errors = new AggregateException()
         List<LibraryProvider> providers = getLibraryProviders(flowOwner)
@@ -79,7 +81,8 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
     }
 
     @Override
-    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
+    void injectPrimitives(CpsFlowExecution exec, PipelineConfigurationObject config){
+        FlowExecutionOwner flowOwner = exec.getOwner()
         // fetch library providers and determine library resolution order
         List<LibraryProvider> providers = getLibraryProviders(flowOwner)
         boolean reverseProviders = config.jteBlockWrapper.reverse_library_resolution
@@ -105,7 +108,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
 
         // actually create the StepWrappers
         LibraryNamespace libCollector = new LibraryNamespace()
-        StepWrapperFactory stepFactory = new StepWrapperFactory(flowOwner)
+        StepWrapperFactory stepFactory = new StepWrapperFactory(exec)
         aggregatedConfig[KEY].each{ libName, libConfig ->
             String includes = "${libName}/${LibraryProvider.STEPS_DIR_NAME}/**/*.groovy"
             TemplatePrimitiveNamespace library = new TemplatePrimitiveNamespace(name: libName)
@@ -135,7 +138,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
         }
 
         if(libCollector.getLibraries()) {
-            TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(flowOwner)
+            TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(exec)
             primitiveCollector.addNamespace(libCollector)
             flowOwner.run().addOrReplaceAction(primitiveCollector)
         }
@@ -221,15 +224,6 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
         } - null
         return annotations
     }
-
-    /*
-    @StepAlias("whatever")
-    void call(){}
-
-    @StepAlias("somethingelse")
-    void wahtever(){}
-
-     */
 
     private List<LibraryProvider> getLibraryProviders(FlowExecutionOwner flowOwner){
         WorkflowJob job = flowOwner.run().getParent()

@@ -16,8 +16,6 @@
 package org.boozallen.plugins.jte.init.primitives.injectors
 
 import hudson.model.Result
-import org.boozallen.plugins.jte.init.governance.GovernanceTier
-import org.boozallen.plugins.jte.init.governance.TemplateGlobalConfig
 import org.boozallen.plugins.jte.init.governance.libs.TestLibraryProvider
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveCollector
 import org.boozallen.plugins.jte.util.TestUtil
@@ -25,6 +23,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.junit.ClassRule
 import org.jvnet.hudson.test.JenkinsRule
+import spock.lang.Issue
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -42,15 +41,13 @@ class StepWrapperSpec extends Specification {
     // after each test, remove the library source
     // for a fresh start.
     def cleanup(){
-        TemplateGlobalConfig global = TemplateGlobalConfig.get()
-        GovernanceTier tier = global.getTier()
-        tier.setLibrarySources([])
+        TestLibraryProvider.removeLibrarySources()
     }
 
     def "Library class can be imported and used in a pipeline template"() {
         given:
-        libProvider.addSrc('utility', 'src/boozallen/Utility.groovy', '''
-        package boozallen
+        libProvider.addSrc('utility', 'src/jte/Utility.groovy', '''
+        package jte
         class Utility implements Serializable{
           void doThing(steps){ steps.echo "doing a thing" }
         }
@@ -59,7 +56,7 @@ class StepWrapperSpec extends Specification {
         WorkflowJob job = TestUtil.createAdHoc(jenkins,
             config: 'libraries{ utility }',
             template: '''
-            import boozallen.Utility
+            import jte.Utility
 
             Utility u = new Utility()
             u.doThing(steps)
@@ -690,6 +687,183 @@ class StepWrapperSpec extends Specification {
         expect:
         jenkins.assertBuildStatusSuccess(run)
         step.getParentChain() == 'jte.libraries.resourcesB.step'
+    }
+
+    @Issue("https://github.com/jenkinsci/templating-engine-plugin/issues/279")
+    def "library Class instanceof works in same library step"(){
+        libProvider.addSrc('utility', 'src/jte/Utility.groovy', '''
+        package jte
+        class Utility implements Serializable{}
+        ''')
+        libProvider.addStep("utility", "step", """
+        import jte.Utility
+        void call(){
+            Utility u = new Utility()
+            assert u instanceof Utility
+        }
+        """)
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+                config: 'libraries{ utility }',
+                template: 'step()'
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatusSuccess(run)
+    }
+
+    @Issue("https://github.com/jenkinsci/templating-engine-plugin/issues/279")
+    def "library Class instanceof works in same library different step"(){
+        libProvider.addSrc('utility', 'src/jte/Utility.groovy', '''
+        package jte
+        class Utility implements Serializable{}
+        ''')
+        libProvider.addStep("utility", "createUtility", """
+        import jte.Utility
+        def call(){
+            return new Utility()
+        }
+        """)
+        libProvider.addStep("utility", "checkUtility", """
+        import jte.Utility
+        void call(def u){
+          println Utility.getClassLoader()
+          println u.class.getClassLoader()
+          assert u instanceof Utility
+        }
+        """)
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: 'libraries{ utility }',
+            template: '''
+            def u = createUtility()
+            checkUtility(u)
+            '''
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatusSuccess(run)
+    }
+
+    @Issue("https://github.com/jenkinsci/templating-engine-plugin/issues/279")
+    def "library Class instanceof works in different library step"(){
+        libProvider.addSrc('utility', 'src/jte/Utility.groovy', '''
+        package jte
+        class Utility implements Serializable{}
+        ''')
+        libProvider.addStep("libA", "createUtility", """
+        import jte.Utility
+        def call(){
+            return new Utility()
+        }
+        """)
+        libProvider.addStep("libB", "checkUtility", """
+        import jte.Utility
+        void call(def u){
+          assert u instanceof Utility
+        }
+        """)
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+                config: 'libraries{ utility; libA; libB }',
+                template: '''
+            def u = createUtility()
+            checkUtility(u)
+            '''
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatusSuccess(run)
+    }
+
+    @Issue("https://github.com/jenkinsci/templating-engine-plugin/issues/279")
+    def "library Class instanceof works in template"(){
+        libProvider.addSrc('utility', 'src/jte/Utility.groovy', '''
+        package jte
+        class Utility implements Serializable{}
+        ''')
+        libProvider.addStep("utility", "createUtility", """
+        import jte.Utility
+        def call(){
+            return new Utility()
+        }
+        """)
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+                config: 'libraries{ utility }',
+                template: '''
+            import jte.Utility
+            def u = createUtility()
+            assert u instanceof Utility
+            '''
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatusSuccess(run)
+    }
+
+    @Issue("https://github.com/jenkinsci/templating-engine-plugin/issues/279")
+    def "library Class instanceof works in template when created in template"(){
+        libProvider.addSrc('utility', 'src/jte/Utility.groovy', '''
+        package jte
+        class Utility implements Serializable{}
+        ''')
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: 'libraries{ utility }',
+            template: '''
+            import jte.Utility
+            def u = new Utility()
+            assert u instanceof Utility
+            '''
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatusSuccess(run)
+    }
+
+    @Issue("https://github.com/jenkinsci/templating-engine-plugin/issues/279")
+    def "Step method parameters can be typed to library classes"(){
+        libProvider.addSrc('utility', 'src/jte/Utility.groovy', '''
+        package jte
+        class Utility implements Serializable{}
+        ''')
+        libProvider.addStep("utility", "checkUtility", """
+        import jte.Utility
+        void call(Utility u){
+          assert u instanceof Utility
+        }
+        """)
+        def run
+        WorkflowJob job = TestUtil.createAdHoc(jenkins,
+            config: 'libraries{ utility }',
+            template: '''
+            import jte.Utility
+            def u = new Utility()
+            checkUtility(u)
+            '''
+        )
+
+        when:
+        run = job.scheduleBuild2(0).get()
+
+        then:
+        jenkins.assertBuildStatusSuccess(run)
     }
 
 }

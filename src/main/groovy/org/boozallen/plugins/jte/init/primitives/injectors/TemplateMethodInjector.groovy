@@ -21,6 +21,7 @@ import org.boozallen.plugins.jte.init.primitives.RunAfter
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveCollector
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveNamespace
+import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 /**
@@ -33,13 +34,14 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
     @SuppressWarnings("ParameterName")
     @Override
     @RunAfter([LibraryStepInjector, DefaultStepInjector])
-    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
-        TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(flowOwner)
+    void injectPrimitives(CpsFlowExecution exec, PipelineConfigurationObject config){
+        FlowExecutionOwner flowOwner = exec.getOwner()
+        TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(exec)
         TemplatePrimitiveNamespace steps = new TemplatePrimitiveNamespace(name: KEY)
 
         // populate namespace with no-op steps
         LinkedHashMap aggregatedConfig = config.getConfig()
-        StepWrapperFactory stepFactory = new StepWrapperFactory(flowOwner)
+        StepWrapperFactory stepFactory = new StepWrapperFactory(exec)
         aggregatedConfig[KEY].each{ step, _ ->
             if(!primitiveCollector.hasStep(step)){
                 StepWrapper stepWrapper = stepFactory.createNullStep(step)

@@ -23,6 +23,7 @@ import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveNamespace
 import org.boozallen.plugins.jte.util.JTEException
 import org.boozallen.plugins.jte.util.TemplateLogger
+import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 /**
@@ -34,7 +35,8 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
     @Override
     @RunAfter([LibraryStepInjector, DefaultStepInjector, TemplateMethodInjector])
-    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
+    void injectPrimitives(CpsFlowExecution exec, PipelineConfigurationObject config){
+        FlowExecutionOwner flowOwner = exec.getOwner()
         TemplatePrimitiveNamespace stages = new TemplatePrimitiveNamespace(name: KEY)
 
         // populate namespace with stages from pipeline config
@@ -49,15 +51,16 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
         // add namespace to collector if there are primitives
         if(stages.getPrimitives()){
             // add the namespace to the collector and save it on the run
-            TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(flowOwner)
+            TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(exec)
             primitiveCollector.addNamespace(stages)
             flowOwner.run().addOrReplaceAction(primitiveCollector)
         }
     }
 
     @Override
-    void validatePrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
-        TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(flowOwner)
+    void validatePrimitives(CpsFlowExecution exec, PipelineConfigurationObject config){
+        FlowExecutionOwner flowOwner = exec.getOwner()
+        TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(exec)
         LinkedHashMap aggregatedConfig = config.getConfig()
         LinkedHashMap stagesWithUndefinedSteps = [:]
         aggregatedConfig[KEY].each{ name, stageConfig ->

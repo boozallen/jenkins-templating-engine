@@ -40,6 +40,14 @@ import javax.annotation.Nonnull
  */
 class TemplatePrimitiveCollector extends InvisibleAction{
 
+    /**
+     * The common classloader that's used across Pipeline Template
+     * and individual StepWrapper compilation. It gets added by
+     * {@see StepWrapperFactory}. While not serializable, as an
+     * action, this class is persisted to the run's build.xml file
+     */
+    @SuppressWarnings('UnnecessaryTransientModifier')
+    transient ClassLoader loader
     List<TemplatePrimitiveNamespace> namespaces = []
 
     static List<GlobalVariable> getGlobalVariablesByName(String name, Run run){

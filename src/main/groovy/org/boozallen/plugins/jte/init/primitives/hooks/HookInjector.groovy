@@ -19,7 +19,7 @@ import hudson.Extension
 import jenkins.model.Jenkins
 import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfigurationObject
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
-import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
+import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution
 
 /**
  * registers the CpsTransformed classes used during pipeline execution related
@@ -42,7 +42,7 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
     }
 
     @Override
-    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
+    void injectPrimitives(CpsFlowExecution exec, PipelineConfigurationObject config){
         getHooksClass()
         getAnnotatedMethodClass()
     }

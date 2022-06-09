@@ -20,6 +20,7 @@ import org.boozallen.plugins.jte.init.governance.config.dsl.PipelineConfiguratio
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveCollector
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveInjector
 import org.boozallen.plugins.jte.init.primitives.TemplatePrimitiveNamespace
+import org.jenkinsci.plugins.workflow.cps.CpsFlowExecution
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
 /**
@@ -30,7 +31,8 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
     private static final String KEY = "keywords"
 
     @Override
-    void injectPrimitives(FlowExecutionOwner flowOwner, PipelineConfigurationObject config){
+    void injectPrimitives(CpsFlowExecution exec, PipelineConfigurationObject config){
+        FlowExecutionOwner flowOwner = exec.getOwner()
         TemplatePrimitiveNamespace keywords = new TemplatePrimitiveNamespace(name: KEY)
 
         // populate namespace with keywords from pipeline config
@@ -43,7 +45,7 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner
 
         // add the namespace to the collector and save it on the run
         if(keywords.getPrimitives()) {
-            TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(flowOwner)
+            TemplatePrimitiveCollector primitiveCollector = getPrimitiveCollector(exec)
             primitiveCollector.addNamespace(keywords)
             flowOwner.run().addOrReplaceAction(primitiveCollector)
         }
