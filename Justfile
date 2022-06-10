@@ -85,8 +85,10 @@ release version branch=`git branch --show-current`:
   fi
 
   # update build.gradle on main
-  sed -ie "s/^version.*/version = '{{version}}'/g" build.gradle
-  git add build.gradle
+  sed -i '' "s/^version.*/version = '{{version}}'/g" build.gradle
+  # update github issue template with new version in dropdown
+  sed -i '' "s/options: \[/options: \[ {{version}},/g" .github/ISSUE_TEMPLATE/bug-report.yaml
+  git add build.gradle .github/ISSUE_TEMPLATE/bug-report.yaml
   git commit -m "bump version to {{version}}"
   git push
 
