@@ -6,4 +6,5 @@ RUN pip install \
     pymdown-extensions && \
     git config --global user.name "docs deployer" && \
     git config --global user.email "null@null.com" && \
-    git config --global credential.helper 'store --file=/root/.git-credentials'
+    git config --global credential.helper 'store --file=/root/.git-credentials' && \
+    git config --global --add safe.directory /app
