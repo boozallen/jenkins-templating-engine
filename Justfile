@@ -51,11 +51,11 @@ lint-docs: lint-prose lint-markdown
 
 # use Vale to lint the prose of the documentation
 lint-prose:
-  docker run -v $(pwd):/app -w /app jdkato/vale docs
+  docker run -v $(pwd):/app -w /app jdkato/vale:v2.18.0 docs
 
 # use markdownlit to lint the docs
 lint-markdown: 
-  docker run -v $(pwd):/app -w /app davidanson/markdownlint-cli2:0.3.1 "docs/**/*.md"
+  docker run -v $(pwd):/app -w /app davidanson/markdownlint-cli2:0.4.0
 
 # update current docs
 update-docs: buildDocsImage
