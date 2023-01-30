@@ -31,6 +31,7 @@
 
   </td>
   </tr>
+
 </table>
 
 ## Overview
@@ -38,7 +39,7 @@
 The Jenkins Templating Engine (JTE) is a plugin originally created by [Booz Allen Hamilton](https://www.boozallen.com/) enabling pipeline templating and governance.
 
 JTE brings the [Template Method Design Pattern](https://refactoring.guru/design-patterns/template-method) to Jenkins pipelines.
-Users can remove the Jenkinsfile from individual source code repositories in favor of a centralized, tool-agnostic [Pipeline Template](https://jenkinsci.github.io/templating-engine-plugin/2.5/concepts/pipeline-templates/). 
+Users can remove the Jenkinsfile from individual source code repositories in favor of a centralized, tool-agnostic [Pipeline Template](https://jenkinsci.github.io/templating-engine-plugin/2.5/concepts/pipeline-templates/).
 This template provides the structure of the pipeline.
 
 Pipeline functionality is provided by Library Steps.

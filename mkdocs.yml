@@ -114,7 +114,38 @@ nav:
     - 'reference/library-configuration-schema.md'
     - 'reference/governance-tier.md'
   - Tutorials:
-    - 'tutorials/overview.md'
+    - 'tutorials/index.md'
+    - Learning Lab - Local Development:
+      - tutorials/local-development/index.md
+      - tutorials/local-development/1-prerequisites.md
+      - tutorials/local-development/2-run-jenkins.md
+      - tutorials/local-development/3-configure-jenkins.md
+      - tutorials/local-development/4-validate-jenkins.md
+    - Learning Lab - The Basics:
+      - tutorials/jte-the-basics/index.md
+      - tutorials/jte-the-basics/1-prerequisites.md
+      - tutorials/jte-the-basics/2-pipeline-job.md
+      - tutorials/jte-the-basics/3-first-libraries.md
+      - tutorials/jte-the-basics/4-first-configuration-file.md
+      - tutorials/jte-the-basics/5-swap-to-gradle.md
+      - tutorials/jte-the-basics/6-multibranch.md
+      - tutorials/jte-the-basics/7-github-org.md
+      - tutorials/jte-the-basics/8-summary.md
+    - Learning Lab - Pipeline Primitives:
+      - tutorials/jte-primitives/index.md
+      - tutorials/jte-primitives/1-prerequisites.md
+      - tutorials/jte-primitives/2-pipeline-job.md
+      - tutorials/jte-primitives/3-stages.md
+      - tutorials/jte-primitives/4-application-environments.md
+      - tutorials/jte-primitives/5-keywords.md
+      - tutorials/jte-primitives/6-summary.md
+    - Learning Lab - Advanced Features:
+      - tutorials/jte-advanced-features/index.md
+      - tutorials/jte-advanced-features/1-prerequisites.md
+      - tutorials/jte-advanced-features/2-default-step-implementation.md
+      - tutorials/jte-advanced-features/3-pipeline-lifecycle-hooks.md
+      - tutorials/jte-advanced-features/4-multimethod-steps.md
+      - tutorials/jte-advanced-features/5-summary.md
   - How-To Guides: 
     - 'how-to/overview.md'
     - Library Development:

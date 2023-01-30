@@ -1,6 +1,6 @@
 # Package a Library Source as a Plugin
 
-Users can package their Library Source as a stand-alone Jenkins Plugin. 
+Users can package their Library Source as a stand-alone Jenkins Plugin.
 
 This has a couple advantages:
 
