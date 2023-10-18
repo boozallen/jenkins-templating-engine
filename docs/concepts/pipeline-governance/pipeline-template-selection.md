@@ -13,7 +13,7 @@ Figure 1 visualizes this process in a flow chart.
 
 ### Ad Hoc Pipeline Jobs
 
-JTE treats ad hoc Pipeline Jobs a little differently than Pipeline Jobs that have been created by a MultiBranch Project.
+JTE treats ad hoc Pipeline Jobs a little differently than Pipeline Jobs that have been created by a Multibranch Project.
 
 For Pipeline Jobs, if a Pipeline Template has been configured, it will be used.
 If not, JTE will follow the flow described throughout the rest of this document.
@@ -21,9 +21,9 @@ If not, JTE will follow the flow described throughout the rest of this document.
 !!! note "Rationale"
     The rationale for using the configured template without falling back to the rest of the Pipeline Template Selection process is that if a user has permissions to create and configure their own Jenkins job, Pipeline Governance is already gone.
 
-### MultiBranch Project Pipeline Jobs
+### Multibranch Project Pipeline Jobs
 
-For MultiBranch Project Pipeline Jobs, if the source code repository has a `Jenkinsfile` at the root (or at any arbitrary path in the repository as configured by `scriptPath`) **and** `jte.allow_scm_jenkinsfile` is set to `True`, then the repository `Jenkinsfile` will be used as the Pipeline Template.
+For Multibranch Project Pipeline Jobs, if the source code repository has a `Jenkinsfile` at the root (or at any arbitrary path in the repository as configured by `scriptPath`) **and** `jte.allow_scm_jenkinsfile` is set to `True`, then the repository `Jenkinsfile` will be used as the Pipeline Template.
 
 !!! important "Disabling Repository Jenkinsfiles"
     It's important that when trying to enforce a certain set of Pipeline Templates are used that `jte.allow_scm_jenkinsfile` is set to `False`.

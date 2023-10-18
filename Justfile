@@ -47,13 +47,13 @@ docs: buildDocsImage
 serve: buildDocsImage
   docker run --rm -p 8000:8000 -v $(pwd):/docs {{docsImage}} serve -a 0.0.0.0:8000
 
-lint-docs: lint-prose lint-markdown
+lint-docs: lint-markdown lint-prose 
 
 # use Vale to lint the prose of the documentation
-lint-prose:
-  docker run -v $(pwd):/app -w /app jdkato/vale:v2.18.0 docs
+lint-prose docsToLint="docs":
+  docker run -v $(pwd):/app -w /app jdkato/vale:v2.18.0 {{docsToLint}}
 
-# use markdownlit to lint the docs
+# use markdownlint to lint the docs
 lint-markdown: 
   docker run -v $(pwd):/app -w /app davidanson/markdownlint-cli2:0.4.0
 

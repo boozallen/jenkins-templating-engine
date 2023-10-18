@@ -42,6 +42,6 @@ swap:
   'governance tier' : Governance Tier
   'Governance tier' : Governance Tier
   'governance Tier' : Governance Tier
-  'pipeline run' : Pipeline Run
-  'Pipeline run' : Pipeline Run
-  'pipeline Run' : Pipeline Run
+  'pipeline runs?\b' : Pipeline Run
+  'Pipeline runs?\b' : Pipeline Run
+  'pipeline Runs?\b' : Pipeline Run
