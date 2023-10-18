@@ -61,7 +61,7 @@ lint-markdown:
 update-docs: buildDocsImage
     #!/usr/bin/env bash
     version=$(./gradlew -q printJTEVersion)
-    docker run --rm -v ~/.git-credentials:/root/.git-credentials -v $(pwd):/app -w /app --entrypoint=mike jte-docs-builder deploy -f --push $version
+    docker run --rm -v ~/.git-credentials:/root/.git-credentials -v $(pwd):/app -w /app --entrypoint=mike jte-docs-builder deploy -f --ignore --push --update-aliases $version latest
     echo "INFO     -  Published version '$version' to GitHub Pages"
 
 ###################
