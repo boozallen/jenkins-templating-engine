@@ -1,4 +1,6 @@
 # Jenkins Templating Engine
+# ⚠️ PROJECT RETIRED / UNMAINTAINED
+This repository is no longer actively maintained.  Refer to [Jenkins repository](https://github.com/jenkinsci/templating-engine-plugin) 
 
 [![Jenkins Plugin](https://img.shields.io/jenkins/plugin/v/templating-engine.svg)](https://plugins.jenkins.io/templating-engine)
 [![GitHub Release](https://img.shields.io/github/v/release/jenkinsci/templating-engine-plugin.svg?label=release)](https://github.com/jenkinsci/templating-engine-plugin/releases/latest)
